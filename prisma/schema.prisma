@@ -5,3 +5,127 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum UserRole {
+  NURSE
+  HOSPITAL_ADMIN
+  SUPER_ADMIN
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum JobShiftStatus {
+  OPEN
+  MATCHED
+  CANCELED
+}
+
+enum MatchContractStatus {
+  PENDING
+  SIGNED
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+}
+
+model User {
+  id                 String             @id @default(cuid())
+  email              String             @unique
+  passwordHash       String
+  role               UserRole
+  verificationStatus VerificationStatus @default(PENDING)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  nurseProfile       NurseProfile?
+  hospitalProfile    HospitalProfile?
+
+  @@index([role])
+  @@index([verificationStatus])
+}
+
+model NurseProfile {
+  id                String            @id @default(cuid())
+  userId            String            @unique
+  firstName         String
+  lastName          String
+  iban              String
+  minHourlyRate     Decimal           @default(42.00) @db.Decimal(10, 2)
+  phoneNumber       String
+  whatsappOptIn     Boolean           @default(false)
+  examenFileUrl     String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchContracts    MatchContract[]
+
+  @@index([lastName, firstName])
+  @@index([phoneNumber])
+}
+
+model HospitalProfile {
+  id               String     @id @default(cuid())
+  userId           String     @unique
+  clinicName       String
+  billingAddress   String
+  taxNumber        String
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobShifts        JobShift[]
+
+  @@index([clinicName])
+}
+
+model JobShift {
+  id                 String         @id @default(cuid())
+  hospitalProfileId  String
+  startTime          DateTime
+  endTime            DateTime
+  totalPlannedHours  Decimal        @db.Decimal(6, 2)
+  status             JobShiftStatus @default(OPEN)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  hospitalProfile    HospitalProfile @relation(fields: [hospitalProfileId], references: [id], onDelete: Cascade)
+  matchContracts     MatchContract[]
+
+  @@index([hospitalProfileId])
+  @@index([status])
+  @@index([startTime, endTime])
+}
+
+model MatchContract {
+  id              String              @id @default(cuid())
+  jobShiftId      String
+  nurseProfileId  String
+  status          MatchContractStatus @default(PENDING)
+  signedAt        DateTime?
+  contractPdfUrl  String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  jobShift        JobShift            @relation(fields: [jobShiftId], references: [id], onDelete: Cascade)
+  nurseProfile    NurseProfile        @relation(fields: [nurseProfileId], references: [id], onDelete: Cascade)
+  invoice         Invoice?
+
+  @@unique([jobShiftId, nurseProfileId])
+  @@index([status])
+  @@index([nurseProfileId])
+}
+
+model Invoice {
+  id                String        @id @default(cuid())
+  matchContractId   String        @unique
+  amount            Decimal       @db.Decimal(10, 2)
+  status            InvoiceStatus @default(PENDING)
+  invoicePdfUrl     String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  matchContract     MatchContract @relation(fields: [matchContractId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+}
