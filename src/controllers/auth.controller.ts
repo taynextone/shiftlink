@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { registerUser } from '../services/auth.service';
 import { signAuthToken } from '../utils/jwt';
-import { setAuthCookie } from '../utils/cookies';
+import { setAuthCookie, AUTH_COOKIE_NAME } from '../utils/cookies';
 
 export async function registerController(req: Request, res: Response): Promise<void> {
   const user = await registerUser(req.body);
@@ -20,6 +20,16 @@ export async function registerController(req: Request, res: Response): Promise<v
       verificationStatus: user.verificationStatus,
       nurseProfile: user.nurseProfile,
       hospitalProfile: user.hospitalProfile,
+    },
+  });
+}
+
+export async function meController(req: Request, res: Response): Promise<void> {
+  res.status(200).json({
+    auth: {
+      userId: req.auth?.userId,
+      role: req.auth?.role,
+      cookieName: AUTH_COOKIE_NAME,
     },
   });
 }

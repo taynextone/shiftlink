@@ -16,6 +16,7 @@ process.env.S3_FORCE_PATH_STYLE = 'true';
 
 import request from 'supertest';
 import { MatchContractStatus, JobShiftStatus, UserRole, VerificationStatus, InvoiceStatus, Prisma } from '@prisma/client';
+import { signAuthToken } from '../src/utils/jwt';
 
 jest.mock('../src/config/prisma', () => ({
   prisma: {
@@ -95,7 +96,28 @@ describe('registration and signed match flow', () => {
     expect(response.headers['set-cookie']).toBeDefined();
   });
 
+  it('rejects signing a match without auth', async () => {
+    const response = await request(app).post('/api/v1/matches/sign').send({
+      matchContractId: 'contract_1',
+    });
+
+    expect(response.status).toBe(401);
+  });
+
+  it('rejects signing a match with the wrong role', async () => {
+    const token = signAuthToken({ sub: 'user_2', role: UserRole.NURSE });
+
+    const response = await request(app)
+      .post('/api/v1/matches/sign')
+      .set('Cookie', [`shiftlink_token=${token}`])
+      .send({ matchContractId: 'contract_1' });
+
+    expect(response.status).toBe(403);
+  });
+
   it('signs a match, updates shift status, and enqueues billing + whatsapp jobs', async () => {
+    const token = signAuthToken({ sub: 'admin_1', role: UserRole.HOSPITAL_ADMIN });
+
     (prisma.matchContract.findUnique as jest.Mock).mockResolvedValue({
       id: 'contract_1',
       status: MatchContractStatus.PENDING,
@@ -128,9 +150,12 @@ describe('registration and signed match flow', () => {
       invoice: null,
     });
 
-    const response = await request(app).post('/api/v1/matches/sign').send({
-      matchContractId: 'contract_1',
-    });
+    const response = await request(app)
+      .post('/api/v1/matches/sign')
+      .set('Cookie', [`shiftlink_token=${token}`])
+      .send({
+        matchContractId: 'contract_1',
+      });
 
     expect(response.status).toBe(200);
     expect(response.body.matchContract.status).toBe(MatchContractStatus.SIGNED);
@@ -141,6 +166,18 @@ describe('registration and signed match flow', () => {
       matchContractId: 'contract_1',
       phoneNumber: '+491701234567',
     });
+  });
+
+  it('returns auth payload for authenticated users', async () => {
+    const token = signAuthToken({ sub: 'admin_1', role: UserRole.HOSPITAL_ADMIN });
+
+    const response = await request(app)
+      .get('/api/v1/auth/me')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.body.auth.userId).toBe('admin_1');
+    expect(response.body.auth.role).toBe(UserRole.HOSPITAL_ADMIN);
   });
 
   it('creates an invoice amount based on total planned hours times platform fee', async () => {
