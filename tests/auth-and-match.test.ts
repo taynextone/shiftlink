@@ -158,15 +158,32 @@ describe('registration and signed match flow', () => {
       publicId: 'NUR-AB12CD34',
       displayName: 'NurseNova',
       minHourlyRate: new Prisma.Decimal(49),
-      availabilityCity: 'Berlin',
-      availabilityPostalCode: '10115',
-      availabilityLatitude: new Prisma.Decimal(52.520008),
-      availabilityLongitude: new Prisma.Decimal(13.404954),
-      availabilityRadiusKm: 25,
-      isAvailable: true,
       specializations: [{ tag: 'intensivstation' }, { tag: 'fachweiterbildung-intensiv' }],
-      availabilityWindows: [
-        { startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-29T18:00:00.000Z') },
+      availabilityBlocks: [
+        {
+          title: 'Berlin Juni Block 1',
+          city: 'Berlin',
+          postalCode: '10115',
+          latitude: new Prisma.Decimal(52.520008),
+          longitude: new Prisma.Decimal(13.404954),
+          radiusKm: 25,
+          startTime: new Date('2026-06-16T06:00:00.000Z'),
+          endTime: new Date('2026-06-29T18:00:00.000Z'),
+          isBooked: false,
+          notes: 'Nur Juni-Block Berlin',
+        },
+        {
+          title: 'Bremen Juli Block',
+          city: 'Bremen',
+          postalCode: '28195',
+          latitude: new Prisma.Decimal(53.079296),
+          longitude: new Prisma.Decimal(8.801694),
+          radiusKm: 20,
+          startTime: new Date('2026-07-10T06:00:00.000Z'),
+          endTime: new Date('2026-07-14T18:00:00.000Z'),
+          isBooked: false,
+          notes: 'Juli Bremen',
+        },
       ],
     });
 
@@ -176,33 +193,48 @@ describe('registration and signed match flow', () => {
       .send({
         displayName: 'NurseNova',
         minHourlyRate: 49,
-        availabilityCity: 'Berlin',
-        availabilityPostalCode: '10115',
-        availabilityLatitude: 52.520008,
-        availabilityLongitude: 13.404954,
-        availabilityRadiusKm: 25,
-        isAvailable: true,
         specializationTags: ['Intensivstation', 'Fachweiterbildung-Intensiv'],
-        availabilityWindows: [
-          { startTime: '2026-06-16T06:00:00.000Z', endTime: '2026-06-29T18:00:00.000Z' },
+        availabilityBlocks: [
+          {
+            title: 'Berlin Juni Block 1',
+            city: 'Berlin',
+            postalCode: '10115',
+            latitude: 52.520008,
+            longitude: 13.404954,
+            radiusKm: 25,
+            startTime: '2026-06-16T06:00:00.000Z',
+            endTime: '2026-06-29T18:00:00.000Z',
+            notes: 'Nur Juni-Block Berlin',
+          },
+          {
+            title: 'Bremen Juli Block',
+            city: 'Bremen',
+            postalCode: '28195',
+            latitude: 53.079296,
+            longitude: 8.801694,
+            radiusKm: 20,
+            startTime: '2026-07-10T06:00:00.000Z',
+            endTime: '2026-07-14T18:00:00.000Z',
+            notes: 'Juli Bremen',
+          },
         ],
       });
 
     expect(response.status).toBe(200);
-    expect(response.body.nurseProfile.availabilityCity).toBe('Berlin');
     expect(response.body.nurseProfile.specializations).toHaveLength(2);
-    expect(response.body.nurseProfile.availabilityWindows).toHaveLength(1);
+    expect(response.body.nurseProfile.availabilityBlocks).toHaveLength(2);
+    expect(response.body.nurseProfile.availabilityBlocks[0].city).toBe('Berlin');
+    expect(response.body.nurseProfile.availabilityBlocks[1].city).toBe('Bremen');
   });
 
-  it('rejects available=true without a radius', async () => {
+  it('rejects invalid availability blocks with end before start', async () => {
     const token = signAuthToken({ sub: 'nurse_user_1', role: UserRole.NURSE });
 
     const response = await request(app)
       .patch('/api/v1/nurse-profile/me')
       .set('Cookie', [`shiftlink_token=${token}`])
       .send({
-        isAvailable: true,
-        availabilityCity: 'Berlin',
+        availabilityBlocks: [{ city: 'Berlin', radiusKm: 20, startTime: '2026-06-29T18:00:00.000Z', endTime: '2026-06-16T06:00:00.000Z' }],
       });
 
     expect(response.status).toBe(400);

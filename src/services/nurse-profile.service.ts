@@ -25,26 +25,25 @@ export async function updateOwnNurseProfile(actor: { userId: string; role: UserR
     phoneNumber: input.phoneNumber,
     whatsappOptIn: input.whatsappOptIn,
     examenFileUrl: input.examenFileUrl,
-    availabilityCity: input.availabilityCity,
-    availabilityPostalCode: input.availabilityPostalCode,
-    availabilityLatitude:
-      input.availabilityLatitude !== undefined ? new Prisma.Decimal(input.availabilityLatitude) : undefined,
-    availabilityLongitude:
-      input.availabilityLongitude !== undefined ? new Prisma.Decimal(input.availabilityLongitude) : undefined,
-    availabilityRadiusKm: input.availabilityRadiusKm,
-    isAvailable: input.isAvailable,
     specializations: input.specializationTags
       ? {
           deleteMany: {},
           create: input.specializationTags.map((tag) => ({ tag })),
         }
       : undefined,
-    availabilityWindows: input.availabilityWindows
+    availabilityBlocks: input.availabilityBlocks
       ? {
           deleteMany: {},
-          create: input.availabilityWindows.map((window) => ({
-            startTime: new Date(window.startTime),
-            endTime: new Date(window.endTime),
+          create: input.availabilityBlocks.map((block) => ({
+            title: block.title,
+            city: block.city,
+            postalCode: block.postalCode,
+            latitude: block.latitude !== undefined ? new Prisma.Decimal(block.latitude) : undefined,
+            longitude: block.longitude !== undefined ? new Prisma.Decimal(block.longitude) : undefined,
+            radiusKm: block.radiusKm,
+            startTime: new Date(block.startTime),
+            endTime: new Date(block.endTime),
+            notes: block.notes,
           })),
         }
       : undefined,
@@ -55,7 +54,7 @@ export async function updateOwnNurseProfile(actor: { userId: string; role: UserR
     data,
     include: {
       specializations: true,
-      availabilityWindows: true,
+      availabilityBlocks: true,
     },
   });
 }
