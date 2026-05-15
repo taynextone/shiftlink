@@ -1,8 +1,13 @@
 import { Request, Response } from 'express';
+import createHttpError from 'http-errors';
 import { signMatchContract } from '../services/match.service';
 
 export async function signMatchContractController(req: Request, res: Response): Promise<void> {
-  const contract = await signMatchContract(req.body.matchContractId);
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const contract = await signMatchContract(req.body.matchContractId, req.auth);
 
   res.status(200).json({
     matchContract: contract,

@@ -55,3 +55,25 @@ export async function registerUser(input: RegisterInput) {
     },
   });
 }
+
+export async function loginUser(email: string, password: string) {
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: {
+      nurseProfile: true,
+      hospitalProfile: true,
+    },
+  });
+
+  if (!user) {
+    throw createHttpError(401, 'Invalid email or password');
+  }
+
+  const isPasswordValid = await argon2.verify(user.passwordHash, password);
+
+  if (!isPasswordValid) {
+    throw createHttpError(401, 'Invalid email or password');
+  }
+
+  return user;
+}

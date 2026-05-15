@@ -1,9 +1,9 @@
 import createHttpError from 'http-errors';
-import { MatchContractStatus, JobShiftStatus } from '@prisma/client';
+import { MatchContractStatus, JobShiftStatus, UserRole } from '@prisma/client';
 import { prisma } from '../config/prisma';
 import { billingQueue, whatsappQueue } from '../config/queues';
 
-export async function signMatchContract(matchContractId: string) {
+export async function signMatchContract(matchContractId: string, actor: { userId: string; role: UserRole }) {
   const existingContract = await prisma.matchContract.findUnique({
     where: { id: matchContractId },
     include: {
@@ -18,6 +18,13 @@ export async function signMatchContract(matchContractId: string) {
 
   if (!existingContract) {
     throw createHttpError(404, 'Match contract not found');
+  }
+
+  const ownerUserId = existingContract.jobShift.hospitalProfile.userId;
+  const canSign = actor.role === UserRole.SUPER_ADMIN || actor.userId === ownerUserId;
+
+  if (!canSign) {
+    throw createHttpError(403, 'You are not allowed to sign this match contract');
   }
 
   if (existingContract.status === MatchContractStatus.SIGNED) {

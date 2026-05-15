@@ -45,4 +45,10 @@ export const registerSchema = z
     }
   });
 
+export const loginSchema = z.object({
+  email: z.email().transform((value) => value.toLowerCase()),
+  password: z.string().min(12).max(128),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;

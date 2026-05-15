@@ -15,6 +15,7 @@ process.env.S3_SECRET_KEY = 'minioadmin';
 process.env.S3_FORCE_PATH_STYLE = 'true';
 
 import request from 'supertest';
+import argon2 from 'argon2';
 import { MatchContractStatus, JobShiftStatus, UserRole, VerificationStatus, InvoiceStatus, Prisma } from '@prisma/client';
 import { signAuthToken } from '../src/utils/jwt';
 
@@ -96,6 +97,41 @@ describe('registration and signed match flow', () => {
     expect(response.headers['set-cookie']).toBeDefined();
   });
 
+  it('logs in a user and returns an auth cookie', async () => {
+    const passwordHash = await argon2.hash('very-secure-password');
+    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+      id: 'admin_1',
+      email: 'admin@example.com',
+      passwordHash,
+      role: UserRole.HOSPITAL_ADMIN,
+      verificationStatus: VerificationStatus.PENDING,
+      nurseProfile: null,
+      hospitalProfile: {
+        id: 'hospital_1',
+        clinicName: 'Clinic One',
+      },
+    });
+
+    const response = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: 'admin@example.com', password: 'very-secure-password' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.user.email).toBe('admin@example.com');
+    expect(response.headers['set-cookie']).toBeDefined();
+  });
+
+  it('logs out an authenticated user', async () => {
+    const token = signAuthToken({ sub: 'admin_1', role: UserRole.HOSPITAL_ADMIN });
+
+    const response = await request(app)
+      .post('/api/v1/auth/logout')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.body.message).toBe('Logged out successfully');
+  });
+
   it('rejects signing a match without auth', async () => {
     const response = await request(app).post('/api/v1/matches/sign').send({
       matchContractId: 'contract_1',
@@ -115,8 +151,8 @@ describe('registration and signed match flow', () => {
     expect(response.status).toBe(403);
   });
 
-  it('signs a match, updates shift status, and enqueues billing + whatsapp jobs', async () => {
-    const token = signAuthToken({ sub: 'admin_1', role: UserRole.HOSPITAL_ADMIN });
+  it('rejects signing a match for a different hospital owner', async () => {
+    const token = signAuthToken({ sub: 'hospital_admin_1', role: UserRole.HOSPITAL_ADMIN });
 
     (prisma.matchContract.findUnique as jest.Mock).mockResolvedValue({
       id: 'contract_1',
@@ -128,6 +164,33 @@ describe('registration and signed match flow', () => {
       jobShift: {
         hospitalProfile: {
           id: 'hospital_1',
+          userId: 'different_hospital_owner',
+        },
+      },
+    });
+
+    const response = await request(app)
+      .post('/api/v1/matches/sign')
+      .set('Cookie', [`shiftlink_token=${token}`])
+      .send({ matchContractId: 'contract_1' });
+
+    expect(response.status).toBe(403);
+  });
+
+  it('signs a match, updates shift status, and enqueues billing + whatsapp jobs', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
+
+    (prisma.matchContract.findUnique as jest.Mock).mockResolvedValue({
+      id: 'contract_1',
+      status: MatchContractStatus.PENDING,
+      nurseProfile: {
+        whatsappOptIn: true,
+        phoneNumber: '+491701234567',
+      },
+      jobShift: {
+        hospitalProfile: {
+          id: 'hospital_1',
+          userId: 'hospital_owner_1',
         },
       },
     });
@@ -145,6 +208,7 @@ describe('registration and signed match flow', () => {
         status: JobShiftStatus.MATCHED,
         hospitalProfile: {
           id: 'hospital_1',
+          userId: 'hospital_owner_1',
         },
       },
       invoice: null,
