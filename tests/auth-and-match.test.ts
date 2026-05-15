@@ -228,7 +228,7 @@ describe('registration and signed match flow', () => {
     );
   });
 
-  it('allows nurse to accept an offer and signs it', async () => {
+  it('allows nurse to accept an offer and signs it without sending another WhatsApp', async () => {
     const token = signAuthToken({ sub: 'nurse_user_1', role: UserRole.NURSE });
     (prisma.nurseProfile.findUnique as jest.Mock)
       .mockResolvedValueOnce({ id: 'nurse_1', userId: 'nurse_user_1' })
@@ -253,14 +253,10 @@ describe('registration and signed match flow', () => {
     expect(response.status).toBe(200);
     expect(response.body.status).toBe('ACCEPTED');
     expect(billingQueue.add).toHaveBeenCalled();
-    expect(whatsappQueue.add).toHaveBeenCalledWith(
-      'signed-match-notification',
-      expect.objectContaining({ matchContractId: 'contract_1', type: 'match-signed' }),
-      { jobId: 'signed-match-notification:contract_1' },
-    );
+    expect(whatsappQueue.add).not.toHaveBeenCalled();
   });
 
-  it('allows nurse to decline an offer and queues WhatsApp notification', async () => {
+  it('allows nurse to decline an offer without sending another WhatsApp', async () => {
     (prisma.nurseProfile.findUnique as jest.Mock).mockImplementationOnce(async () => ({ id: 'nurse_1', userId: 'nurse_user_1' }));
     (prisma.matchContract.findUnique as jest.Mock).mockImplementationOnce(async () => ({ id: 'contract_1', nurseProfileId: 'nurse_1', status: MatchContractStatus.PENDING, invoice: null, nurseProfile: { id: 'nurse_1', publicId: 'NUR-AB12CD34', displayName: 'NurseNova', phoneNumber: '+491701234567', whatsappOptIn: true }, jobShift: { id: 'shift_1', locationCity: 'Berlin', startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-20T18:00:00.000Z'), hospitalProfile: { userId: 'hospital_owner_1', clinicName: 'Clinic One' }, requirements: [] } }));
 
@@ -271,11 +267,7 @@ describe('registration and signed match flow', () => {
 
     expect(result.status).toBe('DECLINED');
     expect(prisma.matchContract.delete).toHaveBeenCalledWith({ where: { id: 'contract_1' } });
-    expect(whatsappQueue.add).toHaveBeenCalledWith(
-      'match-declined-notification',
-      expect.objectContaining({ matchContractId: 'contract_1', type: 'match-declined' }),
-      { jobId: 'match-declined:contract_1' },
-    );
+    expect(whatsappQueue.add).not.toHaveBeenCalled();
   });
 
   it('lists own match contracts for a nurse', async () => {

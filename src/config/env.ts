@@ -20,6 +20,7 @@ const envSchema = z.object({
   S3_SIGNED_URL_TTL_SECONDS: z.coerce.number().int().positive().default(900),
   AUTH_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
+  NURSE_LOGIN_URL: z.string().url().optional(),
 });
 
 export const env = envSchema.parse(process.env);

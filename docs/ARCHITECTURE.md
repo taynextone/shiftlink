@@ -89,7 +89,8 @@ Bereits umgesetzt:
 - JWT-Erstellung und `httpOnly`-Cookie
 - Auth-, Rollen- und erste Ownership-Middleware/-Checks
 - Match-Signing-Endpoint
-- asynchrones Billing-/WhatsApp-Queueing via BullMQ
+- asynchrones Billing-Queueing via BullMQ
+- WhatsApp-Queueing aktuell gezielt für neue Pflegekraft-Angebote
 - erster geschützter Dokumentenzugriffs-Flow im Backend
 - erste Tests für Auth, Match und Billing
 
@@ -115,7 +116,7 @@ Noch offen bzw. bewusst unvollständig:
 
 BullMQ ist vorgesehen bzw. teilweise bereits genutzt für:
 1. PDF-Generierung von Verträgen und Rechnungen
-2. WhatsApp-Notifications bei neuen Jobs in Berlin oder bei `MatchContract.status = SIGNED`
+2. WhatsApp-Notifications bei neu erstellten Pflegekraft-Angeboten mit Kurzdetails + Login-Link
 3. Billing-/Invoice-Erzeugung nach bestätigtem Match
 
 Vor Versand von WhatsApp-Nachrichten immer `whatsapp_opt_in === true` prüfen.

@@ -12,7 +12,8 @@ Das Repo ist nicht mehr nur Konzept oder Doku. Es enthält bereits ein erstes la
 - Login / Logout
 - JWT im `httpOnly`-Cookie
 - RBAC- und erste Ownership-Checks
-- Match-Signing mit Billing-/WhatsApp-Queue-Triggern
+- Match-Offer-Flow für Pflegekräfte mit WhatsApp-Angebots-Trigger
+- Match-Signing mit Billing-Triggern
 - erste Tests für Registration, Auth, Matching und Billing
 
 ## Was in diesem Repo liegt

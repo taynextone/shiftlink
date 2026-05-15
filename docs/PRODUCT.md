@@ -29,3 +29,9 @@ Es werden keine Patientendaten verarbeitet. Allerdings werden sensible Personald
 - Das System muss Vertragsstatus und Rechnungs-Trigger absolut sauber modellieren.
 - Dokumenten- und Rollenrechte sind nicht nur Feature-Themen, sondern Kern des Produkts.
 - Vertrauen und Verifikation sind zentrale Bestandteile des MVP, nicht spätere Extras.
+
+## Benachrichtigungslogik (aktuell)
+
+- Pflegekräfte sollen vorerst genau **eine WhatsApp beim neuen Angebot** erhalten.
+- Inhalt: kurze Einsatzdetails + Link zum Login / zur Angebotsansicht.
+- Keine zusätzliche WhatsApp bei Signierung oder Ablehnung im MVP.

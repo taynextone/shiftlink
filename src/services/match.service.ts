@@ -2,6 +2,7 @@ import createHttpError from 'http-errors';
 import { MatchContractStatus, JobShiftStatus, UserRole } from '@prisma/client';
 import { prisma } from '../config/prisma';
 import { billingQueue, whatsappQueue } from '../config/queues';
+import { env } from '../config/env';
 
 function normalizeDate(value: Date) {
   return new Date(value);
@@ -290,6 +291,7 @@ export async function createMatchOffer(
         locationCity: created.jobShift.locationCity,
         startTime: created.jobShift.startTime,
         endTime: created.jobShift.endTime,
+        loginUrl: env.NURSE_LOGIN_URL,
       },
       {
         jobId: `new-match-offer:${created.id}`,
@@ -339,27 +341,6 @@ export async function respondToMatchOffer(
   }
 
   if (input.action === 'DECLINE') {
-    if (contract.nurseProfile.whatsappOptIn) {
-      await whatsappQueue.add(
-        'match-declined-notification',
-        {
-          type: 'match-declined',
-          matchContractId: contract.id,
-          phoneNumber: contract.nurseProfile.phoneNumber,
-          publicId: contract.nurseProfile.publicId,
-          displayName: contract.nurseProfile.displayName,
-          jobShiftId: contract.jobShift.id,
-          clinicName: contract.jobShift.hospitalProfile.clinicName,
-          locationCity: contract.jobShift.locationCity,
-          startTime: contract.jobShift.startTime,
-          endTime: contract.jobShift.endTime,
-        },
-        {
-          jobId: `match-declined:${contract.id}`,
-        },
-      );
-    }
-
     await prisma.matchContract.delete({
       where: { id: contract.id },
     });
@@ -442,27 +423,6 @@ export async function signMatchContract(matchContractId: string, actor: { userId
       },
       {
         jobId: `invoice:${updatedContract.id}`,
-      },
-    );
-  }
-
-  if (updatedContract.nurseProfile.whatsappOptIn) {
-    await whatsappQueue.add(
-      'signed-match-notification',
-      {
-        type: 'match-signed',
-        matchContractId: updatedContract.id,
-        phoneNumber: updatedContract.nurseProfile.phoneNumber,
-        publicId: updatedContract.nurseProfile.publicId,
-        displayName: updatedContract.nurseProfile.displayName,
-        jobShiftId: updatedContract.jobShift.id,
-        clinicName: updatedContract.jobShift.hospitalProfile.clinicName,
-        locationCity: updatedContract.jobShift.locationCity,
-        startTime: updatedContract.jobShift.startTime,
-        endTime: updatedContract.jobShift.endTime,
-      },
-      {
-        jobId: `signed-match-notification:${updatedContract.id}`,
       },
     );
   }
