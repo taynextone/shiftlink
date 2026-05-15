@@ -10,10 +10,19 @@ export async function updateOwnNurseProfile(actor: { userId: string; role: UserR
 
   const existingProfile = await prisma.nurseProfile.findUnique({
     where: { userId: actor.userId },
+    include: {
+      availabilityBlocks: true,
+    },
   });
 
   if (!existingProfile) {
     throw createHttpError(404, 'Nurse profile not found');
+  }
+
+  const bookedBlocks = existingProfile.availabilityBlocks.filter((block) => block.isBooked);
+
+  if (bookedBlocks.length > 0 && input.availabilityBlocks) {
+    throw createHttpError(409, 'Booked availability blocks cannot be replaced through the general profile update flow');
   }
 
   const data: Prisma.NurseProfileUpdateInput = {
@@ -25,6 +34,10 @@ export async function updateOwnNurseProfile(actor: { userId: string; role: UserR
     phoneNumber: input.phoneNumber,
     whatsappOptIn: input.whatsappOptIn,
     examenFileUrl: input.examenFileUrl,
+    preferredShiftType: input.preferredShiftType,
+    minAssignmentHours: input.minAssignmentHours,
+    maxAssignmentHours: input.maxAssignmentHours,
+    preferredRegionsNote: input.preferredRegionsNote,
     specializations: input.specializationTags
       ? {
           deleteMany: {},
@@ -57,4 +70,46 @@ export async function updateOwnNurseProfile(actor: { userId: string; role: UserR
       availabilityBlocks: true,
     },
   });
+}
+
+export async function getPublicNurseProfile(publicId: string) {
+  const profile = await prisma.nurseProfile.findUnique({
+    where: { publicId },
+    include: {
+      specializations: true,
+      availabilityBlocks: {
+        where: {
+          isBooked: false,
+        },
+        orderBy: {
+          startTime: 'asc',
+        },
+      },
+    },
+  });
+
+  if (!profile) {
+    throw createHttpError(404, 'Nurse profile not found');
+  }
+
+  return {
+    publicId: profile.publicId,
+    displayName: profile.displayName,
+    minHourlyRate: profile.minHourlyRate,
+    preferredShiftType: profile.preferredShiftType,
+    minAssignmentHours: profile.minAssignmentHours,
+    maxAssignmentHours: profile.maxAssignmentHours,
+    preferredRegionsNote: profile.preferredRegionsNote,
+    specializations: profile.specializations.map((item) => item.tag),
+    availabilityBlocks: profile.availabilityBlocks.map((block) => ({
+      id: block.id,
+      title: block.title,
+      city: block.city,
+      postalCode: block.postalCode,
+      radiusKm: block.radiusKm,
+      startTime: block.startTime,
+      endTime: block.endTime,
+      notes: block.notes,
+    })),
+  };
 }

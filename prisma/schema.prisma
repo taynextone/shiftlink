@@ -39,6 +39,14 @@ enum RequirementPriority {
   PREFERRED
 }
 
+enum ShiftPreference {
+  DAY
+  NIGHT
+  EARLY
+  LATE
+  FLEXIBLE
+}
+
 model User {
   id                 String             @id @default(cuid())
   email              String             @unique
@@ -55,23 +63,27 @@ model User {
 }
 
 model NurseProfile {
-  id                    String                   @id @default(cuid())
-  userId                String                   @unique
-  publicId              String                   @unique
-  displayName           String
-  firstName             String
-  lastName              String
-  iban                  String
-  minHourlyRate         Decimal                  @default(42.00) @db.Decimal(10, 2)
-  phoneNumber           String
-  whatsappOptIn         Boolean                  @default(false)
-  examenFileUrl         String?
-  createdAt             DateTime                 @default(now())
-  updatedAt             DateTime                 @updatedAt
-  user                  User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  matchContracts        MatchContract[]
-  specializations       NurseSpecialization[]
-  availabilityBlocks    NurseAvailabilityBlock[]
+  id                      String                   @id @default(cuid())
+  userId                  String                   @unique
+  publicId                String                   @unique
+  displayName             String
+  firstName               String
+  lastName                String
+  iban                    String
+  minHourlyRate           Decimal                  @default(42.00) @db.Decimal(10, 2)
+  phoneNumber             String
+  whatsappOptIn           Boolean                  @default(false)
+  examenFileUrl           String?
+  preferredShiftType      ShiftPreference          @default(FLEXIBLE)
+  minAssignmentHours      Int?
+  maxAssignmentHours      Int?
+  preferredRegionsNote    String?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  user                    User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchContracts          MatchContract[]
+  specializations         NurseSpecialization[]
+  availabilityBlocks      NurseAvailabilityBlock[]
 
   @@index([lastName, firstName])
   @@index([phoneNumber])

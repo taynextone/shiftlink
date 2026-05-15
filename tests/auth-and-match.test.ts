@@ -150,6 +150,7 @@ describe('registration and signed match flow', () => {
     (prisma.nurseProfile.findUnique as jest.Mock).mockResolvedValue({
       id: 'nurse_profile_1',
       userId: 'nurse_user_1',
+      availabilityBlocks: [],
     });
 
     (prisma.nurseProfile.update as jest.Mock).mockResolvedValue({
@@ -157,10 +158,21 @@ describe('registration and signed match flow', () => {
       userId: 'nurse_user_1',
       publicId: 'NUR-AB12CD34',
       displayName: 'NurseNova',
+      firstName: 'Nina',
+      lastName: 'Care',
+      iban: 'DE89370400440532013000',
       minHourlyRate: new Prisma.Decimal(49),
+      phoneNumber: '+491701234567',
+      whatsappOptIn: true,
+      examenFileUrl: 's3://bucket/examen.pdf',
+      preferredShiftType: 'FLEXIBLE',
+      minAssignmentHours: 8,
+      maxAssignmentHours: 120,
+      preferredRegionsNote: 'Berlin und später Bremen',
       specializations: [{ tag: 'intensivstation' }, { tag: 'fachweiterbildung-intensiv' }],
       availabilityBlocks: [
         {
+          id: 'block_1',
           title: 'Berlin Juni Block 1',
           city: 'Berlin',
           postalCode: '10115',
@@ -173,6 +185,7 @@ describe('registration and signed match flow', () => {
           notes: 'Nur Juni-Block Berlin',
         },
         {
+          id: 'block_2',
           title: 'Bremen Juli Block',
           city: 'Bremen',
           postalCode: '28195',
@@ -193,6 +206,10 @@ describe('registration and signed match flow', () => {
       .send({
         displayName: 'NurseNova',
         minHourlyRate: 49,
+        preferredShiftType: 'FLEXIBLE',
+        minAssignmentHours: 8,
+        maxAssignmentHours: 120,
+        preferredRegionsNote: 'Berlin und später Bremen',
         specializationTags: ['Intensivstation', 'Fachweiterbildung-Intensiv'],
         availabilityBlocks: [
           {
@@ -222,6 +239,8 @@ describe('registration and signed match flow', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.nurseProfile.specializations).toHaveLength(2);
+    expect(response.body.nurseProfile.preferredShiftType).toBe('FLEXIBLE');
+    expect(response.body.nurseProfile.minAssignmentHours).toBe(8);
     expect(response.body.nurseProfile.availabilityBlocks).toHaveLength(2);
     expect(response.body.nurseProfile.availabilityBlocks[0].city).toBe('Berlin');
     expect(response.body.nurseProfile.availabilityBlocks[1].city).toBe('Bremen');
@@ -238,6 +257,61 @@ describe('registration and signed match flow', () => {
       });
 
     expect(response.status).toBe(400);
+  });
+
+
+  it('rejects overlapping availability blocks', async () => {
+    const token = signAuthToken({ sub: 'nurse_user_1', role: UserRole.NURSE });
+
+    const response = await request(app)
+      .patch('/api/v1/nurse-profile/me')
+      .set('Cookie', [`shiftlink_token=${token}`])
+      .send({
+        availabilityBlocks: [
+          { city: 'Berlin', radiusKm: 25, startTime: '2026-06-16T06:00:00.000Z', endTime: '2026-06-20T18:00:00.000Z' },
+          { city: 'Berlin', radiusKm: 25, startTime: '2026-06-18T06:00:00.000Z', endTime: '2026-06-22T18:00:00.000Z' },
+        ],
+      });
+
+    expect(response.status).toBe(400);
+  });
+
+  it('returns an anonymized public nurse profile view', async () => {
+    (prisma.nurseProfile.findUnique as jest.Mock).mockResolvedValue({
+      id: 'nurse_1',
+      publicId: 'NUR-AB12CD34',
+      displayName: 'NurseNova',
+      minHourlyRate: new Prisma.Decimal(49),
+      preferredShiftType: 'FLEXIBLE',
+      minAssignmentHours: 8,
+      maxAssignmentHours: 120,
+      preferredRegionsNote: 'Berlin und später Bremen',
+      preferredShiftType: 'FLEXIBLE',
+      minAssignmentHours: 8,
+      maxAssignmentHours: 120,
+      preferredRegionsNote: 'Berlin und später Bremen',
+      specializations: [{ tag: 'intensivstation' }, { tag: 'fachweiterbildung-intensiv' }],
+      availabilityBlocks: [
+        {
+          id: 'block_1',
+          title: 'Berlin Juni Block 1',
+          city: 'Berlin',
+          postalCode: '10115',
+          radiusKm: 25,
+          startTime: new Date('2026-06-16T06:00:00.000Z'),
+          endTime: new Date('2026-06-29T18:00:00.000Z'),
+          notes: 'Nur Juni-Block Berlin',
+        },
+      ],
+    });
+
+    const response = await request(app).get('/api/v1/nurse-profile/public/NUR-AB12CD34');
+
+    expect(response.status).toBe(200);
+    expect(response.body.nurseProfile.publicId).toBe('NUR-AB12CD34');
+    expect(response.body.nurseProfile.displayName).toBe('NurseNova');
+    expect(response.body.nurseProfile.specializations).toContain('intensivstation');
+    expect(response.body.nurseProfile.firstName).toBeUndefined();
   });
 
   it('allows hospitals to create demand with time window and skill requirements', async () => {
