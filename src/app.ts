@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.routes';
 import matchRoutes from './routes/match.routes';
 import documentRoutes from './routes/document.routes';
 import nurseProfileRoutes from './routes/nurse-profile.routes';
+import nurseAvailabilityRoutes from './routes/nurse-availability.routes';
 import jobShiftRoutes from './routes/job-shift.routes';
 import { env } from './config/env';
 import { notFoundMiddleware } from './middlewares/not-found';
@@ -33,6 +34,7 @@ export function createApp() {
   app.use('/api/v1/matches', matchRoutes);
   app.use('/api/v1/documents', documentRoutes);
   app.use('/api/v1/nurse-profile', nurseProfileRoutes);
+  app.use('/api/v1/nurse-availability', nurseAvailabilityRoutes);
   app.use('/api/v1/job-shifts', jobShiftRoutes);
 
   app.use((err: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
