@@ -1,42 +1,60 @@
-# Empfohlene Umsetzungsreihenfolge
+# Umsetzungsstand und nächste Prioritäten
 
-## Prinzip
+## Bereits umgesetzt
 
-Nicht alles auf einmal bauen. Jeder Abschnitt soll klar abgeschlossen und reviewbar sein.
+### Schritt 1 – Setup ✅
+- Node-Projekt initialisiert
+- TypeScript konfiguriert (`strict: true`)
+- Express-App angelegt
+- Security-Basics eingebaut (`helmet`, `cors`, Cookie-Parsing, Fehlerbehandlung)
+- Docker / docker-compose für lokale Entwicklung aufgesetzt
+- Postgres, Redis und MinIO lokal vorgesehen
 
-## Schritt 1 – Setup
-- Node-Projekt initialisieren
-- TypeScript konfigurieren (`strict: true`)
-- Express-App anlegen
-- Security-Basics einbauen (`helmet`, `cors`, Cookie-Parsing, zentrale Fehlerbehandlung)
-- Docker / docker-compose für lokale Entwicklung aufsetzen
-- Postgres und Redis lokal bereitstellen
+### Schritt 2 – Datenbank ✅
+- Prisma initialisiert
+- `schema.prisma` auf Basis des Fachmodells erstellt
+- Kernmodelle und Enums definiert
 
-## Schritt 2 – Datenbank
-- Prisma initialisieren
-- `schema.prisma` auf Basis des Fachmodells erstellen
-- erste Migration anlegen
-
-## Schritt 3 – Auth & Profile
-- Registrierungs-Flow bauen
+### Schritt 3 – Auth & Profile ✅
+- Registrierungs-Flow gebaut
 - Passwort-Hashing mit `argon2`
 - JWT in `httpOnly`-Cookies
 - Zod-Validierung für eingehende Requests
-- Profilanlage für Nurse/Hospital mit sauberer Rollenlogik
+- Profilanlage für Nurse/Hospital mit Rollenlogik
+- erste Auth-/RBAC-Basis ergänzt
 
-## Schritt 4 – Matching & Trigger
-- Matching-Logik implementieren
-- Wechsel auf `SIGNED` modellieren
-- bei `SIGNED` asynchron Billing und Benachrichtigungen triggern
+### Schritt 4 – Matching & Trigger ✅
+- Signing-Flow für MatchContract implementiert
+- Wechsel auf `SIGNED` modelliert
+- asynchrones Billing und WhatsApp-Queueing angestoßen
 
-## Schritt 5 – Testing
-- Integrationstests für Auth
-- Integrationstests für Matching
-- Integrationstests für Billing-Flow
+### Schritt 5 – Testing ✅
+- erste Tests für Auth
+- erste Tests für Matching
+- erste Tests für Billing-Flow
+
+## Nächste Prioritäten
+
+### Priorität 1 – Stabilität & Korrektheit
+1. Prisma-Migrationen anlegen
+2. Login / Logout ergänzen
+3. Ownership-Prüfungen auf Ressourcenebene einführen
+4. Idempotenz beim Signing / Billing härten
+
+### Priorität 2 – Sicherheitskritische Lücken schließen
+5. Dokumentenzugriff absichern
+6. Examen-/PDF-Storage sauber anbinden
+7. Auditierbarkeit / Event-Historie mitdenken
+
+### Priorität 3 – Produktionsfähigkeit ausbauen
+8. Worker und API-Prozess sauberer trennen
+9. echte WhatsApp-Integration ergänzen
+10. PDF-Generierung integrieren
+11. DB-nahe Integrations-/E2E-Tests ausbauen
 
 ## MVP-Meinung
 
-Der MVP sollte sich auf diese Kette konzentrieren:
+Der MVP sollte sich weiterhin auf diese Kette konzentrieren:
 1. Nutzer anlegen
 2. Profile verifizieren
 3. Schicht anlegen
@@ -45,4 +63,4 @@ Der MVP sollte sich auf diese Kette konzentrieren:
 6. Rechnung erzeugen
 7. Notification verschicken
 
-Alles andere ist nachrangig, bis diese Kernkette stabil ist.
+Alles andere ist nachrangig, bis diese Kernkette stabil und belastbar ist.

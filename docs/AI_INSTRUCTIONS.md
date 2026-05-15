@@ -12,9 +12,10 @@ Baue das Backend für Shiftlink von Grund auf neu. Der Code muss produktionsreif
 
 - Schrittweise vorgehen
 - Nicht alles auf einmal umsetzen
-- Nach jedem Schritt auf Feedback oder Freigabe warten
+- Nach jedem Schritt auf Feedback oder Freigabe warten, sofern nicht anders gewünscht
 - Architekturentscheidungen kurz begründen
 - Sicherheit und Korrektheit vor Geschwindigkeit
+- Skalierbarkeit und spätere Server-Migration immer mitdenken
 
 ## Nicht verhandelbare Vorgaben
 
@@ -46,9 +47,25 @@ Das Produkt ist nicht einfach "Uber für Pflege". Der eigentliche Kern ist:
 - saubere Fakturierung
 - vertrauenswürdige Verifikation
 
-## Erwartetes erstes Umsetzungspaket
+## Aktueller Entwicklungsstand
 
+Bereits vorhanden:
 - Projekt-Setup
 - Grundstruktur unter `src/`
 - Docker-Setup für lokale Entwicklung
 - Sicherheits-Basis in `app.ts`
+- Registrierungs-Flow
+- erste Auth-/RBAC-Basis
+- Match-Signing-Flow
+- Billing-/WhatsApp-Queueing
+- erste Tests
+
+## Aktuelle Fokusbereiche
+
+Als Nächstes bevorzugt bearbeiten:
+1. Migrations
+2. Login / Logout
+3. Ownership-Checks
+4. Dokumentensicherheit
+5. Idempotenz / Robustheit
+6. Worker-/Produktionshärtung

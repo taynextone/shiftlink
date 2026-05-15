@@ -24,13 +24,15 @@ Das Backend soll produktionsreif, modular, typsicher und sicher aufgebaut werden
 
 ```text
 src/
-├── config/         # env-Variablen (Zod validiert), Prisma Client, Redis
+├── config/         # env-Variablen (Zod validiert), Prisma Client, Redis, Queues
 ├── controllers/    # Request/Response Handling (keine Geschäftslogik!)
 ├── middlewares/    # Auth, RBAC, Error Handling, Rate Limiting
-├── routes/         # Express Router (z. B. /api/v1/jobs)
+├── routes/         # Express Router
 ├── services/       # Kern-Logik (Matching, Billing, PDF, WhatsApp)
 ├── schemas/        # Zod-Schemas
-├── utils/          # Helper (Logger, Crypto)
+├── types/          # Typ-Erweiterungen, z. B. Express Request
+├── utils/          # Helper (JWT, Cookies, Async Handler)
+├── workers/        # BullMQ Worker
 └── app.ts          # Express App Konfiguration (Helmet, CORS)
 ```
 
@@ -46,10 +48,10 @@ src/
 - Relation zu User
 - Vorname / Nachname
 - IBAN
-- `min_hourly_rate` (Float, Default: 42.00)
-- `phone_number` (E.164)
-- `whatsapp_opt_in` (Boolean, Default: false)
-- `examenFileUrl` (nur Pfad zum S3-Objekt)
+- `minHourlyRate` (**Decimal**, Default: 42.00)
+- `phoneNumber` (E.164)
+- `whatsappOptIn` (Boolean, Default: false)
+- `examenFileUrl` (Pfad zum S3-Objekt)
 
 ### HospitalProfile
 - Relation zu User
@@ -75,17 +77,44 @@ src/
 - Status: `PENDING`, `PAID`
 - Pfad zum PDF
 
+## Aktueller Implementierungsstand
+
+Bereits umgesetzt:
+- Security-Basis in `app.ts` (`helmet`, `cors`, Cookie-Parsing)
+- Zod-validierte Env-Konfiguration
+- Prisma- und Redis-Grundkonfiguration
+- Registrierungs-Flow für `NURSE` und `HOSPITAL_ADMIN`
+- Passwort-Hashing mit `argon2`
+- JWT-Erstellung und `httpOnly`-Cookie
+- einfache Auth- und Rollen-Middleware
+- Match-Signing-Endpoint
+- asynchrones Billing-/WhatsApp-Queueing via BullMQ
+- erste Tests für Auth, Match und Billing
+
+Noch offen bzw. bewusst unvollständig:
+- Login / Logout
+- Ownership-Checks auf Ressourcenebene
+- geschützter Dokumentenzugriff
+- PDF-Generierung
+- echte WhatsApp-Provider-Integration
+- DB-Migrationen
+- getrennte API-/Worker-Process-Strategie für Produktion
+- Idempotenz- und Race-Condition-Härtung
+
 ## Security by Design
 
 - Helmet und CORS global in `app.ts`
 - Rate Limiting auf allen `/auth`-Routen
-- Geschützter Dokumentenzugriff nur für passende `HOSPITAL_ADMIN`
-- Zentrales Error Handling ohne Stack-Traces an Clients im Produktionsmodus
+- geschützter Dokumentenzugriff nur für passende `HOSPITAL_ADMIN`
+- zentrales Error Handling ohne Stack-Traces an Clients im Produktionsmodus
+- Auth per JWT im `httpOnly`-Cookie
+- RBAC-Basis vorhanden, aber Ownership-Prüfungen müssen noch ergänzt werden
 
 ## Asynchrone Prozesse
 
-BullMQ ist Pflicht für:
+BullMQ ist vorgesehen bzw. teilweise bereits genutzt für:
 1. PDF-Generierung von Verträgen und Rechnungen
 2. WhatsApp-Notifications bei neuen Jobs in Berlin oder bei `MatchContract.status = SIGNED`
+3. Billing-/Invoice-Erzeugung nach bestätigtem Match
 
 Vor Versand von WhatsApp-Nachrichten immer `whatsapp_opt_in === true` prüfen.
