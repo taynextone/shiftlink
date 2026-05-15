@@ -76,3 +76,12 @@ Worauf ich achten würde:
 3. Idempotenz und Race-Condition-Schutz ergänzen
 4. Worker/API für Produktion sauberer trennen
 5. Integrations- und DB-nahe Tests ausbauen
+
+
+## WhatsApp-Angebote
+
+Aktuell ist genau eine WhatsApp beim neu erstellten Angebot vorgesehen.
+Konfiguration per Env:
+- `WHATSAPP_PROVIDER=mock|twilio`
+- `NURSE_LOGIN_URL=https://...`
+- bei Twilio zusätzlich: `WHATSAPP_FROM_NUMBER`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`

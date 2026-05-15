@@ -35,3 +35,5 @@ Es werden keine Patientendaten verarbeitet. Allerdings werden sensible Personald
 - Pflegekräfte sollen vorerst genau **eine WhatsApp beim neuen Angebot** erhalten.
 - Inhalt: kurze Einsatzdetails + Link zum Login / zur Angebotsansicht.
 - Keine zusätzliche WhatsApp bei Signierung oder Ablehnung im MVP.
+
+- Die Angebots-WhatsApp enthält kurze Einsatzdetails (Klinik, Ort, Zeitraum) plus Login-Link.

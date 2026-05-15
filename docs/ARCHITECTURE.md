@@ -120,3 +120,11 @@ BullMQ ist vorgesehen bzw. teilweise bereits genutzt für:
 3. Billing-/Invoice-Erzeugung nach bestätigtem Match
 
 Vor Versand von WhatsApp-Nachrichten immer `whatsapp_opt_in === true` prüfen.
+
+
+## WhatsApp-Adapter-Strategie
+
+- interne Produktfunktion: `sendNewMatchOfferWhatsapp(...)`
+- Providerwahl per Env (`mock`, vorbereitet für `twilio`)
+- Worker kennt nur den fachlichen Offer-Job, nicht Produktentscheidungen für andere Statuswechsel
+- `NURSE_LOGIN_URL` wird als Linkziel in die Angebotsnachricht eingebettet
