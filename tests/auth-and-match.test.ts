@@ -28,6 +28,7 @@ jest.mock('../src/config/prisma', () => ({
     },
     nurseProfile: {
       findUnique: jest.fn(),
+      update: jest.fn(),
     },
     matchContract: {
       findUnique: jest.fn(),
@@ -131,6 +132,58 @@ describe('registration and signed match flow', () => {
     expect(response.status).toBe(200);
     expect(response.body.user.email).toBe('admin@example.com');
     expect(response.headers['set-cookie']).toBeDefined();
+  });
+
+  it('allows a nurse to update availability, location and hourly rate', async () => {
+    const token = signAuthToken({ sub: 'nurse_user_1', role: UserRole.NURSE });
+
+    (prisma.nurseProfile.findUnique as jest.Mock).mockResolvedValue({
+      id: 'nurse_profile_1',
+      userId: 'nurse_user_1',
+    });
+
+    (prisma.nurseProfile.update as jest.Mock).mockResolvedValue({
+      id: 'nurse_profile_1',
+      userId: 'nurse_user_1',
+      minHourlyRate: new Prisma.Decimal(49),
+      availabilityCity: 'Berlin',
+      availabilityPostalCode: '10115',
+      availabilityLatitude: new Prisma.Decimal(52.520008),
+      availabilityLongitude: new Prisma.Decimal(13.404954),
+      availabilityRadiusKm: 25,
+      isAvailable: true,
+    });
+
+    const response = await request(app)
+      .patch('/api/v1/nurse-profile/me')
+      .set('Cookie', [`shiftlink_token=${token}`])
+      .send({
+        minHourlyRate: 49,
+        availabilityCity: 'Berlin',
+        availabilityPostalCode: '10115',
+        availabilityLatitude: 52.520008,
+        availabilityLongitude: 13.404954,
+        availabilityRadiusKm: 25,
+        isAvailable: true,
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.nurseProfile.availabilityCity).toBe('Berlin');
+    expect(response.body.nurseProfile.availabilityRadiusKm).toBe(25);
+  });
+
+  it('rejects available=true without a radius', async () => {
+    const token = signAuthToken({ sub: 'nurse_user_1', role: UserRole.NURSE });
+
+    const response = await request(app)
+      .patch('/api/v1/nurse-profile/me')
+      .set('Cookie', [`shiftlink_token=${token}`])
+      .send({
+        isAvailable: true,
+        availabilityCity: 'Berlin',
+      });
+
+    expect(response.status).toBe(400);
   });
 
   it('logs out an authenticated user', async () => {
