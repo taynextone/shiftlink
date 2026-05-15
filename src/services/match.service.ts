@@ -13,6 +13,7 @@ export async function signMatchContract(matchContractId: string, actor: { userId
           hospitalProfile: true,
         },
       },
+      invoice: true,
     },
   });
 
@@ -53,15 +54,29 @@ export async function signMatchContract(matchContractId: string, actor: { userId
     },
   });
 
-  await billingQueue.add('create-invoice', {
-    matchContractId: updatedContract.id,
-  });
+  if (!updatedContract.invoice) {
+    await billingQueue.add(
+      'create-invoice',
+      {
+        matchContractId: updatedContract.id,
+      },
+      {
+        jobId: `invoice:${updatedContract.id}`,
+      },
+    );
+  }
 
   if (updatedContract.nurseProfile.whatsappOptIn) {
-    await whatsappQueue.add('signed-match-notification', {
-      matchContractId: updatedContract.id,
-      phoneNumber: updatedContract.nurseProfile.phoneNumber,
-    });
+    await whatsappQueue.add(
+      'signed-match-notification',
+      {
+        matchContractId: updatedContract.id,
+        phoneNumber: updatedContract.nurseProfile.phoneNumber,
+      },
+      {
+        jobId: `signed-match-notification:${updatedContract.id}`,
+      },
+    );
   }
 
   return updatedContract;

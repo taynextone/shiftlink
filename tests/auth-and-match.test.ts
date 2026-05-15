@@ -13,6 +13,7 @@ process.env.S3_BUCKET = 'shiftlink-private';
 process.env.S3_ACCESS_KEY = 'minioadmin';
 process.env.S3_SECRET_KEY = 'minioadmin';
 process.env.S3_FORCE_PATH_STYLE = 'true';
+process.env.S3_SIGNED_URL_TTL_SECONDS = '900';
 
 import request from 'supertest';
 import argon2 from 'argon2';
@@ -45,6 +46,14 @@ jest.mock('../src/config/queues', () => ({
   whatsappQueue: {
     add: jest.fn(),
   },
+}));
+
+jest.mock('../src/services/storage.service', () => ({
+  createSignedDownloadUrl: jest.fn(async (fileUrl: string) => ({
+    url: `https://signed.example.com/download?file=${encodeURIComponent(fileUrl)}`,
+    expiresIn: 900,
+    objectKey: 'examen.pdf',
+  })),
 }));
 
 const { createApp } = require('../src/app');
@@ -164,6 +173,7 @@ describe('registration and signed match flow', () => {
         whatsappOptIn: true,
         phoneNumber: '+491701234567',
       },
+      invoice: null,
       jobShift: {
         hospitalProfile: {
           id: 'hospital_1',
@@ -180,7 +190,7 @@ describe('registration and signed match flow', () => {
     expect(response.status).toBe(403);
   });
 
-  it('signs a match, updates shift status, and enqueues billing + whatsapp jobs', async () => {
+  it('signs a match, updates shift status, and enqueues billing + whatsapp jobs idempotently', async () => {
     const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
 
     (prisma.matchContract.findUnique as jest.Mock).mockResolvedValue({
@@ -190,6 +200,7 @@ describe('registration and signed match flow', () => {
         whatsappOptIn: true,
         phoneNumber: '+491701234567',
       },
+      invoice: null,
       jobShift: {
         hospitalProfile: {
           id: 'hospital_1',
@@ -226,13 +237,59 @@ describe('registration and signed match flow', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.matchContract.status).toBe(MatchContractStatus.SIGNED);
-    expect(billingQueue.add).toHaveBeenCalledWith('create-invoice', {
-      matchContractId: 'contract_1',
+    expect(billingQueue.add).toHaveBeenCalledWith(
+      'create-invoice',
+      {
+        matchContractId: 'contract_1',
+      },
+      {
+        jobId: 'invoice:contract_1',
+      },
+    );
+    expect(whatsappQueue.add).toHaveBeenCalledWith(
+      'signed-match-notification',
+      {
+        matchContractId: 'contract_1',
+        phoneNumber: '+491701234567',
+      },
+      {
+        jobId: 'signed-match-notification:contract_1',
+      },
+    );
+  });
+
+  it('returns existing signed contract without re-enqueuing when already signed', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
+
+    (prisma.matchContract.findUnique as jest.Mock).mockResolvedValue({
+      id: 'contract_1',
+      status: MatchContractStatus.SIGNED,
+      nurseProfile: {
+        whatsappOptIn: true,
+        phoneNumber: '+491701234567',
+      },
+      invoice: {
+        id: 'invoice_1',
+      },
+      jobShift: {
+        hospitalProfile: {
+          id: 'hospital_1',
+          userId: 'hospital_owner_1',
+        },
+      },
     });
-    expect(whatsappQueue.add).toHaveBeenCalledWith('signed-match-notification', {
-      matchContractId: 'contract_1',
-      phoneNumber: '+491701234567',
-    });
+
+    const response = await request(app)
+      .post('/api/v1/matches/sign')
+      .set('Cookie', [`shiftlink_token=${token}`])
+      .send({
+        matchContractId: 'contract_1',
+      });
+
+    expect(response.status).toBe(200);
+    expect(prisma.matchContract.update).not.toHaveBeenCalled();
+    expect(billingQueue.add).not.toHaveBeenCalled();
+    expect(whatsappQueue.add).not.toHaveBeenCalled();
   });
 
   it('returns auth payload for authenticated users', async () => {
@@ -271,7 +328,7 @@ describe('registration and signed match flow', () => {
     expect(response.status).toBe(403);
   });
 
-  it('returns examen metadata for authorized hospital owners', async () => {
+  it('returns signed examen download metadata for authorized hospital owners', async () => {
     const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
 
     (prisma.nurseProfile.findUnique as jest.Mock).mockResolvedValue({
@@ -293,7 +350,9 @@ describe('registration and signed match flow', () => {
       .set('Cookie', [`shiftlink_token=${token}`]);
 
     expect(response.status).toBe(200);
-    expect(response.body.document.examenFileUrl).toBe('s3://bucket/examen.pdf');
+    expect(response.body.document.objectKey).toBe('examen.pdf');
+    expect(response.body.document.signedUrl).toContain('signed.example.com');
+    expect(response.body.document.expiresIn).toBe(900);
   });
 
   it('creates an invoice amount based on total planned hours times platform fee', async () => {

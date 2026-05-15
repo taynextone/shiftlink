@@ -1,6 +1,7 @@
 import createHttpError from 'http-errors';
 import { UserRole } from '@prisma/client';
 import { prisma } from '../config/prisma';
+import { createSignedDownloadUrl } from './storage.service';
 
 export async function getAccessibleExamenDocument(nurseProfileId: string, actor: { userId: string; role: UserRole }) {
   if (actor.role !== UserRole.HOSPITAL_ADMIN && actor.role !== UserRole.SUPER_ADMIN) {
@@ -41,8 +42,12 @@ export async function getAccessibleExamenDocument(nurseProfileId: string, actor:
     throw createHttpError(403, 'You are not allowed to access this examen document');
   }
 
+  const signedDownload = await createSignedDownloadUrl(nurseProfile.examenFileUrl);
+
   return {
     nurseProfileId: nurseProfile.id,
-    examenFileUrl: nurseProfile.examenFileUrl,
+    objectKey: signedDownload.objectKey,
+    signedUrl: signedDownload.url,
+    expiresIn: signedDownload.expiresIn,
   };
 }

@@ -17,6 +17,7 @@ const envSchema = z.object({
   S3_ACCESS_KEY: z.string().min(1),
   S3_SECRET_KEY: z.string().min(1),
   S3_FORCE_PATH_STYLE: z.coerce.boolean().default(true),
+  S3_SIGNED_URL_TTL_SECONDS: z.coerce.number().int().positive().default(900),
   AUTH_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
 });
