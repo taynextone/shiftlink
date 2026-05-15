@@ -5,6 +5,8 @@ import {
   CopyAvailabilityBlockInput,
   CreateAvailabilityBlockInput,
   ReplaceAvailabilityBlocksInput,
+  SetAvailabilityBlockBookedInput,
+  UpdateAvailabilityBlockInput,
 } from '../schemas/nurse-availability.schema';
 
 function overlaps(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date): boolean {
@@ -68,6 +70,66 @@ export async function createOwnAvailabilityBlock(actor: { userId: string; role: 
       nurseProfileId: profile.id,
       ...toCreateInput(input),
     },
+  });
+}
+
+export async function updateOwnAvailabilityBlock(
+  actor: { userId: string; role: UserRole },
+  blockId: string,
+  input: UpdateAvailabilityBlockInput,
+) {
+  const profile = await getOwnNurseProfile(actor);
+  const existing = profile.availabilityBlocks.find((block) => block.id === blockId);
+
+  if (!existing) {
+    throw createHttpError(404, 'Availability block not found');
+  }
+
+  if (existing.isBooked) {
+    throw createHttpError(409, 'Booked availability blocks cannot be edited through the nurse self-service flow');
+  }
+
+  const nextStart = input.startTime ? new Date(input.startTime) : existing.startTime;
+  const nextEnd = input.endTime ? new Date(input.endTime) : existing.endTime;
+
+  const conflict = profile.availabilityBlocks
+    .filter((block) => block.id !== blockId)
+    .some((block) => overlaps(nextStart, nextEnd, block.startTime, block.endTime));
+
+  if (conflict) {
+    throw createHttpError(409, 'Updated availability block overlaps with an existing block');
+  }
+
+  return prisma.nurseAvailabilityBlock.update({
+    where: { id: blockId },
+    data: {
+      title: input.title,
+      city: input.city,
+      postalCode: input.postalCode,
+      latitude: input.latitude !== undefined ? new Prisma.Decimal(input.latitude) : undefined,
+      longitude: input.longitude !== undefined ? new Prisma.Decimal(input.longitude) : undefined,
+      radiusKm: input.radiusKm,
+      startTime: input.startTime ? new Date(input.startTime) : undefined,
+      endTime: input.endTime ? new Date(input.endTime) : undefined,
+      notes: input.notes,
+    },
+  });
+}
+
+export async function deleteOwnAvailabilityBlock(actor: { userId: string; role: UserRole }, blockId: string) {
+  const profile = await getOwnNurseProfile(actor);
+  const existing = profile.availabilityBlocks.find((block) => block.id === blockId);
+
+  if (!existing) {
+    throw createHttpError(404, 'Availability block not found');
+  }
+
+  if (existing.isBooked) {
+    throw createHttpError(409, 'Booked availability blocks cannot be deleted through the nurse self-service flow');
+  }
+
+  await prisma.nurseAvailabilityBlock.delete({
+    where: { id: blockId },
   });
 }
 
@@ -163,5 +225,30 @@ export async function copyOwnAvailabilityBlock(actor: { userId: string; role: Us
   return prisma.nurseAvailabilityBlock.findMany({
     where: { nurseProfileId: profile.id },
     orderBy: { startTime: 'asc' },
+  });
+}
+
+export async function setAvailabilityBlockBookedState(
+  blockId: string,
+  input: SetAvailabilityBlockBookedInput,
+  actor?: { role?: UserRole },
+) {
+  if (actor && actor.role !== UserRole.SUPER_ADMIN) {
+    throw createHttpError(403, 'Only super admins can change booked state directly');
+  }
+
+  const existing = await prisma.nurseAvailabilityBlock.findUnique({
+    where: { id: blockId },
+  });
+
+  if (!existing) {
+    throw createHttpError(404, 'Availability block not found');
+  }
+
+  return prisma.nurseAvailabilityBlock.update({
+    where: { id: blockId },
+    data: {
+      isBooked: input.isBooked,
+    },
   });
 }

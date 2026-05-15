@@ -34,6 +34,9 @@ jest.mock('../src/config/prisma', () => ({
       create: jest.fn(),
       createMany: jest.fn(),
       findMany: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
       deleteMany: jest.fn(),
     },
     hospitalProfile: {
@@ -374,6 +377,92 @@ describe('registration and signed match flow', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.blocks).toHaveLength(3);
+  });
+
+
+  it('updates a single nurse availability block', async () => {
+    const token = signAuthToken({ sub: 'nurse_user_1', role: UserRole.NURSE });
+
+    (prisma.nurseProfile.findUnique as jest.Mock).mockResolvedValue({
+      id: 'nurse_profile_1',
+      userId: 'nurse_user_1',
+      availabilityBlocks: [
+        { id: 'block_1', city: 'Berlin', startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-20T18:00:00.000Z'), isBooked: false },
+      ],
+    });
+
+    (prisma.nurseAvailabilityBlock.update as jest.Mock).mockResolvedValue({
+      id: 'block_1',
+      city: 'Bremen',
+      radiusKm: 30,
+    });
+
+    const response = await request(app)
+      .patch('/api/v1/nurse-availability/me/block_1')
+      .set('Cookie', [`shiftlink_token=${token}`])
+      .send({ city: 'Bremen', radiusKm: 30 });
+
+    expect(response.status).toBe(200);
+    expect(response.body.block.city).toBe('Bremen');
+  });
+
+  it('deletes an unbooked nurse availability block', async () => {
+    const token = signAuthToken({ sub: 'nurse_user_1', role: UserRole.NURSE });
+
+    (prisma.nurseProfile.findUnique as jest.Mock).mockResolvedValue({
+      id: 'nurse_profile_1',
+      userId: 'nurse_user_1',
+      availabilityBlocks: [
+        { id: 'block_1', city: 'Berlin', startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-20T18:00:00.000Z'), isBooked: false },
+      ],
+    });
+
+    const response = await request(app)
+      .delete('/api/v1/nurse-availability/me/block_1')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(204);
+    expect(prisma.nurseAvailabilityBlock.delete).toHaveBeenCalled();
+  });
+
+  it('prevents deleting booked availability blocks through nurse self-service', async () => {
+    const token = signAuthToken({ sub: 'nurse_user_1', role: UserRole.NURSE });
+
+    (prisma.nurseProfile.findUnique as jest.Mock).mockResolvedValue({
+      id: 'nurse_profile_1',
+      userId: 'nurse_user_1',
+      availabilityBlocks: [
+        { id: 'block_1', city: 'Berlin', startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-20T18:00:00.000Z'), isBooked: true },
+      ],
+    });
+
+    const response = await request(app)
+      .delete('/api/v1/nurse-availability/me/block_1')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(409);
+  });
+
+  it('allows super admins to mark an availability block as booked', async () => {
+    const token = signAuthToken({ sub: 'super_admin_1', role: UserRole.SUPER_ADMIN });
+
+    (prisma.nurseAvailabilityBlock.findUnique as jest.Mock).mockResolvedValue({
+      id: 'block_1',
+      isBooked: false,
+    });
+
+    (prisma.nurseAvailabilityBlock.update as jest.Mock).mockResolvedValue({
+      id: 'block_1',
+      isBooked: true,
+    });
+
+    const response = await request(app)
+      .patch('/api/v1/nurse-availability/block_1/booked')
+      .set('Cookie', [`shiftlink_token=${token}`])
+      .send({ isBooked: true });
+
+    expect(response.status).toBe(200);
+    expect(response.body.block.isBooked).toBe(true);
   });
 
   it('returns an anonymized public nurse profile view', async () => {
