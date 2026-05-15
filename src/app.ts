@@ -2,7 +2,9 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import { ZodError } from 'zod';
 import healthRoutes from './routes/health.routes';
+import authRoutes from './routes/auth.routes';
 import { env } from './config/env';
 import { notFoundMiddleware } from './middlewares/not-found';
 import { errorHandler } from './middlewares/error-handler';
@@ -23,6 +25,19 @@ export function createApp() {
   app.use(cookieParser());
 
   app.use('/api/v1', healthRoutes);
+  app.use('/api/v1/auth', authRoutes);
+
+  app.use((err: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (err instanceof ZodError) {
+      res.status(400).json({
+        message: 'Validation failed',
+        issues: err.flatten(),
+      });
+      return;
+    }
+
+    next(err);
+  });
 
   app.use(notFoundMiddleware);
   app.use(errorHandler);
