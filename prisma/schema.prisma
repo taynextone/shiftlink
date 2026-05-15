@@ -34,6 +34,11 @@ enum InvoiceStatus {
   PAID
 }
 
+enum RequirementPriority {
+  REQUIRED
+  PREFERRED
+}
+
 model User {
   id                 String             @id @default(cuid())
   email              String             @unique
@@ -50,62 +55,111 @@ model User {
 }
 
 model NurseProfile {
-  id                      String             @id @default(cuid())
-  userId                  String             @unique
+  id                      String                   @id @default(cuid())
+  userId                  String                   @unique
+  publicId                String                   @unique
+  displayName             String
   firstName               String
   lastName                String
   iban                    String
-  minHourlyRate           Decimal            @default(42.00) @db.Decimal(10, 2)
+  minHourlyRate           Decimal                  @default(42.00) @db.Decimal(10, 2)
   phoneNumber             String
-  whatsappOptIn           Boolean            @default(false)
+  whatsappOptIn           Boolean                  @default(false)
   examenFileUrl           String?
   availabilityCity        String?
   availabilityPostalCode  String?
-  availabilityLatitude    Decimal?           @db.Decimal(9, 6)
-  availabilityLongitude   Decimal?           @db.Decimal(9, 6)
+  availabilityLatitude    Decimal?                 @db.Decimal(9, 6)
+  availabilityLongitude   Decimal?                 @db.Decimal(9, 6)
   availabilityRadiusKm    Int?
-  isAvailable             Boolean            @default(false)
-  createdAt               DateTime           @default(now())
-  updatedAt               DateTime           @updatedAt
-  user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isAvailable             Boolean                  @default(false)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  user                    User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   matchContracts          MatchContract[]
+  specializations         NurseSpecialization[]
+  availabilityWindows     NurseAvailabilityWindow[]
 
   @@index([lastName, firstName])
   @@index([phoneNumber])
   @@index([isAvailable])
   @@index([availabilityCity])
   @@index([availabilityPostalCode])
+  @@index([publicId])
+}
+
+model NurseSpecialization {
+  id             String       @id @default(cuid())
+  nurseProfileId String
+  tag            String
+  createdAt      DateTime     @default(now())
+  nurseProfile   NurseProfile @relation(fields: [nurseProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([nurseProfileId, tag])
+  @@index([tag])
+}
+
+model NurseAvailabilityWindow {
+  id             String       @id @default(cuid())
+  nurseProfileId String
+  startTime      DateTime
+  endTime        DateTime
+  createdAt      DateTime     @default(now())
+  nurseProfile   NurseProfile @relation(fields: [nurseProfileId], references: [id], onDelete: Cascade)
+
+  @@index([nurseProfileId])
+  @@index([startTime, endTime])
 }
 
 model HospitalProfile {
-  id               String      @id @default(cuid())
-  userId           String      @unique
+  id               String                @id @default(cuid())
+  userId           String                @unique
   clinicName       String
   billingAddress   String
   taxNumber        String
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
-  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   jobShifts        JobShift[]
 
   @@index([clinicName])
 }
 
 model JobShift {
-  id                 String          @id @default(cuid())
-  hospitalProfileId  String
-  startTime          DateTime
-  endTime            DateTime
-  totalPlannedHours  Decimal         @db.Decimal(6, 2)
-  status             JobShiftStatus  @default(OPEN)
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
-  hospitalProfile    HospitalProfile @relation(fields: [hospitalProfileId], references: [id], onDelete: Cascade)
-  matchContracts     MatchContract[]
+  id                       String                @id @default(cuid())
+  hospitalProfileId        String
+  title                    String?
+  department               String?
+  stationName              String?
+  locationCity             String?
+  locationPostalCode       String?
+  locationLatitude         Decimal?              @db.Decimal(9, 6)
+  locationLongitude        Decimal?              @db.Decimal(9, 6)
+  startTime                DateTime
+  endTime                  DateTime
+  totalPlannedHours        Decimal               @db.Decimal(6, 2)
+  status                   JobShiftStatus        @default(OPEN)
+  createdAt                DateTime              @default(now())
+  updatedAt                DateTime              @updatedAt
+  hospitalProfile          HospitalProfile       @relation(fields: [hospitalProfileId], references: [id], onDelete: Cascade)
+  matchContracts           MatchContract[]
+  requirements             JobShiftRequirement[]
 
   @@index([hospitalProfileId])
   @@index([status])
   @@index([startTime, endTime])
+  @@index([locationCity])
+}
+
+model JobShiftRequirement {
+  id          String              @id @default(cuid())
+  jobShiftId  String
+  tag         String
+  priority    RequirementPriority
+  createdAt   DateTime            @default(now())
+  jobShift    JobShift            @relation(fields: [jobShiftId], references: [id], onDelete: Cascade)
+
+  @@index([jobShiftId])
+  @@index([tag])
 }
 
 model MatchContract {

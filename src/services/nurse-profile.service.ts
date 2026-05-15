@@ -17,6 +17,7 @@ export async function updateOwnNurseProfile(actor: { userId: string; role: UserR
   }
 
   const data: Prisma.NurseProfileUpdateInput = {
+    displayName: input.displayName,
     firstName: input.firstName,
     lastName: input.lastName,
     iban: input.iban,
@@ -32,10 +33,29 @@ export async function updateOwnNurseProfile(actor: { userId: string; role: UserR
       input.availabilityLongitude !== undefined ? new Prisma.Decimal(input.availabilityLongitude) : undefined,
     availabilityRadiusKm: input.availabilityRadiusKm,
     isAvailable: input.isAvailable,
+    specializations: input.specializationTags
+      ? {
+          deleteMany: {},
+          create: input.specializationTags.map((tag) => ({ tag })),
+        }
+      : undefined,
+    availabilityWindows: input.availabilityWindows
+      ? {
+          deleteMany: {},
+          create: input.availabilityWindows.map((window) => ({
+            startTime: new Date(window.startTime),
+            endTime: new Date(window.endTime),
+          })),
+        }
+      : undefined,
   };
 
   return prisma.nurseProfile.update({
     where: { userId: actor.userId },
     data,
+    include: {
+      specializations: true,
+      availabilityWindows: true,
+    },
   });
 }

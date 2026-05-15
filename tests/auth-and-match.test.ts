@@ -30,6 +30,12 @@ jest.mock('../src/config/prisma', () => ({
       findUnique: jest.fn(),
       update: jest.fn(),
     },
+    hospitalProfile: {
+      findUnique: jest.fn(),
+    },
+    jobShift: {
+      create: jest.fn(),
+    },
     matchContract: {
       findUnique: jest.fn(),
       update: jest.fn(),
@@ -68,7 +74,7 @@ describe('registration and signed match flow', () => {
     jest.clearAllMocks();
   });
 
-  it('registers a nurse and returns an auth cookie', async () => {
+  it('registers a nurse and returns an auth cookie with anonymous public identity', async () => {
     (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
     (prisma.user.create as jest.Mock).mockResolvedValue({
       id: 'user_1',
@@ -77,6 +83,8 @@ describe('registration and signed match flow', () => {
       verificationStatus: VerificationStatus.PENDING,
       nurseProfile: {
         id: 'nurse_1',
+        publicId: 'NUR-AB12CD34',
+        displayName: 'NurseNova',
         firstName: 'Nina',
         lastName: 'Care',
         iban: 'DE89370400440532013000',
@@ -95,6 +103,7 @@ describe('registration and signed match flow', () => {
         password: 'very-secure-password',
         role: UserRole.NURSE,
         nurseProfile: {
+          displayName: 'NurseNova',
           firstName: 'Nina',
           lastName: 'Care',
           iban: 'DE89370400440532013000',
@@ -107,6 +116,7 @@ describe('registration and signed match flow', () => {
 
     expect(response.status).toBe(201);
     expect(response.body.user.email).toBe('nurse@example.com');
+    expect(response.body.user.nurseProfile.publicId).toBe('NUR-AB12CD34');
     expect(response.headers['set-cookie']).toBeDefined();
   });
 
@@ -134,7 +144,7 @@ describe('registration and signed match flow', () => {
     expect(response.headers['set-cookie']).toBeDefined();
   });
 
-  it('allows a nurse to update availability, location and hourly rate', async () => {
+  it('allows a nurse to update availability, tags, availability windows and hourly rate', async () => {
     const token = signAuthToken({ sub: 'nurse_user_1', role: UserRole.NURSE });
 
     (prisma.nurseProfile.findUnique as jest.Mock).mockResolvedValue({
@@ -145,6 +155,8 @@ describe('registration and signed match flow', () => {
     (prisma.nurseProfile.update as jest.Mock).mockResolvedValue({
       id: 'nurse_profile_1',
       userId: 'nurse_user_1',
+      publicId: 'NUR-AB12CD34',
+      displayName: 'NurseNova',
       minHourlyRate: new Prisma.Decimal(49),
       availabilityCity: 'Berlin',
       availabilityPostalCode: '10115',
@@ -152,12 +164,17 @@ describe('registration and signed match flow', () => {
       availabilityLongitude: new Prisma.Decimal(13.404954),
       availabilityRadiusKm: 25,
       isAvailable: true,
+      specializations: [{ tag: 'intensivstation' }, { tag: 'fachweiterbildung-intensiv' }],
+      availabilityWindows: [
+        { startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-29T18:00:00.000Z') },
+      ],
     });
 
     const response = await request(app)
       .patch('/api/v1/nurse-profile/me')
       .set('Cookie', [`shiftlink_token=${token}`])
       .send({
+        displayName: 'NurseNova',
         minHourlyRate: 49,
         availabilityCity: 'Berlin',
         availabilityPostalCode: '10115',
@@ -165,11 +182,16 @@ describe('registration and signed match flow', () => {
         availabilityLongitude: 13.404954,
         availabilityRadiusKm: 25,
         isAvailable: true,
+        specializationTags: ['Intensivstation', 'Fachweiterbildung-Intensiv'],
+        availabilityWindows: [
+          { startTime: '2026-06-16T06:00:00.000Z', endTime: '2026-06-29T18:00:00.000Z' },
+        ],
       });
 
     expect(response.status).toBe(200);
     expect(response.body.nurseProfile.availabilityCity).toBe('Berlin');
-    expect(response.body.nurseProfile.availabilityRadiusKm).toBe(25);
+    expect(response.body.nurseProfile.specializations).toHaveLength(2);
+    expect(response.body.nurseProfile.availabilityWindows).toHaveLength(1);
   });
 
   it('rejects available=true without a radius', async () => {
@@ -184,6 +206,52 @@ describe('registration and signed match flow', () => {
       });
 
     expect(response.status).toBe(400);
+  });
+
+  it('allows hospitals to create demand with time window and skill requirements', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
+
+    (prisma.hospitalProfile.findUnique as jest.Mock).mockResolvedValue({
+      id: 'hospital_1',
+      userId: 'hospital_owner_1',
+    });
+
+    (prisma.jobShift.create as jest.Mock).mockResolvedValue({
+      id: 'shift_1',
+      title: 'Intensivpflege Juni',
+      department: 'Intensivstation',
+      stationName: 'ITS 3',
+      locationCity: 'Berlin',
+      totalPlannedHours: new Prisma.Decimal(120),
+      requirements: [
+        { tag: 'intensivstation', priority: 'REQUIRED' },
+        { tag: 'fachweiterbildung-intensiv', priority: 'PREFERRED' },
+      ],
+    });
+
+    const response = await request(app)
+      .post('/api/v1/job-shifts')
+      .set('Cookie', [`shiftlink_token=${token}`])
+      .send({
+        title: 'Intensivpflege Juni',
+        department: 'Intensivstation',
+        stationName: 'ITS 3',
+        locationCity: 'Berlin',
+        locationPostalCode: '10115',
+        locationLatitude: 52.52,
+        locationLongitude: 13.405,
+        startTime: '2026-06-16T06:00:00.000Z',
+        endTime: '2026-06-29T18:00:00.000Z',
+        totalPlannedHours: 120,
+        requirements: [
+          { tag: 'intensivstation', priority: 'REQUIRED' },
+          { tag: 'fachweiterbildung-intensiv', priority: 'PREFERRED' },
+        ],
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.jobShift.locationCity).toBe('Berlin');
+    expect(response.body.jobShift.requirements).toHaveLength(2);
   });
 
   it('logs out an authenticated user', async () => {

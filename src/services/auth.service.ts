@@ -3,6 +3,7 @@ import { Prisma, UserRole } from '@prisma/client';
 import argon2 from 'argon2';
 import { prisma } from '../config/prisma';
 import { RegisterInput } from '../schemas/auth.schema';
+import { generateNursePublicId } from '../utils/public-id';
 
 export type RegisteredUser = Awaited<ReturnType<typeof registerUser>>;
 
@@ -25,6 +26,8 @@ export async function registerUser(input: RegisterInput) {
       input.role === UserRole.NURSE && input.nurseProfile
         ? {
             create: {
+              publicId: generateNursePublicId(),
+              displayName: input.nurseProfile.displayName ?? 'Pflegekraft',
               firstName: input.nurseProfile.firstName,
               lastName: input.nurseProfile.lastName,
               iban: input.nurseProfile.iban,

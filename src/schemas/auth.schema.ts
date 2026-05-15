@@ -6,6 +6,7 @@ const e164Regex = /^\+[1-9]\d{7,14}$/;
 const nurseProfileSchema = z.object({
   firstName: z.string().trim().min(1).max(100),
   lastName: z.string().trim().min(1).max(100),
+  displayName: z.string().trim().min(2).max(80).optional(),
   iban: z.string().trim().min(15).max(34),
   minHourlyRate: z.number().positive().min(1).default(42),
   phoneNumber: z.string().trim().regex(e164Regex, 'phoneNumber must be in E.164 format'),
