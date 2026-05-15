@@ -55,17 +55,18 @@ Bereits vorhanden:
 - Docker-Setup für lokale Entwicklung
 - Sicherheits-Basis in `app.ts`
 - Registrierungs-Flow
-- erste Auth-/RBAC-Basis
+- Login / Logout
+- erste Auth-/RBAC-/Ownership-Basis
 - Match-Signing-Flow
 - Billing-/WhatsApp-Queueing
+- geschützter Dokumentenzugriffs-Flow als Backend-Logik
 - erste Tests
 
 ## Aktuelle Fokusbereiche
 
 Als Nächstes bevorzugt bearbeiten:
 1. Migrations
-2. Login / Logout
-3. Ownership-Checks
-4. Dokumentensicherheit
-5. Idempotenz / Robustheit
-6. Worker-/Produktionshärtung
+2. echten Dokumenten-Download anbinden
+3. Idempotenz / Robustheit
+4. Worker-/Produktionshärtung
+5. PDF-Generierung

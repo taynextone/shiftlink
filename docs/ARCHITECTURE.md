@@ -24,11 +24,11 @@ Das Backend soll produktionsreif, modular, typsicher und sicher aufgebaut werden
 
 ```text
 src/
-├── config/         # env-Variablen (Zod validiert), Prisma Client, Redis, Queues
+├── config/         # env-Variablen (Zod validiert), Prisma Client, Redis, Queues, S3
 ├── controllers/    # Request/Response Handling (keine Geschäftslogik!)
 ├── middlewares/    # Auth, RBAC, Error Handling, Rate Limiting
 ├── routes/         # Express Router
-├── services/       # Kern-Logik (Matching, Billing, PDF, WhatsApp)
+├── services/       # Kern-Logik (Matching, Billing, PDF, WhatsApp, Documents)
 ├── schemas/        # Zod-Schemas
 ├── types/          # Typ-Erweiterungen, z. B. Express Request
 ├── utils/          # Helper (JWT, Cookies, Async Handler)
@@ -84,17 +84,17 @@ Bereits umgesetzt:
 - Zod-validierte Env-Konfiguration
 - Prisma- und Redis-Grundkonfiguration
 - Registrierungs-Flow für `NURSE` und `HOSPITAL_ADMIN`
+- Login / Logout
 - Passwort-Hashing mit `argon2`
 - JWT-Erstellung und `httpOnly`-Cookie
-- einfache Auth- und Rollen-Middleware
+- Auth-, Rollen- und erste Ownership-Middleware/-Checks
 - Match-Signing-Endpoint
 - asynchrones Billing-/WhatsApp-Queueing via BullMQ
+- erster geschützter Dokumentenzugriffs-Flow im Backend
 - erste Tests für Auth, Match und Billing
 
 Noch offen bzw. bewusst unvollständig:
-- Login / Logout
-- Ownership-Checks auf Ressourcenebene
-- geschützter Dokumentenzugriff
+- geschützter Dokumentenzugriff an echten S3/MinIO-Download anbinden
 - PDF-Generierung
 - echte WhatsApp-Provider-Integration
 - DB-Migrationen
@@ -108,7 +108,8 @@ Noch offen bzw. bewusst unvollständig:
 - geschützter Dokumentenzugriff nur für passende `HOSPITAL_ADMIN`
 - zentrales Error Handling ohne Stack-Traces an Clients im Produktionsmodus
 - Auth per JWT im `httpOnly`-Cookie
-- RBAC-Basis vorhanden, aber Ownership-Prüfungen müssen noch ergänzt werden
+- RBAC-Basis vorhanden
+- Ownership-Prüfungen auf Match-/Hospital-Ebene teilweise vorhanden und weiter ausbaufähig
 
 ## Asynchrone Prozesse
 

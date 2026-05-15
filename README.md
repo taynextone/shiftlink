@@ -9,10 +9,11 @@ Das Repo ist nicht mehr nur Konzept oder Doku. Es enthält bereits ein erstes la
 - Prisma + PostgreSQL-Grundlage
 - Redis + BullMQ-Grundlage
 - Registrierung mit Rollenlogik
+- Login / Logout
 - JWT im `httpOnly`-Cookie
-- erste RBAC-/Auth-Middleware
+- RBAC- und erste Ownership-Checks
 - Match-Signing mit Billing-/WhatsApp-Queue-Triggern
-- erste Tests für Registration, Matching und Billing
+- erste Tests für Registration, Auth, Matching und Billing
 
 ## Was in diesem Repo liegt
 
@@ -70,9 +71,7 @@ Worauf ich achten würde:
 ## Nächste sinnvolle Schritte
 
 1. Prisma-Migrationen anlegen
-2. Login/Logout ergänzen
-3. Ownership-Checks für Hospitals/Contracts härten
-4. Dokumentenzugriff absichern
-5. Idempotenz und Race-Condition-Schutz ergänzen
-6. Worker/API für Produktion sauberer trennen
-7. Integrations- und DB-nahe Tests ausbauen
+2. geschützten Dokumenten-Download mit echtem Storage verbinden
+3. Idempotenz und Race-Condition-Schutz ergänzen
+4. Worker/API für Produktion sauberer trennen
+5. Integrations- und DB-nahe Tests ausbauen

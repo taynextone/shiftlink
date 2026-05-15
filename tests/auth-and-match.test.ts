@@ -25,6 +25,9 @@ jest.mock('../src/config/prisma', () => ({
       findUnique: jest.fn(),
       create: jest.fn(),
     },
+    nurseProfile: {
+      findUnique: jest.fn(),
+    },
     matchContract: {
       findUnique: jest.fn(),
       update: jest.fn(),
@@ -242,6 +245,55 @@ describe('registration and signed match flow', () => {
     expect(response.status).toBe(200);
     expect(response.body.auth.userId).toBe('admin_1');
     expect(response.body.auth.role).toBe(UserRole.HOSPITAL_ADMIN);
+  });
+
+  it('rejects examen access for unrelated hospitals', async () => {
+    const token = signAuthToken({ sub: 'hospital_admin_1', role: UserRole.HOSPITAL_ADMIN });
+
+    (prisma.nurseProfile.findUnique as jest.Mock).mockResolvedValue({
+      id: 'nurse_1',
+      examenFileUrl: 's3://bucket/examen.pdf',
+      matchContracts: [
+        {
+          jobShift: {
+            hospitalProfile: {
+              userId: 'different_owner',
+            },
+          },
+        },
+      ],
+    });
+
+    const response = await request(app)
+      .get('/api/v1/documents/examen/nurse_1')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(403);
+  });
+
+  it('returns examen metadata for authorized hospital owners', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
+
+    (prisma.nurseProfile.findUnique as jest.Mock).mockResolvedValue({
+      id: 'nurse_1',
+      examenFileUrl: 's3://bucket/examen.pdf',
+      matchContracts: [
+        {
+          jobShift: {
+            hospitalProfile: {
+              userId: 'hospital_owner_1',
+            },
+          },
+        },
+      ],
+    });
+
+    const response = await request(app)
+      .get('/api/v1/documents/examen/nurse_1')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.body.document.examenFileUrl).toBe('s3://bucket/examen.pdf');
   });
 
   it('creates an invoice amount based on total planned hours times platform fee', async () => {
