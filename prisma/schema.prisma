@@ -184,6 +184,8 @@ model MatchContract {
   jobShiftId      String
   nurseProfileId  String
   status          MatchContractStatus @default(PENDING)
+  expiresAt       DateTime?
+  respondedAt     DateTime?
   signedAt        DateTime?
   contractPdfUrl  String?
   createdAt       DateTime            @default(now())

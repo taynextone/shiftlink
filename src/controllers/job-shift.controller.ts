@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import createHttpError from 'http-errors';
-import { createJobShift } from '../services/job-shift.service';
+import { createJobShift, listHospitalJobShifts } from '../services/job-shift.service';
 
 export async function createJobShiftController(req: Request, res: Response): Promise<void> {
   if (!req.auth) {
@@ -12,4 +12,17 @@ export async function createJobShiftController(req: Request, res: Response): Pro
   res.status(201).json({
     jobShift,
   });
+}
+
+export async function listHospitalJobShiftsController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const result = await listHospitalJobShifts(req.auth, {
+    status: typeof req.query.status === 'string' ? (req.query.status as 'OPEN' | 'MATCHED' | 'CANCELED') : undefined,
+    limit: req.query.limit ? Number(req.query.limit) : undefined,
+  });
+
+  res.status(200).json(result);
 }

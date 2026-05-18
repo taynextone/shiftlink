@@ -4,6 +4,8 @@ import { prisma } from '../config/prisma';
 import { billingQueue, whatsappQueue } from '../config/queues';
 import { env } from '../config/env';
 
+const DEFAULT_OFFER_EXPIRY_HOURS = 24;
+
 function normalizeDate(value: Date) {
   return new Date(value);
 }
@@ -15,6 +17,14 @@ function isTerminalStatus(status: MatchContractStatus): boolean {
     status === MatchContractStatus.EXPIRED ||
     status === MatchContractStatus.CANCELED
   );
+}
+
+function computeOfferExpiry(baseDate: Date): Date {
+  return new Date(baseDate.getTime() + DEFAULT_OFFER_EXPIRY_HOURS * 60 * 60 * 1000);
+}
+
+function isExpired(expiresAt?: Date | null): boolean {
+  return Boolean(expiresAt && expiresAt.getTime() <= Date.now());
 }
 
 async function autoBookAvailabilityForSignedContract(matchContractId: string) {
@@ -101,6 +111,29 @@ async function autoBookAvailabilityForSignedContract(matchContractId: string) {
   }
 }
 
+async function markOfferExpiredIfNeeded(contract: any) {
+  if (contract.status === MatchContractStatus.PENDING && isExpired(contract.expiresAt)) {
+    return prisma.matchContract.update({
+      where: { id: contract.id },
+      data: {
+        status: MatchContractStatus.EXPIRED,
+      },
+      include: {
+        invoice: true,
+        nurseProfile: true,
+        jobShift: {
+          include: {
+            hospitalProfile: true,
+            requirements: true,
+          },
+        },
+      },
+    });
+  }
+
+  return contract;
+}
+
 export async function listVisibleJobShiftsForNurse(actor: { userId: string; role: UserRole }, limit = 20) {
   if (actor.role !== UserRole.NURSE) {
     throw createHttpError(403, 'Only nurses can browse visible job shifts');
@@ -156,7 +189,9 @@ export async function listVisibleJobShiftsForNurse(actor: { userId: string; role
       }
 
       const alreadyRelated = shift.matchContracts.some((contract) =>
-        contract.nurseProfileId === nurseProfile.id && contract.status !== MatchContractStatus.DECLINED,
+        contract.nurseProfileId === nurseProfile.id &&
+        contract.status !== MatchContractStatus.DECLINED &&
+        contract.status !== MatchContractStatus.EXPIRED,
       );
 
       return !alreadyRelated;
@@ -188,7 +223,7 @@ export async function listOwnMatchContracts(actor: { userId: string; role: UserR
     throw createHttpError(404, 'Nurse profile not found');
   }
 
-  return prisma.matchContract.findMany({
+  const contracts = await prisma.matchContract.findMany({
     where: {
       nurseProfileId: nurseProfile.id,
     },
@@ -205,6 +240,8 @@ export async function listOwnMatchContracts(actor: { userId: string; role: UserR
       createdAt: 'desc',
     },
   });
+
+  return Promise.all(contracts.map((contract) => markOfferExpiredIfNeeded(contract)));
 }
 
 export async function listHospitalMatchOffers(actor: { userId: string; role: UserRole }, jobShiftId: string) {
@@ -236,6 +273,8 @@ export async function listHospitalMatchOffers(actor: { userId: string; role: Use
     throw createHttpError(403, 'You are not allowed to view match offers for this job shift');
   }
 
+  const contracts = await Promise.all(jobShift.matchContracts.map((contract) => markOfferExpiredIfNeeded(contract)));
+
   return {
     jobShift: {
       id: jobShift.id,
@@ -245,9 +284,11 @@ export async function listHospitalMatchOffers(actor: { userId: string; role: Use
       endTime: jobShift.endTime,
       locationCity: jobShift.locationCity,
     },
-    offers: jobShift.matchContracts.map((contract) => ({
+    offers: contracts.map((contract) => ({
       id: contract.id,
       status: contract.status,
+      expiresAt: contract.expiresAt ?? null,
+      respondedAt: contract.respondedAt ?? null,
       signedAt: contract.signedAt,
       createdAt: contract.createdAt,
       updatedAt: contract.updatedAt,
@@ -319,12 +360,19 @@ export async function createMatchOffer(
       },
     });
 
-    if (hydratedExistingContract?.status === MatchContractStatus.DECLINED) {
-      throw createHttpError(409, 'This nurse already declined the current offer. Create a new shift or explicitly reopen later.');
+    const normalizedExistingContract = hydratedExistingContract
+      ? await markOfferExpiredIfNeeded(hydratedExistingContract)
+      : null;
+
+    if (
+      normalizedExistingContract?.status === MatchContractStatus.DECLINED ||
+      normalizedExistingContract?.status === MatchContractStatus.EXPIRED
+    ) {
+      throw createHttpError(409, 'This nurse already closed the current offer. Create a new shift or explicitly reopen later.');
     }
 
-    if (hydratedExistingContract) {
-      return hydratedExistingContract;
+    if (normalizedExistingContract) {
+      return normalizedExistingContract;
     }
   }
 
@@ -344,6 +392,7 @@ export async function createMatchOffer(
       jobShiftId: input.jobShiftId,
       nurseProfileId: input.nurseProfileId,
       status: MatchContractStatus.PENDING,
+      expiresAt: computeOfferExpiry(new Date()),
     },
     include: {
       invoice: true,
@@ -420,15 +469,18 @@ export async function respondToMatchOffer(
     throw createHttpError(403, 'You are not allowed to respond to this match offer');
   }
 
-  if (isTerminalStatus(contract.status)) {
+  const normalizedContract = await markOfferExpiredIfNeeded(contract);
+
+  if (isTerminalStatus(normalizedContract.status)) {
     throw createHttpError(409, 'This match offer can no longer be changed');
   }
 
   if (input.action === 'DECLINE') {
     const declinedContract = await prisma.matchContract.update({
-      where: { id: contract.id },
+      where: { id: normalizedContract.id },
       data: {
         status: MatchContractStatus.DECLINED,
+        respondedAt: new Date(),
       },
       include: {
         invoice: true,
@@ -448,8 +500,8 @@ export async function respondToMatchOffer(
     };
   }
 
-  const signedContract = await signMatchContract(contract.id, {
-    userId: contract.jobShift.hospitalProfile.userId,
+  const signedContract = await signMatchContract(normalizedContract.id, {
+    userId: normalizedContract.jobShift.hospitalProfile.userId,
     role: UserRole.HOSPITAL_ADMIN,
   });
 
@@ -488,7 +540,9 @@ export async function signMatchContract(matchContractId: string, actor: { userId
     return existingContract;
   }
 
-  if (existingContract.status !== MatchContractStatus.PENDING) {
+  const normalizedContract = await markOfferExpiredIfNeeded(existingContract);
+
+  if (normalizedContract.status !== MatchContractStatus.PENDING) {
     throw createHttpError(409, 'Only pending match offers can be signed');
   }
 
@@ -496,6 +550,7 @@ export async function signMatchContract(matchContractId: string, actor: { userId
     where: { id: matchContractId },
     data: {
       status: MatchContractStatus.SIGNED,
+      respondedAt: new Date(),
       signedAt: new Date(),
       jobShift: {
         update: {

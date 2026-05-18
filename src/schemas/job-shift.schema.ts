@@ -40,4 +40,10 @@ export const createJobShiftSchema = z
     }
   });
 
+export const listJobShiftsQuerySchema = z.object({
+  status: z.enum(['OPEN', 'MATCHED', 'CANCELED']).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+});
+
 export type CreateJobShiftInput = z.infer<typeof createJobShiftSchema>;
+export type ListJobShiftsQueryInput = z.infer<typeof listJobShiftsQuerySchema>;
