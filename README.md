@@ -85,3 +85,11 @@ Konfiguration per Env:
 - `WHATSAPP_PROVIDER=mock|twilio`
 - `NURSE_LOGIN_URL=https://...`
 - bei Twilio zusätzlich: `WHATSAPP_FROM_NUMBER`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`
+
+
+## Hospital Integration v1
+
+Aktuell vorgesehen bzw. umgesetzt:
+- idempotenter Shift-Import über `POST /api/v1/job-shifts/import` mit `externalJobShiftId`
+- Hospital Read-API über `GET /api/v1/job-shifts`
+- Webhook-Event-Grundlage via persistierter Outbox (`shift.created`, `shift.imported`)

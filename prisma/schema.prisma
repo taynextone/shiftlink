@@ -133,10 +133,13 @@ model HospitalProfile {
   clinicName       String
   billingAddress   String
   taxNumber        String
+  webhookUrl       String?
+  webhookSecret    String?
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
   user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   jobShifts        JobShift[]
+  webhookEvents    WebhookEvent[]
 
   @@index([clinicName])
 }
@@ -144,6 +147,7 @@ model HospitalProfile {
 model JobShift {
   id                       String                @id @default(cuid())
   hospitalProfileId        String
+  externalJobShiftId       String?
   title                    String?
   department               String?
   stationName              String?
@@ -162,6 +166,7 @@ model JobShift {
   requirements             JobShiftRequirement[]
 
   @@index([hospitalProfileId])
+  @@unique([hospitalProfileId, externalJobShiftId])
   @@index([status])
   @@index([startTime, endTime])
   @@index([locationCity])
@@ -210,4 +215,17 @@ model Invoice {
   matchContract     MatchContract @relation(fields: [matchContractId], references: [id], onDelete: Cascade)
 
   @@index([status])
+}
+
+model WebhookEvent {
+  id                String   @id @default(cuid())
+  hospitalProfileId String
+  eventType         String
+  payloadJson       String
+  deliveredAt       DateTime?
+  createdAt         DateTime @default(now())
+  hospitalProfile   HospitalProfile @relation(fields: [hospitalProfileId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalProfileId, createdAt])
+  @@index([eventType])
 }

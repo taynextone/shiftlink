@@ -37,3 +37,10 @@ Es werden keine Patientendaten verarbeitet. Allerdings werden sensible Personald
 - Keine zusätzliche WhatsApp bei Signierung oder Ablehnung im MVP.
 
 - Die Angebots-WhatsApp enthält kurze Einsatzdetails (Klinik, Ort, Zeitraum) plus Login-Link.
+
+
+## Krankenhaus-Schnittstellen v1
+
+- Shift-Import mit externer Referenz (`externalJobShiftId`)
+- Status-/Listen-API für offene und bearbeitete Bedarfe
+- Webhook-Outbox als Grundlage für Rückmeldungen ins Krankenhaus-System

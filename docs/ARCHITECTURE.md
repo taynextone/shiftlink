@@ -128,3 +128,12 @@ Vor Versand von WhatsApp-Nachrichten immer `whatsapp_opt_in === true` prüfen.
 - Providerwahl per Env (`mock`, vorbereitet für `twilio`)
 - Worker kennt nur den fachlichen Offer-Job, nicht Produktentscheidungen für andere Statuswechsel
 - `NURSE_LOGIN_URL` wird als Linkziel in die Angebotsnachricht eingebettet
+
+
+## Hospital Integration v1
+
+Zielbild für einfache Krankenhaus-Anbindung:
+- REST-Import von Bedarfen/Schichten über `externalJobShiftId`
+- idempotente Verarbeitung pro `hospitalProfileId + externalJobShiftId`
+- persistierte Webhook-Outbox für Status-/Lifecycle-Events
+- Read-API für operative Statusübersichten

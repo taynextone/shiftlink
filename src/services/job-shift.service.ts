@@ -1,7 +1,8 @@
 import createHttpError from 'http-errors';
 import { JobShiftStatus, Prisma, UserRole } from '@prisma/client';
 import { prisma } from '../config/prisma';
-import { CreateJobShiftInput, ListJobShiftsQueryInput } from '../schemas/job-shift.schema';
+import { CreateJobShiftInput, ImportJobShiftInput, ListJobShiftsQueryInput } from '../schemas/job-shift.schema';
+import { createHospitalWebhookEvent } from './webhook.service';
 
 async function requireHospitalProfile(actor: { userId: string; role: UserRole }) {
   const hospitalProfile = await prisma.hospitalProfile.findUnique({
@@ -14,11 +15,38 @@ async function requireHospitalProfile(actor: { userId: string; role: UserRole })
 
   const hospitalProfileId = hospitalProfile?.id;
 
-  if (!hospitalProfileId) {
+  if (!hospitalProfileId || !hospitalProfile) {
     throw createHttpError(400, 'Super admin job shift access requires a mapped hospital profile');
   }
 
-  return hospitalProfileId;
+  return hospitalProfile;
+}
+
+function buildCreateData(hospitalProfileId: string, input: CreateJobShiftInput | ImportJobShiftInput): Prisma.JobShiftCreateInput {
+  return {
+    hospitalProfile: {
+      connect: {
+        id: hospitalProfileId,
+      },
+    },
+    externalJobShiftId: input.externalJobShiftId,
+    title: input.title,
+    department: input.department,
+    stationName: input.stationName,
+    locationCity: input.locationCity,
+    locationPostalCode: input.locationPostalCode,
+    locationLatitude: input.locationLatitude !== undefined ? new Prisma.Decimal(input.locationLatitude) : undefined,
+    locationLongitude: input.locationLongitude !== undefined ? new Prisma.Decimal(input.locationLongitude) : undefined,
+    startTime: new Date(input.startTime),
+    endTime: new Date(input.endTime),
+    totalPlannedHours: new Prisma.Decimal(input.totalPlannedHours),
+    requirements: {
+      create: input.requirements.map((requirement) => ({
+        tag: requirement.tag,
+        priority: requirement.priority,
+      })),
+    },
+  };
 }
 
 export async function createJobShift(actor: { userId: string; role: UserRole }, input: CreateJobShiftInput) {
@@ -26,32 +54,75 @@ export async function createJobShift(actor: { userId: string; role: UserRole }, 
     throw createHttpError(403, 'Only hospital admins can create job shifts');
   }
 
-  const hospitalProfileId = await requireHospitalProfile(actor);
+  const hospitalProfile = await requireHospitalProfile(actor);
 
-  return prisma.jobShift.create({
-    data: {
-      hospitalProfileId,
-      title: input.title,
-      department: input.department,
-      stationName: input.stationName,
-      locationCity: input.locationCity,
-      locationPostalCode: input.locationPostalCode,
-      locationLatitude: input.locationLatitude !== undefined ? new Prisma.Decimal(input.locationLatitude) : undefined,
-      locationLongitude: input.locationLongitude !== undefined ? new Prisma.Decimal(input.locationLongitude) : undefined,
-      startTime: new Date(input.startTime),
-      endTime: new Date(input.endTime),
-      totalPlannedHours: new Prisma.Decimal(input.totalPlannedHours),
-      requirements: {
-        create: input.requirements.map((requirement) => ({
-          tag: requirement.tag,
-          priority: requirement.priority,
-        })),
+  const jobShift = await prisma.jobShift.create({
+    data: buildCreateData(hospitalProfile.id, input),
+    include: {
+      requirements: true,
+    },
+  });
+
+  await createHospitalWebhookEvent({
+    hospitalProfileId: hospitalProfile.id,
+    eventType: 'shift.created',
+    payload: {
+      jobShiftId: jobShift.id,
+      externalJobShiftId: jobShift.externalJobShiftId,
+      status: jobShift.status,
+    },
+  });
+
+  return jobShift;
+}
+
+export async function importHospitalJobShift(actor: { userId: string; role: UserRole }, input: ImportJobShiftInput) {
+  if (actor.role !== UserRole.HOSPITAL_ADMIN && actor.role !== UserRole.SUPER_ADMIN) {
+    throw createHttpError(403, 'Only hospital admins can import job shifts');
+  }
+
+  const hospitalProfile = await requireHospitalProfile(actor);
+
+  const existing = await prisma.jobShift.findUnique({
+    where: {
+      hospitalProfileId_externalJobShiftId: {
+        hospitalProfileId: hospitalProfile.id,
+        externalJobShiftId: input.externalJobShiftId,
       },
     },
     include: {
       requirements: true,
     },
   });
+
+  if (existing) {
+    return {
+      mode: 'existing' as const,
+      jobShift: existing,
+    };
+  }
+
+  const jobShift = await prisma.jobShift.create({
+    data: buildCreateData(hospitalProfile.id, input),
+    include: {
+      requirements: true,
+    },
+  });
+
+  await createHospitalWebhookEvent({
+    hospitalProfileId: hospitalProfile.id,
+    eventType: 'shift.imported',
+    payload: {
+      jobShiftId: jobShift.id,
+      externalJobShiftId: jobShift.externalJobShiftId,
+      status: jobShift.status,
+    },
+  });
+
+  return {
+    mode: 'created' as const,
+    jobShift,
+  };
 }
 
 export async function listHospitalJobShifts(
@@ -62,10 +133,10 @@ export async function listHospitalJobShifts(
     throw createHttpError(403, 'Only hospital admins can view job shifts');
   }
 
-  const hospitalProfileId = await requireHospitalProfile(actor);
+  const hospitalProfile = await requireHospitalProfile(actor);
 
   const where: Prisma.JobShiftWhereInput = {
-    hospitalProfileId,
+    hospitalProfileId: hospitalProfile.id,
     status: query.status as JobShiftStatus | undefined,
   };
 
@@ -103,6 +174,7 @@ export async function listHospitalJobShifts(
 
       return {
         id: jobShift.id,
+        externalJobShiftId: jobShift.externalJobShiftId,
         title: jobShift.title,
         department: jobShift.department,
         stationName: jobShift.stationName,
