@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import createHttpError from 'http-errors';
 import {
   createMatchOffer,
+  listHospitalMatchOffers,
   listOwnMatchContracts,
   listVisibleJobShiftsForNurse,
   respondToMatchOffer,
@@ -65,6 +66,16 @@ export async function listOwnMatchContractsController(req: Request, res: Respons
   res.status(200).json({
     matchContracts,
   });
+}
+
+export async function listHospitalMatchOffersController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const result = await listHospitalMatchOffers(req.auth, String(req.query.jobShiftId ?? ''));
+
+  res.status(200).json(result);
 }
 
 export async function respondToMatchOfferController(req: Request, res: Response): Promise<void> {

@@ -8,6 +8,15 @@ function normalizeDate(value: Date) {
   return new Date(value);
 }
 
+function isTerminalStatus(status: MatchContractStatus): boolean {
+  return (
+    status === MatchContractStatus.SIGNED ||
+    status === MatchContractStatus.DECLINED ||
+    status === MatchContractStatus.EXPIRED ||
+    status === MatchContractStatus.CANCELED
+  );
+}
+
 async function autoBookAvailabilityForSignedContract(matchContractId: string) {
   const contract = await prisma.matchContract.findUnique({
     where: { id: matchContractId },
@@ -146,7 +155,10 @@ export async function listVisibleJobShiftsForNurse(actor: { userId: string; role
         return false;
       }
 
-      const alreadyRelated = shift.matchContracts.some((contract) => contract.nurseProfileId === nurseProfile.id);
+      const alreadyRelated = shift.matchContracts.some((contract) =>
+        contract.nurseProfileId === nurseProfile.id && contract.status !== MatchContractStatus.DECLINED,
+      );
+
       return !alreadyRelated;
     })
     .map((shift) => ({
@@ -195,6 +207,61 @@ export async function listOwnMatchContracts(actor: { userId: string; role: UserR
   });
 }
 
+export async function listHospitalMatchOffers(actor: { userId: string; role: UserRole }, jobShiftId: string) {
+  if (actor.role !== UserRole.HOSPITAL_ADMIN && actor.role !== UserRole.SUPER_ADMIN) {
+    throw createHttpError(403, 'Only hospital admins can view match offers');
+  }
+
+  const jobShift = await prisma.jobShift.findUnique({
+    where: { id: jobShiftId },
+    include: {
+      hospitalProfile: true,
+      matchContracts: {
+        include: {
+          nurseProfile: true,
+          invoice: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      },
+    },
+  });
+
+  if (!jobShift) {
+    throw createHttpError(404, 'Job shift not found');
+  }
+
+  if (actor.role !== UserRole.SUPER_ADMIN && jobShift.hospitalProfile.userId !== actor.userId) {
+    throw createHttpError(403, 'You are not allowed to view match offers for this job shift');
+  }
+
+  return {
+    jobShift: {
+      id: jobShift.id,
+      title: jobShift.title,
+      status: jobShift.status,
+      startTime: jobShift.startTime,
+      endTime: jobShift.endTime,
+      locationCity: jobShift.locationCity,
+    },
+    offers: jobShift.matchContracts.map((contract) => ({
+      id: contract.id,
+      status: contract.status,
+      signedAt: contract.signedAt,
+      createdAt: contract.createdAt,
+      updatedAt: contract.updatedAt,
+      invoiceId: contract.invoice?.id ?? null,
+      nurse: {
+        id: contract.nurseProfile.id,
+        publicId: contract.nurseProfile.publicId,
+        displayName: contract.nurseProfile.displayName,
+        minHourlyRate: contract.nurseProfile.minHourlyRate,
+      },
+    })),
+  };
+}
+
 export async function createMatchOffer(
   actor: { userId: string; role: UserRole },
   input: { jobShiftId: string; nurseProfileId: string },
@@ -216,6 +283,10 @@ export async function createMatchOffer(
     throw createHttpError(404, 'Job shift not found');
   }
 
+  if (jobShift.status !== JobShiftStatus.OPEN) {
+    throw createHttpError(409, 'Offers can only be created for open job shifts');
+  }
+
   if (actor.role !== UserRole.SUPER_ADMIN && jobShift.hospitalProfile.userId !== actor.userId) {
     throw createHttpError(403, 'You are not allowed to create match offers for this job shift');
   }
@@ -234,7 +305,7 @@ export async function createMatchOffer(
 
   const existingContract = jobShift.matchContracts.find((contract) => contract.nurseProfileId === input.nurseProfileId);
   if (existingContract) {
-    return prisma.matchContract.findUnique({
+    const hydratedExistingContract = await prisma.matchContract.findUnique({
       where: { id: existingContract.id },
       include: {
         invoice: true,
@@ -247,6 +318,14 @@ export async function createMatchOffer(
         },
       },
     });
+
+    if (hydratedExistingContract?.status === MatchContractStatus.DECLINED) {
+      throw createHttpError(409, 'This nurse already declined the current offer. Create a new shift or explicitly reopen later.');
+    }
+
+    if (hydratedExistingContract) {
+      return hydratedExistingContract;
+    }
   }
 
   const matchingBlock = nurseProfile.availabilityBlocks.find((block) => {
@@ -264,6 +343,7 @@ export async function createMatchOffer(
     data: {
       jobShiftId: input.jobShiftId,
       nurseProfileId: input.nurseProfileId,
+      status: MatchContractStatus.PENDING,
     },
     include: {
       invoice: true,
@@ -340,14 +420,31 @@ export async function respondToMatchOffer(
     throw createHttpError(403, 'You are not allowed to respond to this match offer');
   }
 
+  if (isTerminalStatus(contract.status)) {
+    throw createHttpError(409, 'This match offer can no longer be changed');
+  }
+
   if (input.action === 'DECLINE') {
-    await prisma.matchContract.delete({
+    const declinedContract = await prisma.matchContract.update({
       where: { id: contract.id },
+      data: {
+        status: MatchContractStatus.DECLINED,
+      },
+      include: {
+        invoice: true,
+        nurseProfile: true,
+        jobShift: {
+          include: {
+            hospitalProfile: true,
+            requirements: true,
+          },
+        },
+      },
     });
 
     return {
       status: 'DECLINED' as const,
-      matchContractId: contract.id,
+      matchContract: declinedContract,
     };
   }
 
@@ -389,6 +486,10 @@ export async function signMatchContract(matchContractId: string, actor: { userId
 
   if (existingContract.status === MatchContractStatus.SIGNED) {
     return existingContract;
+  }
+
+  if (existingContract.status !== MatchContractStatus.PENDING) {
+    throw createHttpError(409, 'Only pending match offers can be signed');
   }
 
   const updatedContract = await prisma.matchContract.update({

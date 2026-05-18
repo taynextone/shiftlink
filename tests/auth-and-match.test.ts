@@ -14,6 +14,8 @@ process.env.S3_ACCESS_KEY = 'minioadmin';
 process.env.S3_SECRET_KEY = 'minioadmin';
 process.env.S3_FORCE_PATH_STYLE = 'true';
 process.env.S3_SIGNED_URL_TTL_SECONDS = '900';
+process.env.WHATSAPP_PROVIDER = 'mock';
+process.env.NURSE_LOGIN_URL = 'https://app.shiftlink.example/login';
 
 import request from 'supertest';
 import argon2 from 'argon2';
@@ -58,7 +60,7 @@ const { prisma } = require('../src/config/prisma');
 const { billingQueue, whatsappQueue } = require('../src/config/queues');
 const matchService = require('../src/services/match.service');
 
-describe('registration and signed match flow', () => {
+describe('registration and durable match offer flow', () => {
   const app = createApp();
 
   beforeEach(() => {
@@ -172,25 +174,10 @@ describe('registration and signed match flow', () => {
     expect(response.body.candidates).toHaveLength(1);
   });
 
-  it('lists visible job shifts for a nurse', async () => {
-    const token = signAuthToken({ sub: 'nurse_user_1', role: UserRole.NURSE });
-    (prisma.nurseProfile.findUnique as jest.Mock).mockResolvedValue({
-      id: 'nurse_1',
-      userId: 'nurse_user_1',
-      specializations: [{ tag: 'intensivstation' }],
-      availabilityBlocks: [{ id: 'block_1', isBooked: false, startTime: new Date('2026-06-16T05:00:00.000Z'), endTime: new Date('2026-06-20T19:00:00.000Z') }],
-      matchContracts: [],
-    });
-    (prisma.jobShift.findMany as jest.Mock).mockResolvedValue([{ id: 'shift_1', title: 'ITS Einsatz', department: 'ITS', stationName: 'A1', locationCity: 'Berlin', startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-20T18:00:00.000Z'), totalPlannedHours: new Prisma.Decimal(12), hospitalProfile: { clinicName: 'Clinic One' }, requirements: [{ tag: 'intensivstation', priority: 'REQUIRED' }], matchContracts: [] }]);
-    const response = await request(app).get('/api/v1/matches/visible-job-shifts').set('Cookie', [`shiftlink_token=${token}`]);
-    expect(response.status).toBe(200);
-    expect(response.body.jobShifts).toHaveLength(1);
-  });
-
   it('creates a match offer and queues WhatsApp notification', async () => {
-    const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
     (prisma.jobShift.findUnique as jest.Mock).mockResolvedValue({
       id: 'shift_1',
+      status: JobShiftStatus.OPEN,
       startTime: new Date('2026-06-16T06:00:00.000Z'),
       endTime: new Date('2026-06-20T18:00:00.000Z'),
       locationCity: 'Berlin',
@@ -215,17 +202,58 @@ describe('registration and signed match flow', () => {
       jobShift: { id: 'shift_1', locationCity: 'Berlin', startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-20T18:00:00.000Z'), hospitalProfile: { clinicName: 'Clinic One' }, requirements: [] },
     });
 
-    const response = await request(app)
-      .post('/api/v1/matches/offer')
-      .set('Cookie', [`shiftlink_token=${token}`])
-      .send({ jobShiftId: 'shift_1', nurseProfileId: 'nurse_1' });
+    const result = await matchService.createMatchOffer(
+      { userId: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN },
+      { jobShiftId: 'shift_1', nurseProfileId: 'nurse_1' },
+    );
 
-    expect(response.status).toBe(201);
+    expect(result.status).toBe(MatchContractStatus.PENDING);
     expect(whatsappQueue.add).toHaveBeenCalledWith(
       'new-match-offer-notification',
       expect.objectContaining({ matchContractId: 'contract_1', phoneNumber: '+491701234567', type: 'new-match-offer' }),
       { jobId: 'new-match-offer:contract_1' },
     );
+  });
+
+  it('lists hospital offers for a job shift with statuses', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
+    (prisma.jobShift.findUnique as jest.Mock).mockResolvedValue({
+      id: 'shift_1',
+      title: 'ITS Einsatz',
+      status: JobShiftStatus.OPEN,
+      startTime: new Date('2026-06-16T06:00:00.000Z'),
+      endTime: new Date('2026-06-20T18:00:00.000Z'),
+      locationCity: 'Berlin',
+      hospitalProfile: { userId: 'hospital_owner_1' },
+      matchContracts: [
+        {
+          id: 'contract_1',
+          status: MatchContractStatus.PENDING,
+          signedAt: null,
+          createdAt: new Date('2026-05-18T00:00:00.000Z'),
+          updatedAt: new Date('2026-05-18T00:00:00.000Z'),
+          invoice: null,
+          nurseProfile: { id: 'nurse_1', publicId: 'NUR-AB12CD34', displayName: 'NurseNova', minHourlyRate: new Prisma.Decimal(49) },
+        },
+        {
+          id: 'contract_2',
+          status: MatchContractStatus.DECLINED,
+          signedAt: null,
+          createdAt: new Date('2026-05-18T01:00:00.000Z'),
+          updatedAt: new Date('2026-05-18T02:00:00.000Z'),
+          invoice: null,
+          nurseProfile: { id: 'nurse_2', publicId: 'NUR-XY98ZT77', displayName: 'NurseLuna', minHourlyRate: new Prisma.Decimal(52) },
+        },
+      ],
+    });
+
+    const response = await request(app)
+      .get('/api/v1/matches/hospital-offers?jobShiftId=shift_1')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.body.offers).toHaveLength(2);
+    expect(response.body.offers[1].status).toBe(MatchContractStatus.DECLINED);
   });
 
   it('allows nurse to accept an offer and signs it without sending another WhatsApp', async () => {
@@ -239,7 +267,7 @@ describe('registration and signed match flow', () => {
       });
     (prisma.matchContract.findUnique as jest.Mock)
       .mockResolvedValueOnce({ id: 'contract_1', nurseProfileId: 'nurse_1', status: MatchContractStatus.PENDING, invoice: null, nurseProfile: { id: 'nurse_1', publicId: 'NUR-AB12CD34', displayName: 'NurseNova', phoneNumber: '+491701234567', whatsappOptIn: true }, jobShift: { id: 'shift_1', locationCity: 'Berlin', startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-20T18:00:00.000Z'), hospitalProfile: { userId: 'hospital_owner_1', clinicName: 'Clinic One' }, requirements: [] } })
-      .mockResolvedValueOnce({ id: 'contract_1', status: MatchContractStatus.PENDING, invoice: null, nurseProfile: { id: 'nurse_1', publicId: 'NUR-AB12CD34', displayName: 'NurseNova', phoneNumber: '+491701234567', whatsappOptIn: true }, jobShift: { id: 'shift_1', locationCity: 'Berlin', startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-20T18:00:00.000Z'), hospitalProfile: { userId: 'hospital_owner_1', clinicName: 'Clinic One' } }, })
+      .mockResolvedValueOnce({ id: 'contract_1', status: MatchContractStatus.PENDING, invoice: null, nurseProfile: { id: 'nurse_1', publicId: 'NUR-AB12CD34', displayName: 'NurseNova', phoneNumber: '+491701234567', whatsappOptIn: true }, jobShift: { id: 'shift_1', locationCity: 'Berlin', startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-20T18:00:00.000Z'), hospitalProfile: { userId: 'hospital_owner_1', clinicName: 'Clinic One' } } })
       .mockResolvedValueOnce({ id: 'contract_1', jobShift: { startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-20T18:00:00.000Z') }, nurseProfile: { availabilityBlocks: [{ id: 'block_1', nurseProfileId: 'nurse_1', city: 'Berlin', radiusKm: 25, startTime: new Date('2026-06-16T05:00:00.000Z'), endTime: new Date('2026-06-20T19:00:00.000Z'), isBooked: false }] } });
     (prisma.matchContract.update as jest.Mock).mockResolvedValue({ id: 'contract_1', status: MatchContractStatus.SIGNED, signedAt: new Date('2026-05-15T00:00:00.000Z'), invoice: null, nurseProfile: { id: 'nurse_1', publicId: 'NUR-AB12CD34', displayName: 'NurseNova', phoneNumber: '+491701234567', whatsappOptIn: true }, jobShift: { id: 'shift_1', locationCity: 'Berlin', startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-20T18:00:00.000Z'), status: JobShiftStatus.MATCHED, hospitalProfile: { userId: 'hospital_owner_1', clinicName: 'Clinic One' } } });
     (prisma.nurseAvailabilityBlock.update as jest.Mock).mockResolvedValue({ id: 'block_1', isBooked: true });
@@ -256,9 +284,10 @@ describe('registration and signed match flow', () => {
     expect(whatsappQueue.add).not.toHaveBeenCalled();
   });
 
-  it('allows nurse to decline an offer without sending another WhatsApp', async () => {
+  it('marks declined offers durably instead of deleting them', async () => {
     (prisma.nurseProfile.findUnique as jest.Mock).mockImplementationOnce(async () => ({ id: 'nurse_1', userId: 'nurse_user_1' }));
     (prisma.matchContract.findUnique as jest.Mock).mockImplementationOnce(async () => ({ id: 'contract_1', nurseProfileId: 'nurse_1', status: MatchContractStatus.PENDING, invoice: null, nurseProfile: { id: 'nurse_1', publicId: 'NUR-AB12CD34', displayName: 'NurseNova', phoneNumber: '+491701234567', whatsappOptIn: true }, jobShift: { id: 'shift_1', locationCity: 'Berlin', startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-20T18:00:00.000Z'), hospitalProfile: { userId: 'hospital_owner_1', clinicName: 'Clinic One' }, requirements: [] } }));
+    (prisma.matchContract.update as jest.Mock).mockResolvedValue({ id: 'contract_1', status: MatchContractStatus.DECLINED });
 
     const result = await matchService.respondToMatchOffer(
       { userId: 'nurse_user_1', role: UserRole.NURSE },
@@ -266,17 +295,24 @@ describe('registration and signed match flow', () => {
     );
 
     expect(result.status).toBe('DECLINED');
-    expect(prisma.matchContract.delete).toHaveBeenCalledWith({ where: { id: 'contract_1' } });
+    expect(prisma.matchContract.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'contract_1' },
+        data: { status: MatchContractStatus.DECLINED },
+      }),
+    );
+    expect(prisma.matchContract.delete).not.toHaveBeenCalled();
     expect(whatsappQueue.add).not.toHaveBeenCalled();
   });
 
   it('lists own match contracts for a nurse', async () => {
     const token = signAuthToken({ sub: 'nurse_user_1', role: UserRole.NURSE });
     (prisma.nurseProfile.findUnique as jest.Mock).mockResolvedValue({ id: 'nurse_1', userId: 'nurse_user_1' });
-    (prisma.matchContract.findMany as jest.Mock).mockResolvedValue([{ id: 'contract_1' }]);
+    (prisma.matchContract.findMany as jest.Mock).mockResolvedValue([{ id: 'contract_1', status: MatchContractStatus.DECLINED }]);
     const response = await request(app).get('/api/v1/matches/me').set('Cookie', [`shiftlink_token=${token}`]);
     expect(response.status).toBe(200);
     expect(response.body.matchContracts).toHaveLength(1);
+    expect(response.body.matchContracts[0].status).toBe(MatchContractStatus.DECLINED);
   });
 
   it('creates an invoice amount based on total planned hours times platform fee', async () => {

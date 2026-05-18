@@ -26,7 +26,10 @@ enum JobShiftStatus {
 
 enum MatchContractStatus {
   PENDING
+  DECLINED
   SIGNED
+  EXPIRED
+  CANCELED
 }
 
 enum InvoiceStatus {

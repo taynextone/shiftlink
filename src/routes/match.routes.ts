@@ -3,6 +3,7 @@ import { UserRole } from '@prisma/client';
 import {
   createMatchOfferController,
   findCandidatesController,
+  listHospitalMatchOffersController,
   listOwnMatchContractsController,
   listVisibleJobShiftsController,
   respondToMatchOfferController,
@@ -32,6 +33,13 @@ router.get(
   requireAuth,
   requireRole(UserRole.NURSE),
   asyncHandler(listOwnMatchContractsController),
+);
+
+router.get(
+  '/hospital-offers',
+  requireAuth,
+  requireRole(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
+  asyncHandler(listHospitalMatchOffersController),
 );
 
 router.post(
