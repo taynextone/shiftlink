@@ -1,6 +1,7 @@
 import createHttpError from 'http-errors';
 import { ContractExecutionStatus, ContractSignerRole, MatchContractStatus, UserRole } from '@prisma/client';
 import { prisma } from '../config/prisma';
+import { emitContractVoidedEvent } from './contract-webhook.service';
 
 function mapActorToSignerRole(role: UserRole): ContractSignerRole {
   if (role === UserRole.HOSPITAL_ADMIN) {

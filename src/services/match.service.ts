@@ -5,6 +5,7 @@ import { billingQueue, whatsappQueue } from '../config/queues';
 import { env } from '../config/env';
 import { createContractSnapshot, ensureContractSnapshotForOffer } from './contract.service';
 import { generateContractPdfArtifact } from './contract-pdf.service';
+import { emitContractPdfGeneratedEvent, emitMatchOfferSignedEvent } from './contract-webhook.service';
 
 const DEFAULT_OFFER_EXPIRY_HOURS = 24;
 
@@ -583,6 +584,8 @@ export async function signMatchContract(matchContractId: string, actor: { userId
 
   await createContractSnapshot(updatedContract.id);
   await generateContractPdfArtifact(updatedContract.id);
+  await emitMatchOfferSignedEvent(updatedContract.id);
+  await emitContractPdfGeneratedEvent(updatedContract.id);
 
   await autoBookAvailabilityForSignedContract(updatedContract.id);
 

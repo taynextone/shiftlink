@@ -82,6 +82,14 @@ jest.mock('../src/config/queues', () => ({
   webhookQueue: { add: jest.fn() },
 }));
 
+jest.mock('../src/services/contract-webhook.service', () => ({
+  emitContractPdfGeneratedEvent: jest.fn(async () => ({ id: 'webhook_pdf' })),
+  emitMatchOfferSignedEvent: jest.fn(async () => ({ id: 'webhook_signed' })),
+  emitContractExecutionSignedEvent: jest.fn(async () => ({ id: 'webhook_exec_signed' })),
+  emitContractFullyExecutedEvent: jest.fn(async () => ({ id: 'webhook_exec_full' })),
+  emitContractVoidedEvent: jest.fn(async () => ({ id: 'webhook_voided' })),
+}));
+
 jest.mock('../src/services/storage.service', () => ({
   createSignedDownloadUrl: jest.fn(async (fileUrl: string) => ({
     url: `https://signed.example.com/download?file=${encodeURIComponent(fileUrl)}`,
@@ -99,6 +107,7 @@ const { prisma } = require('../src/config/prisma');
 const { billingQueue, whatsappQueue, webhookQueue } = require('../src/config/queues');
 const matchService = require('../src/services/match.service');
 const { uploadPrivateTextFile } = require('../src/services/storage.service');
+const { emitContractPdfGeneratedEvent, emitMatchOfferSignedEvent, emitContractExecutionSignedEvent, emitContractFullyExecutedEvent, emitContractVoidedEvent } = require('../src/services/contract-webhook.service');
 
 describe('hospital integration and scalable match flow', () => {
   const app = createApp();
@@ -140,6 +149,11 @@ describe('hospital integration and scalable match flow', () => {
     (webhookQueue.add as jest.Mock).mockReset();
     (uploadPrivateTextFile as jest.Mock).mockReset();
     (uploadPrivateTextFile as jest.Mock).mockImplementation(async ({ objectKey }: { objectKey: string }) => ({ fileUrl: `s3://shiftlink-private/${objectKey}`, objectKey }));
+    (emitContractPdfGeneratedEvent as jest.Mock).mockClear();
+    (emitMatchOfferSignedEvent as jest.Mock).mockClear();
+    (emitContractExecutionSignedEvent as jest.Mock).mockClear();
+    (emitContractFullyExecutedEvent as jest.Mock).mockClear();
+    (emitContractVoidedEvent as jest.Mock).mockClear();
   });
 
   it('registers a nurse and returns an auth cookie with anonymous public identity', async () => {
@@ -1138,6 +1152,57 @@ describe('hospital integration and scalable match flow', () => {
       .set('Cookie', [`shiftlink_token=${token}`]);
 
     expect(response.status).toBe(403);
+  });
+
+
+  it('emits contract lifecycle webhook events on match signing', async () => {
+    (prisma.matchContract.findUnique as jest.Mock)
+      .mockResolvedValueOnce({
+        id: 'contract_1',
+        status: MatchContractStatus.PENDING,
+        nurseProfile: { id: 'nurse_1', userId: 'nurse_user_1' },
+        jobShift: { id: 'shift_1', totalPlannedHours: new Prisma.Decimal(12), hospitalProfile: { id: 'hospital_1', userId: 'hospital_owner_1' } },
+        invoice: null,
+      })
+      .mockResolvedValueOnce({
+        id: 'contract_1',
+        contractSnapshots: [{ version: 1 }],
+        nurseProfile: { id: 'nurse_1', userId: 'nurse_user_1', publicId: 'NUR-AB12CD34', displayName: 'NurseNova', firstName: 'Nina', lastName: 'Care', minHourlyRate: new Prisma.Decimal(49), specializations: [] },
+        jobShift: { id: 'shift_1', externalJobShiftId: 'ext-123', title: 'ITS Einsatz', department: 'ITS', stationName: 'A1', locationCity: 'Berlin', startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-20T18:00:00.000Z'), totalPlannedHours: new Prisma.Decimal(12), hospitalProfile: { id: 'hospital_1', clinicName: 'Clinic One', billingAddress: 'Street 1', taxNumber: 'TAX-1', userId: 'hospital_owner_1' }, requirements: [] },
+      })
+      .mockResolvedValueOnce({
+        id: 'contract_1',
+        currentSnapshot: { id: 'snapshot_2', version: 2, snapshotJson: JSON.stringify({
+          matchContractId: 'contract_1', version: 2,
+          platform: { role: 'vermittlung-und-matching-plattform', isEmployer: false, isStaffingAgency: false, handlesPayroll: false, platformFeePerHour: '3.00' },
+          hospital: { clinicName: 'Clinic One', billingAddress: 'Street 1', taxNumber: 'TAX-1' },
+          nurse: { displayName: 'NurseNova', firstName: 'Nina', lastName: 'Care', minHourlyRate: '49', specializations: [] },
+          jobShift: { title: 'ITS Einsatz', department: 'ITS', stationName: 'A1', locationCity: 'Berlin', startTime: '2026-06-16T06:00:00.000Z', endTime: '2026-06-20T18:00:00.000Z', totalPlannedHours: '12' },
+          commercialTerms: { invoiceTrigger: 'digital-signature', noRefundPolicy: true, hospitalPaysNurseDirectly: true, platformIssuesServiceFeeInvoiceOnly: true },
+        }) },
+        nurseProfile: { id: 'nurse_1' },
+        jobShift: { id: 'shift_1', hospitalProfile: { id: 'hospital_1' } },
+        voidEvent: null,
+        executionStatus: 'DRAFT',
+        contractPdfUrl: 's3://shiftlink-private/contracts/contract_1/v2.pdf',
+        signedAt: new Date('2026-05-20T11:05:00.000Z'),
+        status: MatchContractStatus.SIGNED,
+      })
+      .mockResolvedValueOnce({
+        id: 'contract_1',
+        nurseProfile: { id: 'nurse_1', availabilityBlocks: [{ id: 'block_1', startTime: new Date('2026-06-16T05:00:00.000Z'), endTime: new Date('2026-06-20T19:00:00.000Z'), isBooked: false }] },
+        jobShift: { id: 'shift_1', startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-20T18:00:00.000Z') },
+      });
+    (prisma.matchContract.update as jest.Mock).mockResolvedValue({ id: 'contract_1', status: MatchContractStatus.SIGNED, invoice: null });
+    (prisma.contractSnapshot.create as jest.Mock).mockResolvedValue({ id: 'snapshot_2', version: 2, summaryText: 'summary' });
+    (prisma.invoice.create as jest.Mock).mockResolvedValue({ id: 'invoice_1' });
+    (prisma.nurseAvailabilityBlock.update as jest.Mock).mockResolvedValue({ id: 'block_1' });
+    (prisma.webhookEvent.create as jest.Mock).mockResolvedValue({ id: 'webhook_1' });
+
+    await matchService.signMatchContract('contract_1', { userId: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
+
+    expect(emitMatchOfferSignedEvent).toHaveBeenCalledWith('contract_1');
+    expect(emitContractPdfGeneratedEvent).toHaveBeenCalledWith('contract_1');
   });
 
   it('creates an invoice amount based on total planned hours times platform fee', async () => {

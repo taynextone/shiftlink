@@ -3,6 +3,7 @@ import { ContractExecutionStatus, ContractSignerRole, MatchContractStatus, UserR
 import { prisma } from '../config/prisma';
 import { createContractSnapshot } from './contract.service';
 import { generateContractPdfArtifact } from './contract-pdf.service';
+import { emitContractExecutionSignedEvent, emitContractFullyExecutedEvent, emitContractPdfGeneratedEvent } from './contract-webhook.service';
 
 function buildSignatureEvidence(actor: { userId: string; role: UserRole }) {
   return {
@@ -116,8 +117,12 @@ export async function signContractExecution(
     },
   });
 
+  await emitContractExecutionSignedEvent(contract.id, actor);
+
   if (nextExecutionStatus === ContractExecutionStatus.FULLY_EXECUTED) {
     await generateContractPdfArtifact(contract.id);
+    await emitContractFullyExecutedEvent(contract.id);
+    await emitContractPdfGeneratedEvent(contract.id);
   }
 
   return {
