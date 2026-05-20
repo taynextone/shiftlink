@@ -31,4 +31,9 @@ export type FindCandidatesInput = z.infer<typeof findCandidatesSchema>;
 export type CreateMatchOfferInput = z.infer<typeof createMatchOfferSchema>;
 export type ListVisibleJobShiftsInput = z.infer<typeof listVisibleJobShiftsSchema>;
 export type ListHospitalMatchOffersInput = z.infer<typeof listHospitalMatchOffersSchema>;
+export const signContractExecutionSchema = z.object({
+  matchContractId: z.string().trim().min(1),
+});
+
 export type RespondToMatchOfferInput = z.infer<typeof respondToMatchOfferSchema>;
+export type SignContractExecutionInput = z.infer<typeof signContractExecutionSchema>;

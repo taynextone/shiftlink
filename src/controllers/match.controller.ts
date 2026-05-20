@@ -10,6 +10,7 @@ import {
 } from '../services/match.service';
 import { getContractSnapshot } from '../services/contract.service';
 import { getContractPdfDownload } from '../services/contract-pdf.service';
+import { getContractExecutionOverview, signContractExecution } from '../services/contract-signature.service';
 import { findCandidatesForJobShift } from '../services/matching.service';
 
 export async function signMatchContractController(req: Request, res: Response): Promise<void> {
@@ -124,4 +125,36 @@ export async function getContractPdfController(req: Request, res: Response): Pro
   res.status(200).json({
     contractPdf,
   });
+}
+
+export async function signContractExecutionController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const matchContractId = req.params.id;
+
+  if (typeof matchContractId !== 'string' || matchContractId.length === 0) {
+    throw createHttpError(400, 'Invalid match contract id');
+  }
+
+  const execution = await signContractExecution(matchContractId, req.auth);
+
+  res.status(200).json({ execution });
+}
+
+export async function getContractExecutionOverviewController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const matchContractId = req.params.id;
+
+  if (typeof matchContractId !== 'string' || matchContractId.length === 0) {
+    throw createHttpError(400, 'Invalid match contract id');
+  }
+
+  const execution = await getContractExecutionOverview(matchContractId, req.auth);
+
+  res.status(200).json({ execution });
 }

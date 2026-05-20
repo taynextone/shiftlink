@@ -3,8 +3,10 @@ import { UserRole } from '@prisma/client';
 import {
   createMatchOfferController,
   findCandidatesController,
+  getContractExecutionOverviewController,
   getContractPdfController,
   getContractSnapshotController,
+  signContractExecutionController,
   listHospitalMatchOffersController,
   listOwnMatchContractsController,
   listVisibleJobShiftsController,
@@ -40,6 +42,18 @@ router.get(
   '/contract/:id/pdf',
   requireAuth,
   asyncHandler(getContractPdfController),
+);
+
+router.get(
+  '/contract/:id/execution',
+  requireAuth,
+  asyncHandler(getContractExecutionOverviewController),
+);
+
+router.post(
+  '/contract/:id/execution/sign',
+  requireAuth,
+  asyncHandler(signContractExecutionController),
 );
 
 router.get(

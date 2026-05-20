@@ -36,6 +36,18 @@ jest.mock('@prisma/client', () => {
       VERIFIED: 'VERIFIED',
       REJECTED: 'REJECTED',
     },
+    ContractExecutionStatus: {
+      DRAFT: 'DRAFT',
+      PENDING_HOSPITAL_SIGNATURE: 'PENDING_HOSPITAL_SIGNATURE',
+      PENDING_NURSE_SIGNATURE: 'PENDING_NURSE_SIGNATURE',
+      FULLY_EXECUTED: 'FULLY_EXECUTED',
+      VOIDED: 'VOIDED',
+    },
+    ContractSignerRole: {
+      HOSPITAL_ADMIN: 'HOSPITAL_ADMIN',
+      NURSE: 'NURSE',
+      SUPER_ADMIN: 'SUPER_ADMIN',
+    },
   };
 });
 
@@ -57,6 +69,7 @@ jest.mock('../src/config/prisma', () => ({
     jobShift: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn() },
     matchContract: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
     contractSnapshot: { create: jest.fn() },
+    contractSignatureEvent: { create: jest.fn() },
     invoice: { create: jest.fn(), findMany: jest.fn() },
     webhookEvent: { create: jest.fn() },
   },
@@ -116,6 +129,7 @@ describe('hospital integration and scalable match flow', () => {
     (prisma.matchContract.update as jest.Mock).mockReset();
     (prisma.matchContract.delete as jest.Mock).mockReset();
     (prisma.contractSnapshot.create as jest.Mock).mockReset();
+    (prisma.contractSignatureEvent.create as jest.Mock).mockReset();
     (prisma.invoice.create as jest.Mock).mockReset();
     (prisma.invoice.findMany as jest.Mock).mockReset();
     (prisma.webhookEvent.create as jest.Mock).mockReset();
@@ -891,6 +905,105 @@ describe('hospital integration and scalable match flow', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.contractPdf.signedUrl ?? response.body.contractPdf.url).toContain('signed.example.com');
+  });
+
+
+  it('records hospital execution signature and waits for nurse signature', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
+    (prisma.matchContract.findUnique as jest.Mock).mockResolvedValue({
+      id: 'contract_1',
+      status: MatchContractStatus.SIGNED,
+      nurseProfile: { id: 'nurse_1', userId: 'nurse_user_1', user: { id: 'nurse_user_1' } },
+      jobShift: { hospitalProfile: { userId: 'hospital_owner_1' } },
+      currentSnapshot: { id: 'snapshot_1' },
+      signatureEvents: [],
+    });
+    (prisma.contractSignatureEvent.create as jest.Mock).mockResolvedValue({
+      id: 'sig_1',
+      signerUserId: 'hospital_owner_1',
+      signerRole: 'HOSPITAL_ADMIN',
+      createdAt: new Date('2026-05-20T12:00:00.000Z'),
+    });
+    (prisma.matchContract.update as jest.Mock).mockResolvedValue({
+      id: 'contract_1',
+      executionStatus: 'PENDING_NURSE_SIGNATURE',
+      fullyExecutedAt: null,
+      signatureEvents: [{ id: 'sig_1' }],
+    });
+
+    const response = await request(app)
+      .post('/api/v1/matches/contract/contract_1/execution/sign')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.body.execution.executionStatus).toBe('PENDING_NURSE_SIGNATURE');
+  });
+
+  it('fully executes contract after nurse signature and regenerates artifact', async () => {
+    const token = signAuthToken({ sub: 'nurse_user_1', role: UserRole.NURSE });
+    (prisma.matchContract.findUnique as jest.Mock)
+      .mockResolvedValueOnce({
+        id: 'contract_1',
+        status: MatchContractStatus.SIGNED,
+        nurseProfile: { id: 'nurse_1', userId: 'nurse_user_1', user: { id: 'nurse_user_1' } },
+        jobShift: { hospitalProfile: { userId: 'hospital_owner_1' } },
+        currentSnapshot: { id: 'snapshot_2' },
+        signatureEvents: [{ id: 'sig_1', signerUserId: 'hospital_owner_1', signerRole: 'HOSPITAL_ADMIN' }],
+      })
+      .mockResolvedValueOnce({
+        id: 'contract_1',
+        contractPdfUrl: 's3://shiftlink-private/contracts/contract_1/v2.pdf',
+        nurseProfile: { userId: 'nurse_user_1' },
+        jobShift: { hospitalProfile: { userId: 'hospital_owner_1' } },
+        currentSnapshot: { id: 'snapshot_2', version: 2, snapshotJson: JSON.stringify({
+          matchContractId: 'contract_1',
+          version: 2,
+          platform: { role: 'vermittlung-und-matching-plattform', isEmployer: false, isStaffingAgency: false, handlesPayroll: false, platformFeePerHour: '3.00' },
+          hospital: { clinicName: 'Clinic One', billingAddress: 'Street 1', taxNumber: 'TAX-1' },
+          nurse: { displayName: 'NurseNova', firstName: 'Nina', lastName: 'Care', minHourlyRate: '49', specializations: [] },
+          jobShift: { title: 'ITS Einsatz', department: 'ITS', stationName: 'A1', locationCity: 'Berlin', startTime: '2026-06-16T06:00:00.000Z', endTime: '2026-06-20T18:00:00.000Z', totalPlannedHours: '12' },
+          commercialTerms: { invoiceTrigger: 'digital-signature', noRefundPolicy: true, hospitalPaysNurseDirectly: true, platformIssuesServiceFeeInvoiceOnly: true },
+        }) },
+      });
+    (prisma.contractSignatureEvent.create as jest.Mock).mockResolvedValue({
+      id: 'sig_2',
+      signerUserId: 'nurse_user_1',
+      signerRole: 'NURSE',
+      createdAt: new Date('2026-05-20T12:05:00.000Z'),
+    });
+    (prisma.matchContract.update as jest.Mock).mockResolvedValue({
+      id: 'contract_1',
+      executionStatus: 'FULLY_EXECUTED',
+      fullyExecutedAt: new Date('2026-05-20T12:05:00.000Z'),
+      signatureEvents: [{ id: 'sig_1' }, { id: 'sig_2' }],
+    });
+
+    const response = await request(app)
+      .post('/api/v1/matches/contract/contract_1/execution/sign')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.body.execution.executionStatus).toBe('FULLY_EXECUTED');
+    expect(uploadPrivateTextFile).toHaveBeenCalled();
+  });
+
+  it('returns contract execution overview to authorized actor', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
+    (prisma.matchContract.findUnique as jest.Mock).mockResolvedValue({
+      id: 'contract_1',
+      executionStatus: 'PENDING_NURSE_SIGNATURE',
+      fullyExecutedAt: null,
+      nurseProfile: { userId: 'nurse_user_1' },
+      jobShift: { hospitalProfile: { userId: 'hospital_owner_1' } },
+      signatureEvents: [{ id: 'sig_1', signerUserId: 'hospital_owner_1', signerRole: 'HOSPITAL_ADMIN', signatureIntent: 'EXECUTE_CONTRACT', createdAt: new Date('2026-05-20T12:00:00.000Z') }],
+    });
+
+    const response = await request(app)
+      .get('/api/v1/matches/contract/contract_1/execution')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.body.execution.signatureEvents).toHaveLength(1);
   });
 
   it('creates an invoice amount based on total planned hours times platform fee', async () => {

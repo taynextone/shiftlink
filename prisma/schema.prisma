@@ -62,6 +62,21 @@ enum VerificationDocumentStatus {
   REJECTED
 }
 
+
+enum ContractExecutionStatus {
+  DRAFT
+  PENDING_HOSPITAL_SIGNATURE
+  PENDING_NURSE_SIGNATURE
+  FULLY_EXECUTED
+  VOIDED
+}
+
+enum ContractSignerRole {
+  HOSPITAL_ADMIN
+  NURSE
+  SUPER_ADMIN
+}
+
 model User {
   id                 String             @id @default(cuid())
   email              String             @unique
@@ -208,6 +223,8 @@ model MatchContract {
   respondedAt           DateTime?
   signedAt              DateTime?
   contractPdfUrl        String?
+  executionStatus       ContractExecutionStatus @default(DRAFT)
+  fullyExecutedAt       DateTime?
   currentSnapshotId     String?               @unique
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
@@ -215,6 +232,7 @@ model MatchContract {
   nurseProfile          NurseProfile          @relation(fields: [nurseProfileId], references: [id], onDelete: Cascade)
   currentSnapshot       ContractSnapshot?     @relation("CurrentContractSnapshot", fields: [currentSnapshotId], references: [id], onDelete: SetNull)
   contractSnapshots     ContractSnapshot[]    @relation("MatchContractSnapshots")
+  signatureEvents       ContractSignatureEvent[]
   invoice               Invoice?
 
   @@unique([jobShiftId, nurseProfileId])
@@ -281,4 +299,19 @@ model ContractSnapshot {
 
   @@unique([matchContractId, version])
   @@index([matchContractId, createdAt])
+}
+
+model ContractSignatureEvent {
+  id                 String                  @id @default(cuid())
+  matchContractId    String
+  signerUserId       String
+  signerRole         ContractSignerRole
+  snapshotId         String?
+  signatureIntent    String
+  signatureEvidenceJson String
+  createdAt          DateTime                @default(now())
+  matchContract      MatchContract           @relation(fields: [matchContractId], references: [id], onDelete: Cascade)
+
+  @@index([matchContractId, createdAt])
+  @@index([signerUserId, createdAt])
 }
