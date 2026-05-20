@@ -233,6 +233,7 @@ model MatchContract {
   currentSnapshot       ContractSnapshot?     @relation("CurrentContractSnapshot", fields: [currentSnapshotId], references: [id], onDelete: SetNull)
   contractSnapshots     ContractSnapshot[]    @relation("MatchContractSnapshots")
   signatureEvents       ContractSignatureEvent[]
+  voidEvent             ContractVoidEvent?
   invoice               Invoice?
 
   @@unique([jobShiftId, nurseProfileId])
@@ -302,16 +303,30 @@ model ContractSnapshot {
 }
 
 model ContractSignatureEvent {
-  id                 String                  @id @default(cuid())
-  matchContractId    String
-  signerUserId       String
-  signerRole         ContractSignerRole
-  snapshotId         String?
-  signatureIntent    String
+  id                    String                  @id @default(cuid())
+  matchContractId       String
+  signerUserId          String
+  signerRole            ContractSignerRole
+  snapshotId            String?
+  signatureIntent       String
   signatureEvidenceJson String
-  createdAt          DateTime                @default(now())
-  matchContract      MatchContract           @relation(fields: [matchContractId], references: [id], onDelete: Cascade)
+  createdAt             DateTime                @default(now())
+  matchContract         MatchContract           @relation(fields: [matchContractId], references: [id], onDelete: Cascade)
 
   @@index([matchContractId, createdAt])
   @@index([signerUserId, createdAt])
+}
+
+model ContractVoidEvent {
+  id                String        @id @default(cuid())
+  matchContractId   String        @unique
+  actorUserId       String
+  actorRole         ContractSignerRole
+  reason            String
+  evidenceJson      String
+  createdAt         DateTime      @default(now())
+  matchContract     MatchContract @relation(fields: [matchContractId], references: [id], onDelete: Cascade)
+
+  @@index([actorUserId, createdAt])
+  @@index([createdAt])
 }

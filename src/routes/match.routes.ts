@@ -6,7 +6,9 @@ import {
   getContractExecutionOverviewController,
   getContractPdfController,
   getContractSnapshotController,
+  getContractVoidOverviewController,
   signContractExecutionController,
+  voidContractExecutionController,
   listHospitalMatchOffersController,
   listOwnMatchContractsController,
   listVisibleJobShiftsController,
@@ -54,6 +56,18 @@ router.post(
   '/contract/:id/execution/sign',
   requireAuth,
   asyncHandler(signContractExecutionController),
+);
+
+router.get(
+  '/contract/:id/void',
+  requireAuth,
+  asyncHandler(getContractVoidOverviewController),
+);
+
+router.post(
+  '/contract/:id/void',
+  requireAuth,
+  asyncHandler(voidContractExecutionController),
 );
 
 router.get(

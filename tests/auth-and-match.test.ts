@@ -70,6 +70,7 @@ jest.mock('../src/config/prisma', () => ({
     matchContract: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
     contractSnapshot: { create: jest.fn() },
     contractSignatureEvent: { create: jest.fn() },
+    contractVoidEvent: { create: jest.fn() },
     invoice: { create: jest.fn(), findMany: jest.fn() },
     webhookEvent: { create: jest.fn() },
   },
@@ -130,6 +131,7 @@ describe('hospital integration and scalable match flow', () => {
     (prisma.matchContract.delete as jest.Mock).mockReset();
     (prisma.contractSnapshot.create as jest.Mock).mockReset();
     (prisma.contractSignatureEvent.create as jest.Mock).mockReset();
+    (prisma.contractVoidEvent.create as jest.Mock).mockReset();
     (prisma.invoice.create as jest.Mock).mockReset();
     (prisma.invoice.findMany as jest.Mock).mockReset();
     (prisma.webhookEvent.create as jest.Mock).mockReset();
@@ -1004,6 +1006,82 @@ describe('hospital integration and scalable match flow', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.execution.signatureEvents).toHaveLength(1);
+  });
+
+
+  it('voids a non-fully-executed contract with audit trail', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
+    (prisma.matchContract.findUnique as jest.Mock).mockResolvedValue({
+      id: 'contract_1',
+      status: MatchContractStatus.SIGNED,
+      executionStatus: 'PENDING_NURSE_SIGNATURE',
+      nurseProfile: { userId: 'nurse_user_1' },
+      jobShift: { hospitalProfile: { userId: 'hospital_owner_1' } },
+      signatureEvents: [{ id: 'sig_1' }],
+      voidEvent: null,
+      invoice: { status: 'PENDING' },
+    });
+    (prisma.contractVoidEvent.create as jest.Mock).mockResolvedValue({
+      id: 'void_1',
+      actorUserId: 'hospital_owner_1',
+      actorRole: 'HOSPITAL_ADMIN',
+      reason: 'Pflegekraft kann den Einsatz in diesem Zeitraum doch nicht wahrnehmen.',
+      createdAt: new Date('2026-05-20T12:20:00.000Z'),
+    });
+    (prisma.matchContract.update as jest.Mock).mockResolvedValue({
+      id: 'contract_1',
+      status: 'CANCELED',
+      executionStatus: 'VOIDED',
+      voidEvent: { reason: 'Pflegekraft kann den Einsatz in diesem Zeitraum doch nicht wahrnehmen.', createdAt: new Date('2026-05-20T12:20:00.000Z') },
+    });
+
+    const response = await request(app)
+      .post('/api/v1/matches/contract/contract_1/void')
+      .set('Cookie', [`shiftlink_token=${token}`])
+      .send({ reason: 'Pflegekraft kann den Einsatz in diesem Zeitraum doch nicht wahrnehmen.' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.voiding.executionStatus).toBe('VOIDED');
+  });
+
+  it('rejects voiding for fully executed contracts', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
+    (prisma.matchContract.findUnique as jest.Mock).mockResolvedValue({
+      id: 'contract_1',
+      status: MatchContractStatus.SIGNED,
+      executionStatus: 'FULLY_EXECUTED',
+      nurseProfile: { userId: 'nurse_user_1' },
+      jobShift: { hospitalProfile: { userId: 'hospital_owner_1' } },
+      signatureEvents: [{ id: 'sig_1' }, { id: 'sig_2' }],
+      voidEvent: null,
+      invoice: { status: 'PENDING' },
+    });
+
+    const response = await request(app)
+      .post('/api/v1/matches/contract/contract_1/void')
+      .set('Cookie', [`shiftlink_token=${token}`])
+      .send({ reason: 'Dieser Vertrag darf nach vollständiger Ausführung nicht mehr aufgehoben werden.' });
+
+    expect(response.status).toBe(409);
+  });
+
+  it('returns contract void overview to authorized actor', async () => {
+    const token = signAuthToken({ sub: 'nurse_user_1', role: UserRole.NURSE });
+    (prisma.matchContract.findUnique as jest.Mock).mockResolvedValue({
+      id: 'contract_1',
+      status: 'CANCELED',
+      executionStatus: 'VOIDED',
+      nurseProfile: { userId: 'nurse_user_1' },
+      jobShift: { hospitalProfile: { userId: 'hospital_owner_1' } },
+      voidEvent: { actorUserId: 'hospital_owner_1', actorRole: 'HOSPITAL_ADMIN', reason: 'Pflegekraft kann den Einsatz in diesem Zeitraum doch nicht wahrnehmen.', createdAt: new Date('2026-05-20T12:20:00.000Z') },
+    });
+
+    const response = await request(app)
+      .get('/api/v1/matches/contract/contract_1/void')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.body.voiding.voidEvent.reason).toContain('nicht wahrnehmen');
   });
 
   it('creates an invoice amount based on total planned hours times platform fee', async () => {

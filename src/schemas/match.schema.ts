@@ -35,5 +35,10 @@ export const signContractExecutionSchema = z.object({
   matchContractId: z.string().trim().min(1),
 });
 
+export const voidContractExecutionSchema = z.object({
+  reason: z.string().trim().min(10).max(2000),
+});
+
 export type RespondToMatchOfferInput = z.infer<typeof respondToMatchOfferSchema>;
 export type SignContractExecutionInput = z.infer<typeof signContractExecutionSchema>;
+export type VoidContractExecutionInput = z.infer<typeof voidContractExecutionSchema>;

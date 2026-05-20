@@ -11,6 +11,7 @@ import {
 import { getContractSnapshot } from '../services/contract.service';
 import { getContractPdfDownload } from '../services/contract-pdf.service';
 import { getContractExecutionOverview, signContractExecution } from '../services/contract-signature.service';
+import { getContractVoidOverview, voidContractExecution } from '../services/contract-void.service';
 import { findCandidatesForJobShift } from '../services/matching.service';
 
 export async function signMatchContractController(req: Request, res: Response): Promise<void> {
@@ -157,4 +158,41 @@ export async function getContractExecutionOverviewController(req: Request, res: 
   const execution = await getContractExecutionOverview(matchContractId, req.auth);
 
   res.status(200).json({ execution });
+}
+
+export async function voidContractExecutionController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const matchContractId = req.params.id;
+  const reason = req.body?.reason;
+
+  if (typeof matchContractId !== 'string' || matchContractId.length === 0) {
+    throw createHttpError(400, 'Invalid match contract id');
+  }
+
+  if (typeof reason !== 'string' || reason.trim().length < 10) {
+    throw createHttpError(400, 'A meaningful void reason is required');
+  }
+
+  const result = await voidContractExecution(matchContractId, req.auth, reason.trim());
+
+  res.status(200).json({ voiding: result });
+}
+
+export async function getContractVoidOverviewController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const matchContractId = req.params.id;
+
+  if (typeof matchContractId !== 'string' || matchContractId.length === 0) {
+    throw createHttpError(400, 'Invalid match contract id');
+  }
+
+  const voiding = await getContractVoidOverview(matchContractId, req.auth);
+
+  res.status(200).json({ voiding });
 }
