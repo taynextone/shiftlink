@@ -8,3 +8,7 @@ export const billingQueue = new Queue('billing', {
 export const whatsappQueue = new Queue('whatsapp', {
   connection: redis,
 });
+
+export const webhookQueue = new Queue('webhook', {
+  connection: redis,
+});

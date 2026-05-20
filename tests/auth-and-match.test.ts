@@ -46,6 +46,7 @@ jest.mock('../src/config/prisma', () => ({
 jest.mock('../src/config/queues', () => ({
   billingQueue: { add: jest.fn() },
   whatsappQueue: { add: jest.fn() },
+  webhookQueue: { add: jest.fn() },
 }));
 
 jest.mock('../src/services/storage.service', () => ({
@@ -58,7 +59,7 @@ jest.mock('../src/services/storage.service', () => ({
 
 const { createApp } = require('../src/app');
 const { prisma } = require('../src/config/prisma');
-const { billingQueue, whatsappQueue } = require('../src/config/queues');
+const { billingQueue, whatsappQueue, webhookQueue } = require('../src/config/queues');
 const matchService = require('../src/services/match.service');
 
 describe('hospital integration and scalable match flow', () => {
@@ -91,6 +92,7 @@ describe('hospital integration and scalable match flow', () => {
     (prisma.webhookEvent.create as jest.Mock).mockReset();
     (billingQueue.add as jest.Mock).mockReset();
     (whatsappQueue.add as jest.Mock).mockReset();
+    (webhookQueue.add as jest.Mock).mockReset();
   });
 
   it('registers a nurse and returns an auth cookie with anonymous public identity', async () => {

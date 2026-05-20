@@ -222,10 +222,14 @@ model WebhookEvent {
   hospitalProfileId String
   eventType         String
   payloadJson       String
+  deliveryAttempts  Int      @default(0)
+  lastAttemptAt     DateTime?
   deliveredAt       DateTime?
+  lastError         String?
   createdAt         DateTime @default(now())
   hospitalProfile   HospitalProfile @relation(fields: [hospitalProfileId], references: [id], onDelete: Cascade)
 
   @@index([hospitalProfileId, createdAt])
   @@index([eventType])
+  @@index([deliveredAt, createdAt])
 }
