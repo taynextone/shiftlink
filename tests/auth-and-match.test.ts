@@ -56,6 +56,7 @@ jest.mock('../src/config/prisma', () => ({
     hospitalProfile: { findUnique: jest.fn() },
     jobShift: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn() },
     matchContract: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
+    contractSnapshot: { create: jest.fn() },
     invoice: { create: jest.fn(), findMany: jest.fn() },
     webhookEvent: { create: jest.fn() },
   },
@@ -109,6 +110,7 @@ describe('hospital integration and scalable match flow', () => {
     (prisma.matchContract.create as jest.Mock).mockReset();
     (prisma.matchContract.update as jest.Mock).mockReset();
     (prisma.matchContract.delete as jest.Mock).mockReset();
+    (prisma.contractSnapshot.create as jest.Mock).mockReset();
     (prisma.invoice.create as jest.Mock).mockReset();
     (prisma.invoice.findMany as jest.Mock).mockReset();
     (prisma.webhookEvent.create as jest.Mock).mockReset();
@@ -397,6 +399,36 @@ describe('hospital integration and scalable match flow', () => {
       nurseProfile: { id: 'nurse_1', publicId: 'NUR-AB12CD34', displayName: 'NurseNova', phoneNumber: '+491701234567', whatsappOptIn: true },
       jobShift: { id: 'shift_1', locationCity: 'Berlin', startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-20T18:00:00.000Z'), hospitalProfile: { clinicName: 'Clinic One' }, requirements: [] },
     });
+    (prisma.matchContract.findUnique as jest.Mock).mockResolvedValue({
+      id: 'contract_1',
+      status: MatchContractStatus.PENDING,
+      currentSnapshot: null,
+      contractSnapshots: [],
+      nurseProfile: {
+        id: 'nurse_1',
+        userId: 'nurse_user_1',
+        publicId: 'NUR-AB12CD34',
+        displayName: 'NurseNova',
+        firstName: 'Nina',
+        lastName: 'Care',
+        minHourlyRate: new Prisma.Decimal(49),
+        specializations: [],
+      },
+      jobShift: {
+        id: 'shift_1',
+        externalJobShiftId: 'ext-123',
+        title: 'ITS Einsatz',
+        department: 'ITS',
+        stationName: 'A1',
+        locationCity: 'Berlin',
+        startTime: new Date('2026-06-16T06:00:00.000Z'),
+        endTime: new Date('2026-06-20T18:00:00.000Z'),
+        totalPlannedHours: new Prisma.Decimal(12),
+        hospitalProfile: { id: 'hospital_1', clinicName: 'Clinic One', billingAddress: 'Street 1', taxNumber: 'TAX-1', userId: 'hospital_owner_1' },
+        requirements: [],
+      },
+    });
+    (prisma.contractSnapshot.create as jest.Mock).mockResolvedValue({ id: 'snapshot_1', version: 1, summaryText: 'summary' });
 
     const result = await matchService.createMatchOffer(
       { userId: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN },
@@ -645,6 +677,106 @@ describe('hospital integration and scalable match flow', () => {
       .set('Cookie', [`shiftlink_token=${token}`]);
 
     expect(response.status).toBe(403);
+  });
+
+
+  it('creates a contract snapshot when an offer is created', async () => {
+    (prisma.jobShift.findUnique as jest.Mock)
+      .mockResolvedValueOnce({
+        id: 'shift_1',
+        status: JobShiftStatus.OPEN,
+        startTime: new Date('2026-06-16T06:00:00.000Z'),
+        endTime: new Date('2026-06-20T18:00:00.000Z'),
+        locationCity: 'Berlin',
+        hospitalProfile: { id: 'hospital_1', userId: 'hospital_owner_1', clinicName: 'Clinic One' },
+        requirements: [],
+        matchContracts: [],
+      })
+      .mockResolvedValueOnce({ currentSnapshot: null });
+    (prisma.nurseProfile.findUnique as jest.Mock).mockResolvedValue({
+      id: 'nurse_1',
+      publicId: 'NUR-AB12CD34',
+      displayName: 'NurseNova',
+      firstName: 'Nina',
+      lastName: 'Care',
+      minHourlyRate: new Prisma.Decimal(49),
+      phoneNumber: '+491701234567',
+      whatsappOptIn: true,
+      isReleasedForMatching: true,
+      specializations: [],
+      availabilityBlocks: [{ id: 'block_1', isBooked: false, startTime: new Date('2026-06-16T05:00:00.000Z'), endTime: new Date('2026-06-20T19:00:00.000Z') }],
+    });
+    (prisma.matchContract.create as jest.Mock).mockResolvedValue({
+      id: 'contract_1',
+      status: MatchContractStatus.PENDING,
+      invoice: null,
+      nurseProfile: { id: 'nurse_1', publicId: 'NUR-AB12CD34', displayName: 'NurseNova', phoneNumber: '+491701234567', whatsappOptIn: true },
+      jobShift: { id: 'shift_1', locationCity: 'Berlin', startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-20T18:00:00.000Z'), hospitalProfile: { clinicName: 'Clinic One', billingAddress: 'Street 1', taxNumber: 'TAX-1' }, requirements: [] },
+    });
+    (prisma.matchContract.findUnique as jest.Mock).mockResolvedValue({
+      id: 'contract_1',
+      status: MatchContractStatus.PENDING,
+      currentSnapshot: null,
+      contractSnapshots: [],
+      nurseProfile: {
+        id: 'nurse_1',
+        userId: 'nurse_user_1',
+        publicId: 'NUR-AB12CD34',
+        displayName: 'NurseNova',
+        firstName: 'Nina',
+        lastName: 'Care',
+        minHourlyRate: new Prisma.Decimal(49),
+        specializations: [],
+      },
+      jobShift: {
+        id: 'shift_1',
+        externalJobShiftId: 'ext-123',
+        title: 'ITS Einsatz',
+        department: 'ITS',
+        stationName: 'A1',
+        locationCity: 'Berlin',
+        startTime: new Date('2026-06-16T06:00:00.000Z'),
+        endTime: new Date('2026-06-20T18:00:00.000Z'),
+        totalPlannedHours: new Prisma.Decimal(12),
+        hospitalProfile: { id: 'hospital_1', clinicName: 'Clinic One', billingAddress: 'Street 1', taxNumber: 'TAX-1', userId: 'hospital_owner_1' },
+        requirements: [],
+      },
+    });
+    (prisma.contractSnapshot.create as jest.Mock).mockResolvedValue({ id: 'snapshot_1', version: 1, summaryText: 'summary' });
+    (prisma.matchContract.update as jest.Mock).mockResolvedValue({ id: 'contract_1', currentSnapshotId: 'snapshot_1' });
+
+    await matchService.createMatchOffer(
+      { userId: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN },
+      { jobShiftId: 'shift_1', nurseProfileId: 'nurse_1' },
+    );
+
+    expect(prisma.contractSnapshot.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          matchContractId: 'contract_1',
+          version: 1,
+          snapshotJson: expect.any(String),
+        }),
+      }),
+    );
+  });
+
+  it('returns contract snapshot to authorized parties', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
+    (prisma.matchContract.findUnique as jest.Mock).mockResolvedValue({
+      id: 'contract_1',
+      nurseProfile: { userId: 'nurse_user_1' },
+      jobShift: { hospitalProfile: { userId: 'hospital_owner_1' } },
+      currentSnapshot: { id: 'snapshot_1', version: 2, summaryText: 'summary', snapshotJson: JSON.stringify({ commercialTerms: { hospitalPaysNurseDirectly: true } }) },
+    });
+
+    const response = await request(app)
+      .get('/api/v1/matches/contract/contract_1')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.body.contractSnapshot.version).toBe(2);
+    expect(response.body.contractSnapshot.snapshot.commercialTerms.hospitalPaysNurseDirectly).toBe(true);
   });
 
   it('creates an invoice amount based on total planned hours times platform fee', async () => {

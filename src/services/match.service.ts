@@ -3,6 +3,7 @@ import { MatchContractStatus, JobShiftStatus, UserRole } from '@prisma/client';
 import { prisma } from '../config/prisma';
 import { billingQueue, whatsappQueue } from '../config/queues';
 import { env } from '../config/env';
+import { createContractSnapshot, ensureContractSnapshotForOffer } from './contract.service';
 
 const DEFAULT_OFFER_EXPIRY_HOURS = 24;
 
@@ -414,6 +415,8 @@ export async function createMatchOffer(
     },
   });
 
+  await ensureContractSnapshotForOffer(created.id);
+
   if (created.nurseProfile.whatsappOptIn) {
     await whatsappQueue.add(
       'new-match-offer-notification',
@@ -576,6 +579,8 @@ export async function signMatchContract(matchContractId: string, actor: { userId
       invoice: true,
     },
   });
+
+  await createContractSnapshot(updatedContract.id);
 
   await autoBookAvailabilityForSignedContract(updatedContract.id);
 
