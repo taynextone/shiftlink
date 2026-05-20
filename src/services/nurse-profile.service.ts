@@ -1,7 +1,54 @@
 import createHttpError from 'http-errors';
-import { Prisma, UserRole } from '@prisma/client';
+import { Prisma, UserRole, VerificationDocumentStatus, VerificationDocumentType } from '@prisma/client';
 import { prisma } from '../config/prisma';
-import { UpdateNurseProfileInput } from '../schemas/nurse-profile.schema';
+import { ReviewVerificationDocumentInput, UpdateNurseProfileInput } from '../schemas/nurse-profile.schema';
+
+const REQUIRED_DOCUMENT_TYPES: VerificationDocumentType[] = [
+  VerificationDocumentType.EXAMEN,
+  VerificationDocumentType.OCCUPATIONAL_HEALTH_CLEARANCE,
+];
+
+function buildVerificationDocumentsCreate(input: UpdateNurseProfileInput): Prisma.VerificationDocumentCreateWithoutNurseProfileInput[] {
+  const docs: Prisma.VerificationDocumentCreateWithoutNurseProfileInput[] = [];
+
+  if (input.examenFileUrl) {
+    docs.push({
+      documentType: VerificationDocumentType.EXAMEN,
+      fileUrl: input.examenFileUrl,
+      status: VerificationDocumentStatus.PENDING,
+    });
+  }
+
+  for (const fileUrl of input.specializationCertificateFileUrls ?? []) {
+    docs.push({
+      documentType: VerificationDocumentType.SPECIALIZATION_CERTIFICATE,
+      fileUrl,
+      status: VerificationDocumentStatus.PENDING,
+    });
+  }
+
+  for (const fileUrl of input.occupationalHealthClearanceFileUrls ?? []) {
+    docs.push({
+      documentType: VerificationDocumentType.OCCUPATIONAL_HEALTH_CLEARANCE,
+      fileUrl,
+      status: VerificationDocumentStatus.PENDING,
+    });
+  }
+
+  return docs;
+}
+
+function isReleasedForMatching(profile: { verificationDocuments: Array<{ documentType: VerificationDocumentType; status: VerificationDocumentStatus }> }) {
+  const byType = new Map<VerificationDocumentType, VerificationDocumentStatus[]>();
+
+  for (const document of profile.verificationDocuments) {
+    const existing = byType.get(document.documentType) ?? [];
+    existing.push(document.status);
+    byType.set(document.documentType, existing);
+  }
+
+  return REQUIRED_DOCUMENT_TYPES.every((type) => (byType.get(type) ?? []).includes(VerificationDocumentStatus.VERIFIED));
+}
 
 export async function updateOwnNurseProfile(actor: { userId: string; role: UserRole }, input: UpdateNurseProfileInput) {
   if (actor.role !== UserRole.NURSE) {
@@ -12,6 +59,7 @@ export async function updateOwnNurseProfile(actor: { userId: string; role: UserR
     where: { userId: actor.userId },
     include: {
       availabilityBlocks: true,
+      verificationDocuments: true,
     },
   });
 
@@ -24,6 +72,9 @@ export async function updateOwnNurseProfile(actor: { userId: string; role: UserR
   if (bookedBlocks.length > 0 && input.availabilityBlocks) {
     throw createHttpError(409, 'Booked availability blocks cannot be replaced through the general profile update flow');
   }
+
+  const newVerificationDocuments = buildVerificationDocumentsCreate(input);
+  const shouldResetRelease = newVerificationDocuments.length > 0;
 
   const data: Prisma.NurseProfileUpdateInput = {
     displayName: input.displayName,
@@ -38,10 +89,17 @@ export async function updateOwnNurseProfile(actor: { userId: string; role: UserR
     minAssignmentHours: input.minAssignmentHours,
     maxAssignmentHours: input.maxAssignmentHours,
     preferredRegionsNote: input.preferredRegionsNote,
+    isReleasedForMatching: shouldResetRelease ? false : undefined,
+    releasedAt: shouldResetRelease ? null : undefined,
     specializations: input.specializationTags
       ? {
           deleteMany: {},
           create: input.specializationTags.map((tag) => ({ tag })),
+        }
+      : undefined,
+    verificationDocuments: newVerificationDocuments.length > 0
+      ? {
+          create: newVerificationDocuments,
         }
       : undefined,
     availabilityBlocks: input.availabilityBlocks
@@ -67,9 +125,90 @@ export async function updateOwnNurseProfile(actor: { userId: string; role: UserR
     data,
     include: {
       specializations: true,
+      verificationDocuments: true,
       availabilityBlocks: true,
     },
   });
+}
+
+export async function reviewVerificationDocument(
+  actor: { userId: string; role: UserRole },
+  input: ReviewVerificationDocumentInput,
+) {
+  if (actor.role !== UserRole.SUPER_ADMIN) {
+    throw createHttpError(403, 'Only super admins can review verification documents');
+  }
+
+  const document = await prisma.verificationDocument.findUnique({
+    where: { id: input.documentId },
+    include: {
+      nurseProfile: {
+        include: {
+          verificationDocuments: true,
+        },
+      },
+    },
+  });
+
+  if (!document) {
+    throw createHttpError(404, 'Verification document not found');
+  }
+
+  const updatedDocument = await prisma.verificationDocument.update({
+    where: { id: input.documentId },
+    data: {
+      status: input.status,
+      reviewerUserId: actor.userId,
+      reviewedAt: new Date(),
+      rejectionReason: input.status === 'REJECTED' ? input.rejectionReason : null,
+    },
+    include: {
+      nurseProfile: {
+        include: {
+          verificationDocuments: true,
+        },
+      },
+    },
+  });
+
+  const release = isReleasedForMatching(updatedDocument.nurseProfile);
+
+  await prisma.nurseProfile.update({
+    where: { id: updatedDocument.nurseProfile.id },
+    data: {
+      isReleasedForMatching: release,
+      releasedAt: release ? new Date() : null,
+    },
+  });
+
+  return updatedDocument;
+}
+
+export async function getOwnVerificationOverview(actor: { userId: string; role: UserRole }) {
+  if (actor.role !== UserRole.NURSE) {
+    throw createHttpError(403, 'Only nurses can access verification overview');
+  }
+
+  const profile = await prisma.nurseProfile.findUnique({
+    where: { userId: actor.userId },
+    include: {
+      verificationDocuments: {
+        orderBy: {
+          createdAt: 'desc',
+        },
+      },
+    },
+  });
+
+  if (!profile) {
+    throw createHttpError(404, 'Nurse profile not found');
+  }
+
+  return {
+    isReleasedForMatching: profile.isReleasedForMatching,
+    releasedAt: profile.releasedAt,
+    documents: profile.verificationDocuments,
+  };
 }
 
 export async function getPublicNurseProfile(publicId: string) {
@@ -77,6 +216,7 @@ export async function getPublicNurseProfile(publicId: string) {
     where: { publicId },
     include: {
       specializations: true,
+      verificationDocuments: true,
       availabilityBlocks: {
         where: {
           isBooked: false,
@@ -100,6 +240,10 @@ export async function getPublicNurseProfile(publicId: string) {
     minAssignmentHours: profile.minAssignmentHours,
     maxAssignmentHours: profile.maxAssignmentHours,
     preferredRegionsNote: profile.preferredRegionsNote,
+    isReleasedForMatching: profile.isReleasedForMatching,
+    hasVerifiedExamen: profile.verificationDocuments.some(
+      (document) => document.documentType === VerificationDocumentType.EXAMEN && document.status === VerificationDocumentStatus.VERIFIED,
+    ),
     specializations: profile.specializations.map((item) => item.tag),
     availabilityBlocks: profile.availabilityBlocks.map((block) => ({
       id: block.id,

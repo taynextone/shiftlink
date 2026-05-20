@@ -1,6 +1,11 @@
 import { Request, Response } from 'express';
 import createHttpError from 'http-errors';
-import { getPublicNurseProfile, updateOwnNurseProfile } from '../services/nurse-profile.service';
+import {
+  getOwnVerificationOverview,
+  getPublicNurseProfile,
+  reviewVerificationDocument,
+  updateOwnNurseProfile,
+} from '../services/nurse-profile.service';
 
 export async function updateOwnNurseProfileController(req: Request, res: Response): Promise<void> {
   if (!req.auth) {
@@ -11,6 +16,30 @@ export async function updateOwnNurseProfileController(req: Request, res: Respons
 
   res.status(200).json({
     nurseProfile: profile,
+  });
+}
+
+export async function reviewVerificationDocumentController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const document = await reviewVerificationDocument(req.auth, req.body);
+
+  res.status(200).json({
+    verificationDocument: document,
+  });
+}
+
+export async function getOwnVerificationOverviewController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const overview = await getOwnVerificationOverview(req.auth);
+
+  res.status(200).json({
+    verification: overview,
   });
 }
 

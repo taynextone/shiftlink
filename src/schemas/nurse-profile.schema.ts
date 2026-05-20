@@ -51,6 +51,8 @@ export const updateNurseProfileSchema = z
     preferredRegionsNote: z.string().trim().min(1).max(500).optional(),
     specializationTags: z.array(tagSchema).max(20).optional(),
     availabilityBlocks: z.array(availabilityBlockSchema).max(100).optional(),
+    specializationCertificateFileUrls: z.array(z.string().trim().min(1)).max(20).optional(),
+    occupationalHealthClearanceFileUrls: z.array(z.string().trim().min(1)).max(20).optional(),
   })
   .superRefine((value, ctx) => {
     if (
@@ -87,4 +89,11 @@ export const updateNurseProfileSchema = z
     }
   });
 
+export const reviewVerificationDocumentSchema = z.object({
+  documentId: z.string().trim().min(1),
+  status: z.enum(['VERIFIED', 'REJECTED']),
+  rejectionReason: z.string().trim().min(3).max(500).optional(),
+});
+
 export type UpdateNurseProfileInput = z.infer<typeof updateNurseProfileSchema>;
+export type ReviewVerificationDocumentInput = z.infer<typeof reviewVerificationDocumentSchema>;

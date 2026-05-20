@@ -66,6 +66,10 @@ export async function findCandidatesForJobShift(actor: { userId: string; role: U
 
   const candidates = nurseProfiles
     .map((nurse) => {
+      if (!nurse.isReleasedForMatching) {
+        return null;
+      }
+
       const nurseTags = nurse.specializations.map((item) => item.tag);
       const hasRequiredTags = requiredTags.every((tag) => nurseTags.includes(tag));
       if (!hasRequiredTags) {

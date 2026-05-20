@@ -19,13 +19,31 @@ process.env.NURSE_LOGIN_URL = 'https://app.shiftlink.example/login';
 
 import request from 'supertest';
 import argon2 from 'argon2';
-import { InvoiceStatus, JobShiftStatus, MatchContractStatus, Prisma, UserRole, VerificationStatus } from '@prisma/client';
+import { InvoiceStatus, JobShiftStatus, MatchContractStatus, Prisma, UserRole, VerificationStatus, VerificationDocumentStatus, VerificationDocumentType } from '@prisma/client';
 import { signAuthToken } from '../src/utils/jwt';
+
+jest.mock('@prisma/client', () => {
+  const actual = jest.requireActual('@prisma/client');
+  return {
+    ...actual,
+    VerificationDocumentType: {
+      EXAMEN: 'EXAMEN',
+      SPECIALIZATION_CERTIFICATE: 'SPECIALIZATION_CERTIFICATE',
+      OCCUPATIONAL_HEALTH_CLEARANCE: 'OCCUPATIONAL_HEALTH_CLEARANCE',
+    },
+    VerificationDocumentStatus: {
+      PENDING: 'PENDING',
+      VERIFIED: 'VERIFIED',
+      REJECTED: 'REJECTED',
+    },
+  };
+});
 
 jest.mock('../src/config/prisma', () => ({
   prisma: {
     user: { findUnique: jest.fn(), create: jest.fn() },
     nurseProfile: { findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn() },
+    verificationDocument: { findUnique: jest.fn(), update: jest.fn() },
     nurseAvailabilityBlock: {
       create: jest.fn(),
       createMany: jest.fn(),
@@ -72,6 +90,8 @@ describe('hospital integration and scalable match flow', () => {
     (prisma.nurseProfile.findUnique as jest.Mock).mockReset();
     (prisma.nurseProfile.findMany as jest.Mock).mockReset();
     (prisma.nurseProfile.update as jest.Mock).mockReset();
+    (prisma.verificationDocument.findUnique as jest.Mock).mockReset();
+    (prisma.verificationDocument.update as jest.Mock).mockReset();
     (prisma.nurseAvailabilityBlock.create as jest.Mock).mockReset();
     (prisma.nurseAvailabilityBlock.createMany as jest.Mock).mockReset();
     (prisma.nurseAvailabilityBlock.findMany as jest.Mock).mockReset();
@@ -365,6 +385,7 @@ describe('hospital integration and scalable match flow', () => {
       displayName: 'NurseNova',
       phoneNumber: '+491701234567',
       whatsappOptIn: true,
+      isReleasedForMatching: true,
       availabilityBlocks: [{ id: 'block_1', isBooked: false, startTime: new Date('2026-06-16T05:00:00.000Z'), endTime: new Date('2026-06-20T19:00:00.000Z') }],
       specializations: [],
     });
@@ -465,6 +486,105 @@ describe('hospital integration and scalable match flow', () => {
         data: { status: MatchContractStatus.EXPIRED },
       }),
     );
+  });
+
+
+  it('excludes unreleased nurses from hospital candidate matching', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
+    (prisma.jobShift.findUnique as jest.Mock).mockResolvedValue({
+      id: 'shift_1',
+      startTime: new Date('2026-06-16T06:00:00.000Z'),
+      endTime: new Date('2026-06-20T18:00:00.000Z'),
+      locationCity: 'Berlin',
+      locationLatitude: new Prisma.Decimal(52.52),
+      locationLongitude: new Prisma.Decimal(13.405),
+      hospitalProfile: { userId: 'hospital_owner_1' },
+      requirements: [{ tag: 'intensivstation', priority: 'REQUIRED' }],
+      matchContracts: [],
+    });
+    (prisma.nurseProfile.findMany as jest.Mock).mockResolvedValue([{ id: 'nurse_1', isReleasedForMatching: false, publicId: 'NUR-AB12CD34', displayName: 'NurseNova', minHourlyRate: new Prisma.Decimal(49), preferredShiftType: 'FLEXIBLE', specializations: [{ tag: 'intensivstation' }], availabilityBlocks: [{ id: 'block_1', city: 'Berlin', radiusKm: 25, startTime: new Date('2026-06-16T05:00:00.000Z'), endTime: new Date('2026-06-20T19:00:00.000Z'), isBooked: false }], matchContracts: [] }]);
+
+    const response = await request(app).post('/api/v1/matches/candidates').set('Cookie', [`shiftlink_token=${token}`]).send({ jobShiftId: 'shift_1' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.candidates).toHaveLength(0);
+  });
+
+  it('returns no visible job shifts for unreleased nurses', async () => {
+    const token = signAuthToken({ sub: 'nurse_user_1', role: UserRole.NURSE });
+    (prisma.nurseProfile.findUnique as jest.Mock).mockResolvedValue({
+      id: 'nurse_1',
+      userId: 'nurse_user_1',
+      isReleasedForMatching: false,
+      specializations: [{ tag: 'intensivstation' }],
+      availabilityBlocks: [],
+      matchContracts: [],
+    });
+
+    const response = await request(app).get('/api/v1/matches/visible-job-shifts').set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.body.jobShifts).toHaveLength(0);
+  });
+
+  it('reviews verification documents and releases nurse for matching when required docs are verified', async () => {
+    const token = signAuthToken({ sub: 'super_admin_1', role: UserRole.SUPER_ADMIN });
+    (prisma.verificationDocument.findUnique as jest.Mock).mockResolvedValue({
+      id: 'doc_1',
+      documentType: 'EXAMEN',
+      nurseProfile: {
+        id: 'nurse_1',
+        verificationDocuments: [
+          { id: 'doc_1', documentType: 'EXAMEN', status: 'PENDING' },
+          { id: 'doc_2', documentType: 'OCCUPATIONAL_HEALTH_CLEARANCE', status: 'VERIFIED' },
+        ],
+      },
+    });
+    (prisma.verificationDocument.update as jest.Mock).mockResolvedValue({
+      id: 'doc_1',
+      documentType: 'EXAMEN',
+      status: 'VERIFIED',
+      nurseProfile: {
+        id: 'nurse_1',
+        verificationDocuments: [
+          { id: 'doc_1', documentType: 'EXAMEN', status: 'VERIFIED' },
+          { id: 'doc_2', documentType: 'OCCUPATIONAL_HEALTH_CLEARANCE', status: 'VERIFIED' },
+        ],
+      },
+    });
+    (prisma.nurseProfile.update as jest.Mock).mockResolvedValue({ id: 'nurse_1', isReleasedForMatching: true });
+
+    const response = await request(app)
+      .post('/api/v1/nurse-profile/verification/review')
+      .set('Cookie', [`shiftlink_token=${token}`])
+      .send({ documentId: 'doc_1', status: 'VERIFIED' });
+
+    expect(response.status).toBe(200);
+    expect(prisma.nurseProfile.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'nurse_1' },
+        data: expect.objectContaining({ isReleasedForMatching: true, releasedAt: expect.any(Date) }),
+      }),
+    );
+  });
+
+  it('shows nurse verification overview', async () => {
+    const token = signAuthToken({ sub: 'nurse_user_1', role: UserRole.NURSE });
+    (prisma.nurseProfile.findUnique as jest.Mock).mockResolvedValue({
+      id: 'nurse_1',
+      userId: 'nurse_user_1',
+      isReleasedForMatching: true,
+      releasedAt: new Date('2026-05-20T10:00:00.000Z'),
+      verificationDocuments: [{ id: 'doc_1', documentType: 'EXAMEN', status: 'VERIFIED' }],
+    });
+
+    const response = await request(app)
+      .get('/api/v1/nurse-profile/me/verification')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.body.verification.isReleasedForMatching).toBe(true);
+    expect(response.body.verification.documents).toHaveLength(1);
   });
 
   it('creates an invoice amount based on total planned hours times platform fee', async () => {

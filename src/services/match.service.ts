@@ -152,6 +152,10 @@ export async function listVisibleJobShiftsForNurse(actor: { userId: string; role
     throw createHttpError(404, 'Nurse profile not found');
   }
 
+  if (!nurseProfile.isReleasedForMatching) {
+    return [];
+  }
+
   const shifts = await prisma.jobShift.findMany({
     where: {
       status: JobShiftStatus.OPEN,
@@ -342,6 +346,10 @@ export async function createMatchOffer(
 
   if (!nurseProfile) {
     throw createHttpError(404, 'Nurse profile not found');
+  }
+
+  if (!nurseProfile.isReleasedForMatching) {
+    throw createHttpError(409, 'Nurse profile is not released for matching yet');
   }
 
   const existingContract = jobShift.matchContracts.find((contract) => contract.nurseProfileId === input.nurseProfileId);
