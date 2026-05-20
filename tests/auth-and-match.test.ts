@@ -36,7 +36,7 @@ jest.mock('../src/config/prisma', () => ({
       deleteMany: jest.fn(),
     },
     hospitalProfile: { findUnique: jest.fn() },
-    jobShift: { create: jest.fn(), findUnique: jest.fn(), findMany: jest.fn() },
+    jobShift: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn() },
     matchContract: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
     invoice: { create: jest.fn() },
     webhookEvent: { create: jest.fn() },
@@ -81,6 +81,7 @@ describe('hospital integration and scalable match flow', () => {
     (prisma.nurseAvailabilityBlock.deleteMany as jest.Mock).mockReset();
     (prisma.hospitalProfile.findUnique as jest.Mock).mockReset();
     (prisma.jobShift.create as jest.Mock).mockReset();
+    (prisma.jobShift.update as jest.Mock).mockReset();
     (prisma.jobShift.findUnique as jest.Mock).mockReset();
     (prisma.jobShift.findMany as jest.Mock).mockReset();
     (prisma.matchContract.findUnique as jest.Mock).mockReset();
@@ -159,7 +160,7 @@ describe('hospital integration and scalable match flow', () => {
     expect(response.headers['set-cookie']).toBeDefined();
   });
 
-  it('imports a hospital job shift idempotently by externalJobShiftId', async () => {
+  it('imports a hospital job shift and updates it explicitly on repeated import while still open and unoffered', async () => {
     const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
     (prisma.hospitalProfile.findUnique as jest.Mock).mockResolvedValue({ id: 'hospital_1', userId: 'hospital_owner_1' });
     (prisma.jobShift.findUnique as jest.Mock)
@@ -167,13 +168,22 @@ describe('hospital integration and scalable match flow', () => {
       .mockResolvedValueOnce({
         id: 'shift_existing',
         externalJobShiftId: 'ext-123',
-        title: 'ITS Einsatz',
+        title: 'ITS Einsatz alt',
+        status: JobShiftStatus.OPEN,
         requirements: [],
+        matchContracts: [],
       });
     (prisma.jobShift.create as jest.Mock).mockResolvedValue({
       id: 'shift_1',
       externalJobShiftId: 'ext-123',
       title: 'ITS Einsatz',
+      status: JobShiftStatus.OPEN,
+      requirements: [{ tag: 'intensivstation', priority: 'REQUIRED' }],
+    });
+    (prisma.jobShift.update as jest.Mock).mockResolvedValue({
+      id: 'shift_existing',
+      externalJobShiftId: 'ext-123',
+      title: 'ITS Einsatz neu',
       status: JobShiftStatus.OPEN,
       requirements: [{ tag: 'intensivstation', priority: 'REQUIRED' }],
     });
@@ -197,19 +207,49 @@ describe('hospital integration and scalable match flow', () => {
       .set('Cookie', [`shiftlink_token=${token}`])
       .send({
         externalJobShiftId: 'ext-123',
-        title: 'ITS Einsatz',
+        title: 'ITS Einsatz neu',
         locationCity: 'Berlin',
-        startTime: '2026-06-16T06:00:00.000Z',
-        endTime: '2026-06-20T18:00:00.000Z',
-        totalPlannedHours: 12,
+        startTime: '2026-06-17T06:00:00.000Z',
+        endTime: '2026-06-21T18:00:00.000Z',
+        totalPlannedHours: 16,
         requirements: [{ tag: 'Intensivstation', priority: 'REQUIRED' }],
       });
 
     expect(first.status).toBe(201);
     expect(first.body.mode).toBe('created');
     expect(second.status).toBe(200);
-    expect(second.body.mode).toBe('existing');
-    expect(prisma.webhookEvent.create).toHaveBeenCalledTimes(1);
+    expect(second.body.mode).toBe('updated');
+    expect(prisma.jobShift.update).toHaveBeenCalled();
+    expect(prisma.webhookEvent.create).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects import updates when pending offers already exist', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
+    (prisma.hospitalProfile.findUnique as jest.Mock).mockResolvedValue({ id: 'hospital_1', userId: 'hospital_owner_1' });
+    (prisma.jobShift.findUnique as jest.Mock).mockResolvedValue({
+      id: 'shift_existing',
+      externalJobShiftId: 'ext-123',
+      title: 'ITS Einsatz alt',
+      status: JobShiftStatus.OPEN,
+      requirements: [],
+      matchContracts: [{ status: MatchContractStatus.PENDING }],
+    });
+
+    const response = await request(app)
+      .post('/api/v1/job-shifts/import')
+      .set('Cookie', [`shiftlink_token=${token}`])
+      .send({
+        externalJobShiftId: 'ext-123',
+        title: 'ITS Einsatz neu',
+        locationCity: 'Berlin',
+        startTime: '2026-06-17T06:00:00.000Z',
+        endTime: '2026-06-21T18:00:00.000Z',
+        totalPlannedHours: 16,
+        requirements: [{ tag: 'Intensivstation', priority: 'REQUIRED' }],
+      });
+
+    expect(response.status).toBe(409);
+    expect(prisma.jobShift.update).not.toHaveBeenCalled();
   });
 
   it('lists hospital job shifts with offer count summary and external ids', async () => {

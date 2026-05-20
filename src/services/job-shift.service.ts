@@ -1,5 +1,5 @@
 import createHttpError from 'http-errors';
-import { JobShiftStatus, Prisma, UserRole } from '@prisma/client';
+import { JobShiftStatus, MatchContractStatus, Prisma, UserRole } from '@prisma/client';
 import { prisma } from '../config/prisma';
 import { CreateJobShiftInput, ImportJobShiftInput, ListJobShiftsQueryInput } from '../schemas/job-shift.schema';
 import { createHospitalWebhookEvent } from './webhook.service';
@@ -49,6 +49,36 @@ function buildCreateData(hospitalProfileId: string, input: CreateJobShiftInput |
   };
 }
 
+function buildUpdateData(input: ImportJobShiftInput): Prisma.JobShiftUpdateInput {
+  return {
+    title: input.title,
+    department: input.department,
+    stationName: input.stationName,
+    locationCity: input.locationCity,
+    locationPostalCode: input.locationPostalCode,
+    locationLatitude: input.locationLatitude !== undefined ? new Prisma.Decimal(input.locationLatitude) : null,
+    locationLongitude: input.locationLongitude !== undefined ? new Prisma.Decimal(input.locationLongitude) : null,
+    startTime: new Date(input.startTime),
+    endTime: new Date(input.endTime),
+    totalPlannedHours: new Prisma.Decimal(input.totalPlannedHours),
+    requirements: {
+      deleteMany: {},
+      create: input.requirements.map((requirement) => ({
+        tag: requirement.tag,
+        priority: requirement.priority,
+      })),
+    },
+  };
+}
+
+function hasLockedOfferState(matchContracts: Array<{ status: MatchContractStatus }>) {
+  return matchContracts.some((contract) => contract.status === MatchContractStatus.SIGNED);
+}
+
+function hasOpenOfferState(matchContracts: Array<{ status: MatchContractStatus }>) {
+  return matchContracts.some((contract) => contract.status === MatchContractStatus.PENDING);
+}
+
 export async function createJobShift(actor: { userId: string; role: UserRole }, input: CreateJobShiftInput) {
   if (actor.role !== UserRole.HOSPITAL_ADMIN && actor.role !== UserRole.SUPER_ADMIN) {
     throw createHttpError(403, 'Only hospital admins can create job shifts');
@@ -92,18 +122,50 @@ export async function importHospitalJobShift(actor: { userId: string; role: User
     },
     include: {
       requirements: true,
+      matchContracts: true,
     },
   });
 
-  if (existing) {
+  if (!existing) {
+    const jobShift = await prisma.jobShift.create({
+      data: buildCreateData(hospitalProfile.id, input),
+      include: {
+        requirements: true,
+      },
+    });
+
+    await createHospitalWebhookEvent({
+      hospitalProfileId: hospitalProfile.id,
+      eventType: 'shift.imported',
+      payload: {
+        jobShiftId: jobShift.id,
+        externalJobShiftId: jobShift.externalJobShiftId,
+        status: jobShift.status,
+        mode: 'created',
+      },
+    });
+
     return {
-      mode: 'existing' as const,
-      jobShift: existing,
+      mode: 'created' as const,
+      jobShift,
     };
   }
 
-  const jobShift = await prisma.jobShift.create({
-    data: buildCreateData(hospitalProfile.id, input),
+  if (existing.status !== JobShiftStatus.OPEN) {
+    throw createHttpError(409, 'Only open job shifts can be updated through import');
+  }
+
+  if (hasLockedOfferState(existing.matchContracts)) {
+    throw createHttpError(409, 'Imported shift cannot be changed after a signed match exists');
+  }
+
+  if (hasOpenOfferState(existing.matchContracts)) {
+    throw createHttpError(409, 'Imported shift cannot be changed while pending offers exist');
+  }
+
+  const updated = await prisma.jobShift.update({
+    where: { id: existing.id },
+    data: buildUpdateData(input),
     include: {
       requirements: true,
     },
@@ -113,15 +175,16 @@ export async function importHospitalJobShift(actor: { userId: string; role: User
     hospitalProfileId: hospitalProfile.id,
     eventType: 'shift.imported',
     payload: {
-      jobShiftId: jobShift.id,
-      externalJobShiftId: jobShift.externalJobShiftId,
-      status: jobShift.status,
+      jobShiftId: updated.id,
+      externalJobShiftId: updated.externalJobShiftId,
+      status: updated.status,
+      mode: 'updated',
     },
   });
 
   return {
-    mode: 'created' as const,
-    jobShift,
+    mode: 'updated' as const,
+    jobShift: updated,
   };
 }
 
