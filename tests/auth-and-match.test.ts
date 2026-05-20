@@ -74,12 +74,17 @@ jest.mock('../src/services/storage.service', () => ({
     expiresIn: 900,
     objectKey: 'examen.pdf',
   })),
+  uploadPrivateTextFile: jest.fn(async ({ objectKey }: { objectKey: string }) => ({
+    fileUrl: `s3://shiftlink-private/${objectKey}`,
+    objectKey,
+  })),
 }));
 
 const { createApp } = require('../src/app');
 const { prisma } = require('../src/config/prisma');
 const { billingQueue, whatsappQueue, webhookQueue } = require('../src/config/queues');
 const matchService = require('../src/services/match.service');
+const { uploadPrivateTextFile } = require('../src/services/storage.service');
 
 describe('hospital integration and scalable match flow', () => {
   const app = createApp();
@@ -117,6 +122,8 @@ describe('hospital integration and scalable match flow', () => {
     (billingQueue.add as jest.Mock).mockReset();
     (whatsappQueue.add as jest.Mock).mockReset();
     (webhookQueue.add as jest.Mock).mockReset();
+    (uploadPrivateTextFile as jest.Mock).mockReset();
+    (uploadPrivateTextFile as jest.Mock).mockImplementation(async ({ objectKey }: { objectKey: string }) => ({ fileUrl: `s3://shiftlink-private/${objectKey}`, objectKey }));
   });
 
   it('registers a nurse and returns an auth cookie with anonymous public identity', async () => {
@@ -777,6 +784,113 @@ describe('hospital integration and scalable match flow', () => {
     expect(response.status).toBe(200);
     expect(response.body.contractSnapshot.version).toBe(2);
     expect(response.body.contractSnapshot.snapshot.commercialTerms.hospitalPaysNurseDirectly).toBe(true);
+  });
+
+
+  it('generates contract PDF artifact on contract signing', async () => {
+    (prisma.matchContract.findUnique as jest.Mock)
+      .mockResolvedValueOnce({
+        id: 'contract_1',
+        status: MatchContractStatus.PENDING,
+        nurseProfileId: 'nurse_1',
+        nurseProfile: { id: 'nurse_1', userId: 'nurse_user_1' },
+        jobShift: { id: 'shift_1', totalPlannedHours: new Prisma.Decimal(12), hospitalProfile: { userId: 'hospital_owner_1' } },
+      })
+      .mockResolvedValueOnce({
+        id: 'contract_1',
+        contractSnapshots: [{ version: 1 }],
+        nurseProfile: {
+          id: 'nurse_1',
+          userId: 'nurse_user_1',
+          publicId: 'NUR-AB12CD34',
+          displayName: 'NurseNova',
+          firstName: 'Nina',
+          lastName: 'Care',
+          minHourlyRate: new Prisma.Decimal(49),
+          specializations: [],
+        },
+        jobShift: {
+          id: 'shift_1',
+          externalJobShiftId: 'ext-123',
+          title: 'ITS Einsatz',
+          department: 'ITS',
+          stationName: 'A1',
+          locationCity: 'Berlin',
+          startTime: new Date('2026-06-16T06:00:00.000Z'),
+          endTime: new Date('2026-06-20T18:00:00.000Z'),
+          totalPlannedHours: new Prisma.Decimal(12),
+          hospitalProfile: { id: 'hospital_1', clinicName: 'Clinic One', billingAddress: 'Street 1', taxNumber: 'TAX-1', userId: 'hospital_owner_1' },
+          requirements: [],
+        },
+        currentSnapshot: { id: 'snapshot_2', version: 2, snapshotJson: JSON.stringify({
+          matchContractId: 'contract_1',
+          version: 2,
+          platform: { role: 'vermittlung-und-matching-plattform', isEmployer: false, isStaffingAgency: false, handlesPayroll: false, platformFeePerHour: '3.00' },
+          hospital: { clinicName: 'Clinic One', billingAddress: 'Street 1', taxNumber: 'TAX-1' },
+          nurse: { displayName: 'NurseNova', firstName: 'Nina', lastName: 'Care', minHourlyRate: '49', specializations: [] },
+          jobShift: { title: 'ITS Einsatz', department: 'ITS', stationName: 'A1', locationCity: 'Berlin', startTime: '2026-06-16T06:00:00.000Z', endTime: '2026-06-20T18:00:00.000Z', totalPlannedHours: '12' },
+          commercialTerms: { invoiceTrigger: 'digital-signature', noRefundPolicy: true, hospitalPaysNurseDirectly: true, platformIssuesServiceFeeInvoiceOnly: true },
+        }) },
+           })
+      .mockResolvedValueOnce({
+        id: 'contract_1',
+        currentSnapshot: { id: 'snapshot_2', version: 2, snapshotJson: JSON.stringify({
+          matchContractId: 'contract_1',
+          version: 2,
+          platform: { role: 'vermittlung-und-matching-plattform', isEmployer: false, isStaffingAgency: false, handlesPayroll: false, platformFeePerHour: '3.00' },
+          hospital: { clinicName: 'Clinic One', billingAddress: 'Street 1', taxNumber: 'TAX-1' },
+          nurse: { displayName: 'NurseNova', firstName: 'Nina', lastName: 'Care', minHourlyRate: '49', specializations: [] },
+          jobShift: { title: 'ITS Einsatz', department: 'ITS', stationName: 'A1', locationCity: 'Berlin', startTime: '2026-06-16T06:00:00.000Z', endTime: '2026-06-20T18:00:00.000Z', totalPlannedHours: '12' },
+          commercialTerms: { invoiceTrigger: 'digital-signature', noRefundPolicy: true, hospitalPaysNurseDirectly: true, platformIssuesServiceFeeInvoiceOnly: true },
+        }) },
+      })
+      .mockResolvedValueOnce({
+        id: 'contract_1',
+        nurseProfile: {
+          id: 'nurse_1',
+          availabilityBlocks: [{ id: 'block_1', startTime: new Date('2026-06-16T05:00:00.000Z'), endTime: new Date('2026-06-20T19:00:00.000Z'), isBooked: false }],
+        },
+        jobShift: {
+          id: 'shift_1',
+          startTime: new Date('2026-06-16T06:00:00.000Z'),
+          endTime: new Date('2026-06-20T18:00:00.000Z'),
+        },
+      });
+
+    (prisma.matchContract.update as jest.Mock).mockResolvedValue({ id: 'contract_1', status: MatchContractStatus.SIGNED, contractPdfUrl: 's3://shiftlink-private/contracts/contract_1/v2.pdf' });
+    (prisma.contractSnapshot.create as jest.Mock).mockResolvedValue({ id: 'snapshot_2', version: 2, summaryText: 'summary' });
+    (prisma.invoice.create as jest.Mock).mockResolvedValue({ id: 'invoice_1' });
+    (prisma.nurseAvailabilityBlock.findMany as jest.Mock).mockResolvedValue([]);
+    (prisma.nurseAvailabilityBlock.createMany as jest.Mock).mockResolvedValue({ count: 0 });
+
+    await matchService.signMatchContract(
+      'contract_1',
+      { userId: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN },
+    );
+
+    expect(uploadPrivateTextFile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        objectKey: 'contracts/contract_1/v2.pdf',
+        contentType: 'application/pdf',
+      }),
+    );
+  });
+
+  it('returns contract PDF download for authorized parties', async () => {
+    const token = signAuthToken({ sub: 'nurse_user_1', role: UserRole.NURSE });
+    (prisma.matchContract.findUnique as jest.Mock).mockResolvedValue({
+      id: 'contract_1',
+      contractPdfUrl: 's3://shiftlink-private/contracts/contract_1/v2.pdf',
+      nurseProfile: { userId: 'nurse_user_1' },
+      jobShift: { hospitalProfile: { userId: 'hospital_owner_1' } },
+    });
+
+    const response = await request(app)
+      .get('/api/v1/matches/contract/contract_1/pdf')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.body.contractPdf.signedUrl ?? response.body.contractPdf.url).toContain('signed.example.com');
   });
 
   it('creates an invoice amount based on total planned hours times platform fee', async () => {
