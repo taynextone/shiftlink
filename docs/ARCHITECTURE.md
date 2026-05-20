@@ -67,9 +67,16 @@ src/
 
 ### MatchContract
 - Relation zu JobShift und Nurse
-- Status: `PENDING`, `SIGNED`
-- Zeitstempel
-- Pfad zum PDF
+- Offer-/Match-Status: `PENDING`, `DECLINED`, `SIGNED`, `EXPIRED`, `CANCELED`
+- separater `executionStatus` für Vertragsausführung
+- Zeitstempel (`respondedAt`, `signedAt`, `fullyExecutedAt`)
+- Pfad zum Contract PDF Artifact
+- Referenz auf aktuellen Contract Snapshot
+
+### ContractSnapshot / Signature / Void
+- `ContractSnapshot` als immutable Vertragsversion
+- `ContractSignatureEvent` für Signatur-Intent + Evidence pro Akteur
+- `ContractVoidEvent` für kontrollierte Vertragsaufhebung mit Begründung
 
 ### Invoice
 - Relation zu MatchContract
@@ -87,20 +94,25 @@ Bereits umgesetzt:
 - Login / Logout
 - Passwort-Hashing mit `argon2`
 - JWT-Erstellung und `httpOnly`-Cookie
-- Auth-, Rollen- und erste Ownership-Middleware/-Checks
-- Match-Signing-Endpoint
+- Auth-, Rollen- und Ownership-Checks auf Match-/Hospital-/Contract-Ebene
+- Verification-/Release-Gating für Pflegekräfte
+- hospitalseitiger Dossier-Zugriff mit verifizierten Dokumenten
+- Contract Snapshot Foundation
+- Contract PDF Artifact Generation + Retrieval
+- Contract Execution Signatures + Voiding Policy
+- Contract Lifecycle Audit Read Model
 - asynchrones Platform-Fee Billing-Queueing via BullMQ
 - WhatsApp-Queueing aktuell gezielt für neue Pflegekraft-Angebote
-- erster geschützter Dokumentenzugriffs-Flow im Backend
-- erste Tests für Auth, Match und Platform-Fee Billing
+- persistierte Outbox/Webhook-Events auch für Contract-Lifecycle-Meilensteine
+- Tests für Auth, Match, Verification, Contract Lifecycle und Platform-Fee Billing
 
 Noch offen bzw. bewusst unvollständig:
-- geschützter Dokumentenzugriff an echten S3/MinIO-Download anbinden
-- PDF-Generierung
+- Contract-PDF-Rendering von textuellem Artefakt auf finales Produktionsformat heben
 - echte WhatsApp-Provider-Integration
 - DB-Migrationen
 - getrennte API-/Worker-Process-Strategie für Produktion
 - Idempotenz- und Race-Condition-Härtung
+- Doku-/Schema-Formalisation der neuen Contract-Lifecycle-Events
 
 ## Security by Design
 
@@ -115,9 +127,10 @@ Noch offen bzw. bewusst unvollständig:
 ## Asynchrone Prozesse
 
 BullMQ ist vorgesehen bzw. teilweise bereits genutzt für:
-1. PDF-Generierung von Verträgen und Rechnungen
+1. Delivery der persistierten Hospital-Webhooks (Outbox + Retry/Backoff)
 2. WhatsApp-Notifications bei neu erstellten Pflegekraft-Angeboten mit Kurzdetails + Login-Link
 3. Platform-Fee Erzeugung von Plattformgebühren-Rechnungen nach bestätigtem Match
+4. perspektivisch weitere Artefakt-/PDF-Generierungsjobs
 
 Vor Versand von WhatsApp-Nachrichten immer `whatsapp_opt_in === true` prüfen.
 
@@ -149,3 +162,26 @@ Das bedeutet konkret:
 - keine Wallet-/Payout-Modelle
 - Rechnungen und Exporte beziehen sich nur auf die **Plattformgebühr** gegenüber dem Krankenhaus
 - Arbeits-/Vergütungsverhältnis liegt zwischen Krankenhaus und Pflegekraft
+
+
+## Contract Lifecycle Surface (aktuell)
+
+Wichtige Backend-Endpunkte für den Vertragslebenszyklus:
+
+- `GET /api/v1/matches/contract/:id`
+- `GET /api/v1/matches/contract/:id/pdf`
+- `GET /api/v1/matches/contract/:id/lifecycle`
+- `GET /api/v1/matches/contract/:id/execution`
+- `POST /api/v1/matches/contract/:id/execution/sign`
+- `GET /api/v1/matches/contract/:id/void`
+- `POST /api/v1/matches/contract/:id/void`
+
+## Contract Lifecycle Webhook Events (aktuell)
+
+Persistiert und retrybar über Outbox/Queue:
+
+- `match.offer.signed`
+- `contract.pdf.generated`
+- `contract.execution.signed`
+- `contract.execution.fully-executed`
+- `contract.voided`

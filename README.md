@@ -13,8 +13,13 @@ Das Repo ist nicht mehr nur Konzept oder Doku. Es enthält bereits ein erstes la
 - JWT im `httpOnly`-Cookie
 - RBAC- und erste Ownership-Checks
 - Match-Offer-Flow für Pflegekräfte mit WhatsApp-Angebots-Trigger
+- Verification-/Release-Gating für Pflegekräfte vor Marketplace/Offerability
+- hospitalseitige Dossier-Sicht mit strikt berechtigtem Dokumentenzugriff
+- immutable Contract Snapshots + Contract-PDF-Artefakte
+- Contract Execution Signatures, Voiding-Policy und Audit-Lifecycle-Read-Model
 - Match-Signing mit Platform-Fee Triggern für Plattformgebühren-Rechnungen
-- erste Tests für Registration, Auth, Matching und Platform-Fee Billing
+- persistierte Contract-/Hospital-Webhooks über Outbox + Queue
+- erste Tests für Registration, Auth, Matching, Contract Lifecycle und Platform-Fee Billing
 
 ## Was in diesem Repo liegt
 
@@ -73,9 +78,9 @@ Worauf ich achten würde:
 
 1. Prisma-Migrationen anlegen
 2. geschützten Dokumenten-Download mit echtem Storage verbinden
-3. Idempotenz und Race-Condition-Schutz ergänzen
-4. Worker/API für Produktion sauberer trennen
-5. Integrations- und DB-nahe Tests ausbauen
+3. Worker/API für Produktion sauberer trennen
+4. Integrations- und DB-nahe Tests ausbauen
+5. API-/Produktdoku der Contract Lifecycle Surface weiter schärfen
 
 
 ## WhatsApp-Angebote
@@ -92,7 +97,16 @@ Konfiguration per Env:
 Aktuell vorgesehen bzw. umgesetzt:
 - idempotenter Shift-Import über `POST /api/v1/job-shifts/import` mit `externalJobShiftId`
 - Hospital Read-API über `GET /api/v1/job-shifts`
-- Webhook-Event-Grundlage via persistierter Outbox (`shift.created`, `shift.imported`)
+- Nurse-Dossier-Zugriff für berechtigte Kliniken über `GET /api/v1/documents/dossier/:id`
+- Contract Lifecycle APIs über:
+  - `GET /api/v1/matches/contract/:id`
+  - `GET /api/v1/matches/contract/:id/pdf`
+  - `GET /api/v1/matches/contract/:id/lifecycle`
+  - `GET /api/v1/matches/contract/:id/execution`
+  - `POST /api/v1/matches/contract/:id/execution/sign`
+  - `GET /api/v1/matches/contract/:id/void`
+  - `POST /api/v1/matches/contract/:id/void`
+- Webhook-Outbox für Status-/Lifecycle-Events wie `shift.created`, `shift.imported`, `match.offer.signed`, `contract.execution.signed`, `contract.execution.fully-executed`, `contract.pdf.generated`, `contract.voided`
 
 
 ## Wichtige Abgrenzung
