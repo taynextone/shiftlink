@@ -28,12 +28,12 @@
 - Signing-Flow für MatchContract implementiert
 - Wechsel auf `SIGNED` modelliert
 - Ownership-Checks für Hospital-Admins ergänzt
-- asynchrones Billing und WhatsApp-Queueing angestoßen
+- asynchrones Platform-Fee Billing und WhatsApp-Queueing angestoßen
 
 ### Schritt 5 – Testing ✅
 - erste Tests für Auth
 - erste Tests für Matching
-- erste Tests für Billing-Flow
+- erste Tests für Platform-Fee Billing-Flow
 
 ### Zusätzlicher Sicherheitsbaustein ✅
 - erster geschützter Dokumentenzugriffs-Flow vorgesehen
@@ -43,7 +43,7 @@
 
 ### Priorität 1 – Stabilität & Korrektheit
 1. Prisma-Migrationen anlegen
-2. Idempotenz beim Signing / Billing härten
+2. Idempotenz beim Signing / Platform-Fee Billing härten
 3. echten Storage-Zugriff für Dokumente anbinden
 
 ### Priorität 2 – Sicherheitskritische Lücken schließen
@@ -69,3 +69,11 @@ Der MVP sollte sich weiterhin auf diese Kette konzentrieren:
 7. Notification verschicken
 
 Alles andere ist nachrangig, bis diese Kernkette stabil und belastbar ist.
+
+
+## Dauerhafte Produkt-Leitplanke
+
+Alle Billing-/Export-/Integrationsarbeiten müssen die Abgrenzung beibehalten:
+- Krankenhaus zahlt Pflegekraft direkt
+- Shiftlink rechnet nur die Plattformgebühr an das Krankenhaus ab
+- keine Payroll- oder Arbeitgeberlogik in Shiftlink

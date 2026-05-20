@@ -44,3 +44,13 @@ Es werden keine Patientendaten verarbeitet. Allerdings werden sensible Personald
 - Shift-Import mit externer Referenz (`externalJobShiftId`)
 - Status-/Listen-API für offene und bearbeitete Bedarfe
 - Webhook-Outbox als Grundlage für Rückmeldungen ins Krankenhaus-System
+
+
+## Abgrenzung zu Zeitarbeit / Arbeitgeberrolle
+
+- Shiftlink ist **keine Zeitarbeitsfirma**.
+- Shiftlink ist **nicht Arbeitgeber** der Pflegekraft.
+- Die Vergütung der Pflegekraft erfolgt **direkt durch das Krankenhaus**.
+- Shiftlink stellt nur die **Vermittlungs- und Matching-Plattform** bereit.
+- Rechnungen in Shiftlink betreffen ausschließlich die **Plattform-/Vermittlungsgebühr** gegenüber dem Krankenhaus.
+- Es gibt in Shiftlink **keine Payroll-, Payout- oder Lohnabrechnungslogik** für Pflegekräfte.

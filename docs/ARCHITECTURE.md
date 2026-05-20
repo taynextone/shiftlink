@@ -28,7 +28,7 @@ src/
 ├── controllers/    # Request/Response Handling (keine Geschäftslogik!)
 ├── middlewares/    # Auth, RBAC, Error Handling, Rate Limiting
 ├── routes/         # Express Router
-├── services/       # Kern-Logik (Matching, Billing, PDF, WhatsApp, Documents)
+├── services/       # Kern-Logik (Matching, Platform-Fee Billing, PDF, WhatsApp, Documents)
 ├── schemas/        # Zod-Schemas
 ├── types/          # Typ-Erweiterungen, z. B. Express Request
 ├── utils/          # Helper (JWT, Cookies, Async Handler)
@@ -89,10 +89,10 @@ Bereits umgesetzt:
 - JWT-Erstellung und `httpOnly`-Cookie
 - Auth-, Rollen- und erste Ownership-Middleware/-Checks
 - Match-Signing-Endpoint
-- asynchrones Billing-Queueing via BullMQ
+- asynchrones Platform-Fee Billing-Queueing via BullMQ
 - WhatsApp-Queueing aktuell gezielt für neue Pflegekraft-Angebote
 - erster geschützter Dokumentenzugriffs-Flow im Backend
-- erste Tests für Auth, Match und Billing
+- erste Tests für Auth, Match und Platform-Fee Billing
 
 Noch offen bzw. bewusst unvollständig:
 - geschützter Dokumentenzugriff an echten S3/MinIO-Download anbinden
@@ -117,7 +117,7 @@ Noch offen bzw. bewusst unvollständig:
 BullMQ ist vorgesehen bzw. teilweise bereits genutzt für:
 1. PDF-Generierung von Verträgen und Rechnungen
 2. WhatsApp-Notifications bei neu erstellten Pflegekraft-Angeboten mit Kurzdetails + Login-Link
-3. Billing-/Invoice-Erzeugung nach bestätigtem Match
+3. Platform-Fee Erzeugung von Plattformgebühren-Rechnungen nach bestätigtem Match
 
 Vor Versand von WhatsApp-Nachrichten immer `whatsapp_opt_in === true` prüfen.
 
@@ -137,3 +137,15 @@ Zielbild für einfache Krankenhaus-Anbindung:
 - idempotente Verarbeitung pro `hospitalProfileId + externalJobShiftId`
 - persistierte Webhook-Outbox für Status-/Lifecycle-Events
 - Read-API für operative Statusübersichten
+
+
+## Fachliche Leitplanke: keine Arbeitgeber-/Payroll-Logik
+
+Architektur und Datenmodell dürfen nicht in Richtung Arbeitgeber-, Zeitarbeits- oder Payroll-System abdriften.
+
+Das bedeutet konkret:
+- keine Lohnabrechnung der Pflegekraft in Shiftlink
+- keine Auszahlungssysteme für Pflegekräfte
+- keine Wallet-/Payout-Modelle
+- Rechnungen und Exporte beziehen sich nur auf die **Plattformgebühr** gegenüber dem Krankenhaus
+- Arbeits-/Vergütungsverhältnis liegt zwischen Krankenhaus und Pflegekraft

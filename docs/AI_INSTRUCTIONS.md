@@ -58,7 +58,7 @@ Bereits vorhanden:
 - Login / Logout
 - erste Auth-/RBAC-/Ownership-Basis
 - Match-Signing-Flow
-- Billing-/WhatsApp-Queueing
+- Platform-Fee Billing-/WhatsApp-Queueing
 - geschützter Dokumentenzugriffs-Flow als Backend-Logik
 - erste Tests
 
@@ -70,3 +70,10 @@ Als Nächstes bevorzugt bearbeiten:
 3. Idempotenz / Robustheit
 4. Worker-/Produktionshärtung
 5. PDF-Generierung
+
+
+## Fachliche Grenzen
+
+- Shiftlink ist keine Zeitarbeitsfirma und nicht Arbeitgeber.
+- Keine Features entwerfen, die Lohnabrechnung, Gehaltsauszahlung oder Arbeitgeberrollen von Shiftlink modellieren.
+- Billing/Invoices in diesem Projekt meinen ausschließlich die Plattformgebühr gegenüber dem Krankenhaus.

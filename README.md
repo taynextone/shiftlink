@@ -1,6 +1,6 @@
 # shiftlink
 
-Digitaler Matching-Marktplatz für kurzfristige Pflegeeinsätze in Krankenhäusern, mit Fokus auf Direktvermittlung statt Zeitarbeit.
+Digitale Vermittlungs- und Matching-Plattform für kurzfristige Pflegeeinsätze in Krankenhäusern, mit Fokus auf Direktvermittlung statt Zeitarbeit.
 
 ## Projektstatus
 
@@ -13,8 +13,8 @@ Das Repo ist nicht mehr nur Konzept oder Doku. Es enthält bereits ein erstes la
 - JWT im `httpOnly`-Cookie
 - RBAC- und erste Ownership-Checks
 - Match-Offer-Flow für Pflegekräfte mit WhatsApp-Angebots-Trigger
-- Match-Signing mit Billing-Triggern
-- erste Tests für Registration, Auth, Matching und Billing
+- Match-Signing mit Platform-Fee Triggern für Plattformgebühren-Rechnungen
+- erste Tests für Registration, Auth, Matching und Platform-Fee Billing
 
 ## Was in diesem Repo liegt
 
@@ -93,3 +93,13 @@ Aktuell vorgesehen bzw. umgesetzt:
 - idempotenter Shift-Import über `POST /api/v1/job-shifts/import` mit `externalJobShiftId`
 - Hospital Read-API über `GET /api/v1/job-shifts`
 - Webhook-Event-Grundlage via persistierter Outbox (`shift.created`, `shift.imported`)
+
+
+## Wichtige Abgrenzung
+
+Shiftlink ist **keine Zeitarbeitsfirma** und **nicht Arbeitgeber der Pflegekräfte**.
+
+- Das Krankenhaus schließt den Einsatz bzw. Vertrag direkt mit der Pflegekraft.
+- Das Krankenhaus zahlt die Pflegekraft direkt.
+- Shiftlink übernimmt Matching, Vermittlungsprozess, Dokumenten-/Statusfluss und die Abrechnung der **Plattformgebühr** an das Krankenhaus.
+- Shiftlink wickelt **keine Lohnzahlung** an Pflegekräfte ab.
