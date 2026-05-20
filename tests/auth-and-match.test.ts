@@ -1084,6 +1084,62 @@ describe('hospital integration and scalable match flow', () => {
     expect(response.body.voiding.voidEvent.reason).toContain('nicht wahrnehmen');
   });
 
+
+  it('returns contract lifecycle overview to authorized actor', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
+    (prisma.matchContract.findUnique as jest.Mock).mockResolvedValue({
+      id: 'contract_1',
+      status: 'CANCELED',
+      executionStatus: 'VOIDED',
+      createdAt: new Date('2026-05-20T10:00:00.000Z'),
+      updatedAt: new Date('2026-05-20T12:20:00.000Z'),
+      expiresAt: new Date('2026-05-21T10:00:00.000Z'),
+      respondedAt: new Date('2026-05-20T11:00:00.000Z'),
+      signedAt: new Date('2026-05-20T11:05:00.000Z'),
+      fullyExecutedAt: null,
+      contractPdfUrl: 's3://shiftlink-private/contracts/contract_1/v2.pdf',
+      nurseProfile: { id: 'nurse_1', userId: 'nurse_user_1', publicId: 'NUR-AB12CD34', displayName: 'NurseNova' },
+      jobShift: { hospitalProfile: { id: 'hospital_1', userId: 'hospital_owner_1', clinicName: 'Clinic One' } },
+      contractSnapshots: [
+        { id: 'snapshot_1', version: 1, createdAt: new Date('2026-05-20T10:05:00.000Z'), summaryText: 'Offer snapshot' },
+        { id: 'snapshot_2', version: 2, createdAt: new Date('2026-05-20T11:05:00.000Z'), summaryText: 'Signed snapshot' },
+      ],
+      currentSnapshot: { id: 'snapshot_2', version: 2 },
+      signatureEvents: [{ id: 'sig_1', signerUserId: 'hospital_owner_1', signerRole: 'HOSPITAL_ADMIN', signatureIntent: 'EXECUTE_CONTRACT', snapshotId: 'snapshot_2', createdAt: new Date('2026-05-20T11:10:00.000Z') }],
+      voidEvent: { id: 'void_1', actorUserId: 'hospital_owner_1', actorRole: 'HOSPITAL_ADMIN', reason: 'Pflegekraft kann den Einsatz in diesem Zeitraum doch nicht wahrnehmen.', createdAt: new Date('2026-05-20T12:20:00.000Z') },
+      invoice: { id: 'invoice_1', status: 'PENDING', amount: new Prisma.Decimal(36), invoicePdfUrl: null },
+    });
+
+    const response = await request(app)
+      .get('/api/v1/matches/contract/contract_1/lifecycle')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.body.lifecycle.snapshotSummary.totalSnapshots).toBe(2);
+    expect(response.body.lifecycle.signatureSummary.totalSignatures).toBe(1);
+    expect(response.body.lifecycle.voidSummary.reason).toContain('nicht wahrnehmen');
+  });
+
+  it('rejects lifecycle overview for unrelated actor', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_2', role: UserRole.HOSPITAL_ADMIN });
+    (prisma.matchContract.findUnique as jest.Mock).mockResolvedValue({
+      id: 'contract_1',
+      nurseProfile: { userId: 'nurse_user_1' },
+      jobShift: { hospitalProfile: { userId: 'hospital_owner_1' } },
+      contractSnapshots: [],
+      currentSnapshot: null,
+      signatureEvents: [],
+      voidEvent: null,
+      invoice: null,
+    });
+
+    const response = await request(app)
+      .get('/api/v1/matches/contract/contract_1/lifecycle')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(403);
+  });
+
   it('creates an invoice amount based on total planned hours times platform fee', async () => {
     const { createInvoiceForSignedContract } = require('../src/services/billing.service');
     (prisma.matchContract.findUnique as jest.Mock).mockResolvedValue({ id: 'contract_2', invoice: null, jobShift: { totalPlannedHours: new Prisma.Decimal(12.5) } });

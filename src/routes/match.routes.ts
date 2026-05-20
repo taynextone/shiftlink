@@ -4,6 +4,7 @@ import {
   createMatchOfferController,
   findCandidatesController,
   getContractExecutionOverviewController,
+  getContractLifecycleOverviewController,
   getContractPdfController,
   getContractSnapshotController,
   getContractVoidOverviewController,
@@ -44,6 +45,12 @@ router.get(
   '/contract/:id/pdf',
   requireAuth,
   asyncHandler(getContractPdfController),
+);
+
+router.get(
+  '/contract/:id/lifecycle',
+  requireAuth,
+  asyncHandler(getContractLifecycleOverviewController),
 );
 
 router.get(

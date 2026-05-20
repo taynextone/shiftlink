@@ -12,6 +12,7 @@ import { getContractSnapshot } from '../services/contract.service';
 import { getContractPdfDownload } from '../services/contract-pdf.service';
 import { getContractExecutionOverview, signContractExecution } from '../services/contract-signature.service';
 import { getContractVoidOverview, voidContractExecution } from '../services/contract-void.service';
+import { getContractLifecycleOverview } from '../services/contract-audit.service';
 import { findCandidatesForJobShift } from '../services/matching.service';
 
 export async function signMatchContractController(req: Request, res: Response): Promise<void> {
@@ -195,4 +196,20 @@ export async function getContractVoidOverviewController(req: Request, res: Respo
   const voiding = await getContractVoidOverview(matchContractId, req.auth);
 
   res.status(200).json({ voiding });
+}
+
+export async function getContractLifecycleOverviewController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const matchContractId = req.params.id;
+
+  if (typeof matchContractId !== 'string' || matchContractId.length === 0) {
+    throw createHttpError(400, 'Invalid match contract id');
+  }
+
+  const lifecycle = await getContractLifecycleOverview(matchContractId, req.auth);
+
+  res.status(200).json({ lifecycle });
 }
