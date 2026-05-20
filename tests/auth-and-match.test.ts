@@ -587,6 +587,66 @@ describe('hospital integration and scalable match flow', () => {
     expect(response.body.verification.documents).toHaveLength(1);
   });
 
+
+  it('returns hospital nurse dossier with verified documents only for authorized hospitals', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
+    (prisma.nurseProfile.findUnique as jest.Mock).mockResolvedValue({
+      id: 'nurse_1',
+      publicId: 'NUR-AB12CD34',
+      displayName: 'NurseNova',
+      firstName: 'Nina',
+      lastName: 'Care',
+      phoneNumber: '+491701234567',
+      minHourlyRate: new Prisma.Decimal(49),
+      preferredShiftType: 'FLEXIBLE',
+      isReleasedForMatching: true,
+      releasedAt: new Date('2026-05-20T10:00:00.000Z'),
+      specializations: [{ tag: 'intensivstation' }],
+      verificationDocuments: [
+        { id: 'doc_1', documentType: VerificationDocumentType.EXAMEN, status: VerificationDocumentStatus.VERIFIED, reviewedAt: new Date('2026-05-20T09:00:00.000Z'), fileUrl: 's3://bucket/examen.pdf' },
+        { id: 'doc_2', documentType: VerificationDocumentType.OCCUPATIONAL_HEALTH_CLEARANCE, status: VerificationDocumentStatus.PENDING, reviewedAt: null, fileUrl: 's3://bucket/clearance.pdf' },
+      ],
+      matchContracts: [
+        { id: 'contract_1', jobShift: { id: 'shift_1', startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-20T18:00:00.000Z'), locationCity: 'Berlin', hospitalProfile: { id: 'hospital_1', userId: 'hospital_owner_1', clinicName: 'Clinic One' } } },
+      ],
+    });
+
+    const response = await request(app)
+      .get('/api/v1/documents/dossier/nurse_1')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.body.dossier.verifiedDocuments).toHaveLength(1);
+    expect(response.body.dossier.verifiedDocuments[0].documentType).toBe('EXAMEN');
+  });
+
+  it('rejects dossier access for unrelated hospitals', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_2', role: UserRole.HOSPITAL_ADMIN });
+    (prisma.nurseProfile.findUnique as jest.Mock).mockResolvedValue({
+      id: 'nurse_1',
+      publicId: 'NUR-AB12CD34',
+      displayName: 'NurseNova',
+      firstName: 'Nina',
+      lastName: 'Care',
+      phoneNumber: '+491701234567',
+      minHourlyRate: new Prisma.Decimal(49),
+      preferredShiftType: 'FLEXIBLE',
+      isReleasedForMatching: true,
+      releasedAt: new Date('2026-05-20T10:00:00.000Z'),
+      specializations: [],
+      verificationDocuments: [],
+      matchContracts: [
+        { id: 'contract_1', jobShift: { id: 'shift_1', startTime: new Date('2026-06-16T06:00:00.000Z'), endTime: new Date('2026-06-20T18:00:00.000Z'), locationCity: 'Berlin', hospitalProfile: { id: 'hospital_1', userId: 'hospital_owner_1', clinicName: 'Clinic One' } } },
+      ],
+    });
+
+    const response = await request(app)
+      .get('/api/v1/documents/dossier/nurse_1')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(403);
+  });
+
   it('creates an invoice amount based on total planned hours times platform fee', async () => {
     const { createInvoiceForSignedContract } = require('../src/services/billing.service');
     (prisma.matchContract.findUnique as jest.Mock).mockResolvedValue({ id: 'contract_2', invoice: null, jobShift: { totalPlannedHours: new Prisma.Decimal(12.5) } });
