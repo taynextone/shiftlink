@@ -1,6 +1,12 @@
 import { Request, Response } from 'express';
 import createHttpError from 'http-errors';
-import { createJobShift, importHospitalJobShift, listHospitalJobShifts } from '../services/job-shift.service';
+import {
+  createJobShift,
+  exportHospitalBillingData,
+  getHospitalBillingSummary,
+  importHospitalJobShift,
+  listHospitalJobShifts,
+} from '../services/job-shift.service';
 
 export async function createJobShiftController(req: Request, res: Response): Promise<void> {
   if (!req.auth) {
@@ -33,6 +39,36 @@ export async function listHospitalJobShiftsController(req: Request, res: Respons
     status: typeof req.query.status === 'string' ? (req.query.status as 'OPEN' | 'MATCHED' | 'CANCELED') : undefined,
     limit: req.query.limit ? Number(req.query.limit) : undefined,
   });
+
+  res.status(200).json(result);
+}
+
+export async function getHospitalBillingSummaryController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const summary = await getHospitalBillingSummary(req.auth);
+
+  res.status(200).json({ summary });
+}
+
+export async function exportHospitalBillingController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const result = await exportHospitalBillingData(req.auth, {
+    status: typeof req.query.status === 'string' ? (req.query.status as 'PENDING' | 'PAID') : undefined,
+    format: typeof req.query.format === 'string' ? (req.query.format as 'json' | 'csv') : undefined,
+    limit: req.query.limit ? Number(req.query.limit) : undefined,
+  });
+
+  if (result.format === 'csv') {
+    res.setHeader('content-type', result.contentType);
+    res.status(200).send(result.body);
+    return;
+  }
 
   res.status(200).json(result);
 }

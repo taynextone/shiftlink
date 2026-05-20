@@ -80,6 +80,13 @@ export const listJobShiftsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional(),
 });
 
+export const billingExportQuerySchema = z.object({
+  status: z.enum(['PENDING', 'PAID']).optional(),
+  format: z.enum(['json', 'csv']).optional(),
+  limit: z.coerce.number().int().min(1).max(500).optional(),
+});
+
 export type CreateJobShiftInput = z.infer<typeof createJobShiftSchema>;
 export type ImportJobShiftInput = z.infer<typeof importJobShiftSchema>;
 export type ListJobShiftsQueryInput = z.infer<typeof listJobShiftsQuerySchema>;
+export type BillingExportQueryInput = z.infer<typeof billingExportQuerySchema>;

@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { UserRole } from '@prisma/client';
 import {
   createJobShiftController,
+  exportHospitalBillingController,
+  getHospitalBillingSummaryController,
   importHospitalJobShiftController,
   listHospitalJobShiftsController,
 } from '../controllers/job-shift.controller';
@@ -17,6 +19,20 @@ router.get(
   requireAuth,
   requireRole(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
   asyncHandler(listHospitalJobShiftsController),
+);
+
+router.get(
+  '/billing/summary',
+  requireAuth,
+  requireRole(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
+  asyncHandler(getHospitalBillingSummaryController),
+);
+
+router.get(
+  '/billing/export',
+  requireAuth,
+  requireRole(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
+  asyncHandler(exportHospitalBillingController),
 );
 
 router.post(

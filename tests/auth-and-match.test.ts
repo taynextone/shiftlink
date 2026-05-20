@@ -38,7 +38,7 @@ jest.mock('../src/config/prisma', () => ({
     hospitalProfile: { findUnique: jest.fn() },
     jobShift: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn() },
     matchContract: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
-    invoice: { create: jest.fn() },
+    invoice: { create: jest.fn(), findMany: jest.fn() },
     webhookEvent: { create: jest.fn() },
   },
 }));
@@ -90,6 +90,7 @@ describe('hospital integration and scalable match flow', () => {
     (prisma.matchContract.update as jest.Mock).mockReset();
     (prisma.matchContract.delete as jest.Mock).mockReset();
     (prisma.invoice.create as jest.Mock).mockReset();
+    (prisma.invoice.findMany as jest.Mock).mockReset();
     (prisma.webhookEvent.create as jest.Mock).mockReset();
     (billingQueue.add as jest.Mock).mockReset();
     (whatsappQueue.add as jest.Mock).mockReset();
@@ -291,6 +292,60 @@ describe('hospital integration and scalable match flow', () => {
       canceled: 0,
       invoiced: 1,
     });
+  });
+
+
+  it('returns hospital billing summary for administration', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
+    (prisma.hospitalProfile.findUnique as jest.Mock).mockResolvedValue({ id: 'hospital_1', userId: 'hospital_owner_1' });
+    (prisma.matchContract.findMany as jest.Mock).mockResolvedValue([
+      { status: MatchContractStatus.SIGNED, invoice: { amount: new Prisma.Decimal(36), status: InvoiceStatus.PENDING }, jobShift: { id: 'shift_1' } },
+      { status: MatchContractStatus.SIGNED, invoice: { amount: new Prisma.Decimal(48), status: InvoiceStatus.PAID }, jobShift: { id: 'shift_2' } },
+      { status: MatchContractStatus.DECLINED, invoice: null, jobShift: { id: 'shift_3' } },
+    ]);
+
+    const response = await request(app)
+      .get('/api/v1/job-shifts/billing/summary')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.body.summary).toEqual({
+      signedContracts: 2,
+      invoiceCount: 2,
+      totalInvoiceAmount: 84,
+      pendingInvoiceAmount: 36,
+      paidInvoiceAmount: 48,
+    });
+  });
+
+  it('exports hospital billing data as csv', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
+    (prisma.hospitalProfile.findUnique as jest.Mock).mockResolvedValue({ id: 'hospital_1', userId: 'hospital_owner_1' });
+    (prisma.invoice.findMany as jest.Mock).mockResolvedValue([
+      {
+        id: 'invoice_1',
+        status: InvoiceStatus.PENDING,
+        amount: new Prisma.Decimal(36),
+        createdAt: new Date('2026-05-20T08:00:00.000Z'),
+        matchContract: {
+          id: 'contract_1',
+          status: MatchContractStatus.SIGNED,
+          signedAt: new Date('2026-05-20T07:00:00.000Z'),
+          nurseProfile: { publicId: 'NUR-AB12CD34', displayName: 'NurseNova' },
+          jobShift: { id: 'shift_1', externalJobShiftId: 'ext-123', title: 'ITS Einsatz', locationCity: 'Berlin' },
+        },
+      },
+    ]);
+
+    const response = await request(app)
+      .get('/api/v1/job-shifts/billing/export?format=csv')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toContain('text/csv');
+    expect(response.text).toContain('invoiceId,invoiceStatus,invoiceAmount');
+    expect(response.text).toContain('invoice_1');
+    expect(response.text).toContain('NUR-AB12CD34');
   });
 
   it('creates a match offer and queues WhatsApp notification with expiry', async () => {

@@ -1,7 +1,12 @@
 import createHttpError from 'http-errors';
-import { JobShiftStatus, MatchContractStatus, Prisma, UserRole } from '@prisma/client';
+import { InvoiceStatus, JobShiftStatus, MatchContractStatus, Prisma, UserRole } from '@prisma/client';
 import { prisma } from '../config/prisma';
-import { CreateJobShiftInput, ImportJobShiftInput, ListJobShiftsQueryInput } from '../schemas/job-shift.schema';
+import {
+  BillingExportQueryInput,
+  CreateJobShiftInput,
+  ImportJobShiftInput,
+  ListJobShiftsQueryInput,
+} from '../schemas/job-shift.schema';
 import { createHospitalWebhookEvent } from './webhook.service';
 
 async function requireHospitalProfile(actor: { userId: string; role: UserRole }) {
@@ -77,6 +82,30 @@ function hasLockedOfferState(matchContracts: Array<{ status: MatchContractStatus
 
 function hasOpenOfferState(matchContracts: Array<{ status: MatchContractStatus }>) {
   return matchContracts.some((contract) => contract.status === MatchContractStatus.PENDING);
+}
+
+function toOfferCounts(matchContracts: Array<{ status: MatchContractStatus; invoice?: unknown | null }>) {
+  return matchContracts.reduce(
+    (acc, contract) => {
+      acc.total += 1;
+      if (contract.status === 'PENDING') acc.pending += 1;
+      if (contract.status === 'DECLINED') acc.declined += 1;
+      if (contract.status === 'SIGNED') acc.signed += 1;
+      if (contract.status === 'EXPIRED') acc.expired += 1;
+      if (contract.status === 'CANCELED') acc.canceled += 1;
+      if (contract.invoice) acc.invoiced += 1;
+      return acc;
+    },
+    { total: 0, pending: 0, declined: 0, signed: 0, expired: 0, canceled: 0, invoiced: 0 },
+  );
+}
+
+function csvEscape(value: unknown): string {
+  const stringValue = value == null ? '' : String(value);
+  if (/[",\n]/.test(stringValue)) {
+    return `"${stringValue.replace(/"/g, '""')}"`;
+  }
+  return stringValue;
 }
 
 export async function createJobShift(actor: { userId: string; role: UserRole }, input: CreateJobShiftInput) {
@@ -220,35 +249,149 @@ export async function listHospitalJobShifts(
   });
 
   return {
-    jobShifts: jobShifts.map((jobShift) => {
-      const counts = jobShift.matchContracts.reduce(
-        (acc, contract) => {
-          acc.total += 1;
-          if (contract.status === 'PENDING') acc.pending += 1;
-          if (contract.status === 'DECLINED') acc.declined += 1;
-          if (contract.status === 'SIGNED') acc.signed += 1;
-          if (contract.status === 'EXPIRED') acc.expired += 1;
-          if (contract.status === 'CANCELED') acc.canceled += 1;
-          if (contract.invoice) acc.invoiced += 1;
-          return acc;
-        },
-        { total: 0, pending: 0, declined: 0, signed: 0, expired: 0, canceled: 0, invoiced: 0 },
-      );
+    jobShifts: jobShifts.map((jobShift) => ({
+      id: jobShift.id,
+      externalJobShiftId: jobShift.externalJobShiftId,
+      title: jobShift.title,
+      department: jobShift.department,
+      stationName: jobShift.stationName,
+      locationCity: jobShift.locationCity,
+      startTime: jobShift.startTime,
+      endTime: jobShift.endTime,
+      status: jobShift.status,
+      totalPlannedHours: jobShift.totalPlannedHours,
+      requirements: jobShift.requirements,
+      offerCounts: toOfferCounts(jobShift.matchContracts),
+    })),
+  };
+}
 
-      return {
-        id: jobShift.id,
-        externalJobShiftId: jobShift.externalJobShiftId,
-        title: jobShift.title,
-        department: jobShift.department,
-        stationName: jobShift.stationName,
-        locationCity: jobShift.locationCity,
-        startTime: jobShift.startTime,
-        endTime: jobShift.endTime,
-        status: jobShift.status,
-        totalPlannedHours: jobShift.totalPlannedHours,
-        requirements: jobShift.requirements,
-        offerCounts: counts,
-      };
-    }),
+export async function getHospitalBillingSummary(actor: { userId: string; role: UserRole }) {
+  if (actor.role !== UserRole.HOSPITAL_ADMIN && actor.role !== UserRole.SUPER_ADMIN) {
+    throw createHttpError(403, 'Only hospital admins can view billing summary');
+  }
+
+  const hospitalProfile = await requireHospitalProfile(actor);
+
+  const matchContracts = await prisma.matchContract.findMany({
+    where: {
+      jobShift: {
+        hospitalProfileId: hospitalProfile.id,
+      },
+    },
+    include: {
+      invoice: true,
+      jobShift: true,
+    },
+  });
+
+  const summary = matchContracts.reduce(
+    (acc, contract) => {
+      if (contract.status === MatchContractStatus.SIGNED) {
+        acc.signedContracts += 1;
+      }
+      if (contract.invoice) {
+        acc.invoiceCount += 1;
+        const amount = Number(contract.invoice.amount);
+        acc.totalInvoiceAmount += amount;
+        if (contract.invoice.status === InvoiceStatus.PAID) {
+          acc.paidInvoiceAmount += amount;
+        } else {
+          acc.pendingInvoiceAmount += amount;
+        }
+      }
+      return acc;
+    },
+    {
+      signedContracts: 0,
+      invoiceCount: 0,
+      totalInvoiceAmount: 0,
+      pendingInvoiceAmount: 0,
+      paidInvoiceAmount: 0,
+    },
+  );
+
+  return summary;
+}
+
+export async function exportHospitalBillingData(
+  actor: { userId: string; role: UserRole },
+  query: BillingExportQueryInput = {},
+) {
+  if (actor.role !== UserRole.HOSPITAL_ADMIN && actor.role !== UserRole.SUPER_ADMIN) {
+    throw createHttpError(403, 'Only hospital admins can export billing data');
+  }
+
+  const hospitalProfile = await requireHospitalProfile(actor);
+
+  const invoices = await prisma.invoice.findMany({
+    where: {
+      status: query.status as InvoiceStatus | undefined,
+      matchContract: {
+        jobShift: {
+          hospitalProfileId: hospitalProfile.id,
+        },
+      },
+    },
+    include: {
+      matchContract: {
+        include: {
+          nurseProfile: true,
+          jobShift: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    take: query.limit ?? 200,
+  });
+
+  const rows = invoices.map((invoice) => ({
+    invoiceId: invoice.id,
+    invoiceStatus: invoice.status,
+    invoiceAmount: invoice.amount.toString(),
+    createdAt: invoice.createdAt.toISOString(),
+    matchContractId: invoice.matchContract.id,
+    matchStatus: invoice.matchContract.status,
+    externalJobShiftId: invoice.matchContract.jobShift.externalJobShiftId ?? '',
+    jobShiftId: invoice.matchContract.jobShift.id,
+    jobShiftTitle: invoice.matchContract.jobShift.title ?? '',
+    locationCity: invoice.matchContract.jobShift.locationCity ?? '',
+    nursePublicId: invoice.matchContract.nurseProfile.publicId,
+    nurseDisplayName: invoice.matchContract.nurseProfile.displayName,
+    signedAt: invoice.matchContract.signedAt?.toISOString() ?? '',
+  }));
+
+  if (query.format === 'csv') {
+    const headers = [
+      'invoiceId',
+      'invoiceStatus',
+      'invoiceAmount',
+      'createdAt',
+      'matchContractId',
+      'matchStatus',
+      'externalJobShiftId',
+      'jobShiftId',
+      'jobShiftTitle',
+      'locationCity',
+      'nursePublicId',
+      'nurseDisplayName',
+      'signedAt',
+    ];
+    const lines = [headers.join(',')].concat(
+      rows.map((row) => headers.map((header) => csvEscape(row[header as keyof typeof row])).join(',')),
+    );
+
+    return {
+      format: 'csv' as const,
+      contentType: 'text/csv; charset=utf-8',
+      body: lines.join('\n'),
+    };
+  }
+
+  return {
+    format: 'json' as const,
+    rows,
   };
 }
