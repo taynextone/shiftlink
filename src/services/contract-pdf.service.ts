@@ -83,7 +83,7 @@ function renderContractArtifact(snapshot: ContractSnapshotPayload): string {
   ].join('\n');
 }
 
-export async function generateContractPdfArtifact(matchContractId: string) {
+export async function generateContractPdfArtifact(matchContractId: string, providedSnapshot?: { id: string; version: number; snapshotJson: string }) {
   const contract = await prisma.matchContract.findUnique({
     where: { id: matchContractId },
     include: {
@@ -95,12 +95,14 @@ export async function generateContractPdfArtifact(matchContractId: string) {
     throw createHttpError(404, 'Match contract not found');
   }
 
-  if (!contract.currentSnapshot) {
+  const activeSnapshot = providedSnapshot ?? contract.currentSnapshot;
+
+  if (!activeSnapshot) {
     throw createHttpError(409, 'No contract snapshot available yet');
   }
 
-  const snapshot = JSON.parse(contract.currentSnapshot.snapshotJson) as ContractSnapshotPayload;
-  const objectKey = `contracts/${matchContractId}/v${contract.currentSnapshot.version}.pdf`;
+  const snapshot = JSON.parse(activeSnapshot.snapshotJson) as ContractSnapshotPayload;
+  const objectKey = `contracts/${matchContractId}/v${activeSnapshot.version}.pdf`;
   const artifactBody = renderContractArtifact(snapshot);
   const upload = await uploadPrivateTextFile({
     objectKey,
@@ -118,7 +120,7 @@ export async function generateContractPdfArtifact(matchContractId: string) {
   return {
     fileUrl: upload.fileUrl,
     objectKey: upload.objectKey,
-    version: contract.currentSnapshot.version,
+    version: activeSnapshot.version,
   };
 }
 

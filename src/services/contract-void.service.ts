@@ -2,6 +2,7 @@ import createHttpError from 'http-errors';
 import { ContractExecutionStatus, ContractSignerRole, MatchContractStatus, UserRole } from '@prisma/client';
 import { prisma } from '../config/prisma';
 import { emitContractVoidedEvent } from './contract-webhook.service';
+import { isPrismaUniqueConstraintError } from './prisma-error.service';
 
 function mapActorToSignerRole(role: UserRole): ContractSignerRole {
   if (role === UserRole.HOSPITAL_ADMIN) {
@@ -66,7 +67,9 @@ export async function voidContractExecution(
     throw createHttpError(409, 'Contracts with paid platform invoices cannot be voided through this flow');
   }
 
-  const voidEvent = await prisma.contractVoidEvent.create({
+  let voidEvent;
+  try {
+    voidEvent = await prisma.contractVoidEvent.create({
     data: {
       matchContractId: contract.id,
       actorUserId: actor.userId,
@@ -74,7 +77,14 @@ export async function voidContractExecution(
       reason,
       evidenceJson: JSON.stringify(buildVoidEvidence(actor, reason)),
     },
-  });
+    });
+  } catch (error) {
+    if (!isPrismaUniqueConstraintError(error, ['matchContractId'])) {
+      throw error;
+    }
+
+    throw createHttpError(409, 'Contract was already voided or canceled');
+  }
 
   const updatedContract = await prisma.matchContract.update({
     where: { id: contract.id },

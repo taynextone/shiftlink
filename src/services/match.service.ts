@@ -6,6 +6,7 @@ import { env } from '../config/env';
 import { createContractSnapshot, ensureContractSnapshotForOffer } from './contract.service';
 import { generateContractPdfArtifact } from './contract-pdf.service';
 import { emitContractPdfGeneratedEvent, emitMatchOfferSignedEvent } from './contract-webhook.service';
+import { isPrismaUniqueConstraintError } from './prisma-error.service';
 
 const DEFAULT_OFFER_EXPIRY_HOURS = 24;
 
@@ -398,24 +399,65 @@ export async function createMatchOffer(
     throw createHttpError(409, 'Nurse is not available for this job shift');
   }
 
-  const created = await prisma.matchContract.create({
-    data: {
-      jobShiftId: input.jobShiftId,
-      nurseProfileId: input.nurseProfileId,
-      status: MatchContractStatus.PENDING,
-      expiresAt: computeOfferExpiry(new Date()),
-    },
-    include: {
-      invoice: true,
-      nurseProfile: true,
-      jobShift: {
-        include: {
-          hospitalProfile: true,
-          requirements: true,
+  let created;
+  try {
+    created = await prisma.matchContract.create({
+      data: {
+        jobShiftId: input.jobShiftId,
+        nurseProfileId: input.nurseProfileId,
+        status: MatchContractStatus.PENDING,
+        expiresAt: computeOfferExpiry(new Date()),
+      },
+      include: {
+        invoice: true,
+        nurseProfile: true,
+        jobShift: {
+          include: {
+            hospitalProfile: true,
+            requirements: true,
+          },
         },
       },
-    },
-  });
+    });
+  } catch (error) {
+    if (!isPrismaUniqueConstraintError(error, ['jobShiftId', 'nurseProfileId'])) {
+      throw error;
+    }
+
+    const concurrentContract = await prisma.matchContract.findUnique({
+      where: {
+        jobShiftId_nurseProfileId: {
+          jobShiftId: input.jobShiftId,
+          nurseProfileId: input.nurseProfileId,
+        },
+      },
+      include: {
+        invoice: true,
+        nurseProfile: true,
+        jobShift: {
+          include: {
+            hospitalProfile: true,
+            requirements: true,
+          },
+        },
+      },
+    });
+
+    if (!concurrentContract) {
+      throw error;
+    }
+
+    const normalizedConcurrentContract = await markOfferExpiredIfNeeded(concurrentContract);
+
+    if (
+      normalizedConcurrentContract.status === MatchContractStatus.DECLINED ||
+      normalizedConcurrentContract.status === MatchContractStatus.EXPIRED
+    ) {
+      throw createHttpError(409, 'This nurse already closed the current offer. Create a new shift or explicitly reopen later.');
+    }
+
+    return normalizedConcurrentContract;
+  }
 
   await ensureContractSnapshotForOffer(created.id);
 
@@ -559,18 +601,52 @@ export async function signMatchContract(matchContractId: string, actor: { userId
     throw createHttpError(409, 'Only pending match offers can be signed');
   }
 
-  const updatedContract = await prisma.matchContract.update({
-    where: { id: matchContractId },
+  const updatedContract = await prisma.matchContract.updateMany({
+    where: {
+      id: matchContractId,
+      status: MatchContractStatus.PENDING,
+    },
     data: {
       status: MatchContractStatus.SIGNED,
       respondedAt: new Date(),
       signedAt: new Date(),
-      jobShift: {
-        update: {
-          status: JobShiftStatus.MATCHED,
-        },
-      },
     },
+  });
+
+  if (updatedContract.count === 0) {
+    const latestContract = await prisma.matchContract.findUnique({
+      where: { id: matchContractId },
+      include: {
+        nurseProfile: true,
+        jobShift: {
+          include: {
+            hospitalProfile: true,
+          },
+        },
+        invoice: true,
+      },
+    });
+
+    if (!latestContract) {
+      throw createHttpError(404, 'Match contract not found');
+    }
+
+    if (latestContract.status === MatchContractStatus.SIGNED) {
+      return latestContract;
+    }
+
+    throw createHttpError(409, 'Only pending match offers can be signed');
+  }
+
+  await prisma.jobShift.update({
+    where: { id: existingContract.jobShiftId },
+    data: {
+      status: JobShiftStatus.MATCHED,
+    },
+  });
+
+  const hydratedUpdatedContract = await prisma.matchContract.findUnique({
+    where: { id: matchContractId },
     include: {
       nurseProfile: true,
       jobShift: {
@@ -582,24 +658,28 @@ export async function signMatchContract(matchContractId: string, actor: { userId
     },
   });
 
-  await createContractSnapshot(updatedContract.id);
-  await generateContractPdfArtifact(updatedContract.id);
-  await emitMatchOfferSignedEvent(updatedContract.id);
-  await emitContractPdfGeneratedEvent(updatedContract.id);
+  if (!hydratedUpdatedContract) {
+    throw createHttpError(404, 'Match contract not found');
+  }
 
-  await autoBookAvailabilityForSignedContract(updatedContract.id);
+  const contractSnapshot = await createContractSnapshot(hydratedUpdatedContract.id);
+  await generateContractPdfArtifact(hydratedUpdatedContract.id, contractSnapshot);
+  await emitMatchOfferSignedEvent(hydratedUpdatedContract.id);
+  await emitContractPdfGeneratedEvent(hydratedUpdatedContract.id);
 
-  if (!updatedContract.invoice) {
+  await autoBookAvailabilityForSignedContract(hydratedUpdatedContract.id);
+
+  if (!hydratedUpdatedContract.invoice) {
     await billingQueue.add(
       'create-invoice',
       {
-        matchContractId: updatedContract.id,
+        matchContractId: hydratedUpdatedContract.id,
       },
       {
-        jobId: `invoice:${updatedContract.id}`,
+        jobId: `invoice:${hydratedUpdatedContract.id}`,
       },
     );
   }
 
-  return updatedContract;
+  return hydratedUpdatedContract;
 }

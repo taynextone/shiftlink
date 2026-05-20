@@ -4,6 +4,7 @@ import { prisma } from '../config/prisma';
 import { createContractSnapshot } from './contract.service';
 import { generateContractPdfArtifact } from './contract-pdf.service';
 import { emitContractExecutionSignedEvent, emitContractFullyExecutedEvent, emitContractPdfGeneratedEvent } from './contract-webhook.service';
+import { isPrismaUniqueConstraintError } from './prisma-error.service';
 
 function buildSignatureEvidence(actor: { userId: string; role: UserRole }) {
   return {
@@ -75,7 +76,9 @@ export async function signContractExecution(
 
   const activeSnapshot = contract.currentSnapshot ?? (await createContractSnapshot(contract.id));
 
-  const signatureEvent = await prisma.contractSignatureEvent.create({
+  let signatureEvent;
+  try {
+    signatureEvent = await prisma.contractSignatureEvent.create({
     data: {
       matchContractId: contract.id,
       signerUserId: actor.userId,
@@ -84,7 +87,14 @@ export async function signContractExecution(
       signatureIntent: 'EXECUTE_CONTRACT',
       signatureEvidenceJson: JSON.stringify(buildSignatureEvidence(actor)),
     },
-  });
+    });
+  } catch (error) {
+    if (!isPrismaUniqueConstraintError(error)) {
+      throw error;
+    }
+
+    throw createHttpError(409, 'This signer already recorded a signature for the current contract execution');
+  }
 
   const allSignatures = [...contract.signatureEvents, signatureEvent];
   const hasHospitalSignature = allSignatures.some((event) => event.signerRole === ContractSignerRole.HOSPITAL_ADMIN || event.signerRole === ContractSignerRole.SUPER_ADMIN);
@@ -120,7 +130,7 @@ export async function signContractExecution(
   await emitContractExecutionSignedEvent(contract.id, actor);
 
   if (nextExecutionStatus === ContractExecutionStatus.FULLY_EXECUTED) {
-    await generateContractPdfArtifact(contract.id);
+    await generateContractPdfArtifact(contract.id, activeSnapshot);
     await emitContractFullyExecutedEvent(contract.id);
     await emitContractPdfGeneratedEvent(contract.id);
   }

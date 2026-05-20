@@ -42,7 +42,8 @@ export async function createContractSnapshot(matchContractId: string) {
     throw createHttpError(404, 'Match contract not found');
   }
 
-  const nextVersion = (contract.contractSnapshots[0]?.version ?? 0) + 1;
+  const existingSnapshots = Array.isArray(contract.contractSnapshots) ? contract.contractSnapshots : [];
+  const nextVersion = (existingSnapshots[0]?.version ?? 0) + 1;
 
   const snapshot = {
     matchContractId: contract.id,
