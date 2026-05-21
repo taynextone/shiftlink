@@ -13,6 +13,21 @@ export type AuthState = {
   cookieName: string;
 };
 
+
+export type AvailabilityBlock = {
+  id: string;
+  title?: string | null;
+  city: string;
+  postalCode?: string | null;
+  latitude?: string | null;
+  longitude?: string | null;
+  radiusKm: number;
+  startTime: string;
+  endTime: string;
+  notes?: string | null;
+  isBooked: boolean;
+};
+
 export type VisibleJobShift = {
   id: string;
   title?: string | null;
@@ -136,6 +151,14 @@ export const api = {
   getVisibleJobShifts: () => request<{ jobShifts: VisibleJobShift[] }>('/matches/visible-job-shifts'),
   getOwnMatches: () => request<{ matchContracts: OwnMatchContract[] }>('/matches/me'),
   getVerificationOverview: () => request<{ verification: VerificationOverview }>('/nurse-profile/me/verification'),
+  listOwnAvailabilityBlocks: () => request<{ blocks: AvailabilityBlock[] }>('/nurse-availability/me'),
+  createOwnAvailabilityBlock: (input: { title?: string; city: string; postalCode?: string; radiusKm: number; startTime: string; endTime: string; notes?: string }) =>
+    request<{ block: AvailabilityBlock }>('/nurse-availability/me', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  deleteOwnAvailabilityBlock: (blockId: string) =>
+    request<void>(`/nurse-availability/me/${blockId}`, { method: 'DELETE' }),
   respondToMatchOffer: (input: { matchContractId: string; action: 'ACCEPT' | 'DECLINE' }) =>
     request('/matches/respond', {
       method: 'POST',

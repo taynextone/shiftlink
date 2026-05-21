@@ -9,6 +9,7 @@ const navGroups = [
     items: [
       { to: '/nurse', label: 'Dashboard', caption: 'Status & Überblick' },
       { to: '/nurse/jobs', label: 'Einsätze', caption: 'Verfügbare Bedarfe' },
+      { to: '/nurse/availability', label: 'Verfügbarkeiten', caption: 'Matching-Zeitfenster' },
       { to: '/nurse/matches', label: 'Angebote', caption: 'Offers & Antworten' },
       { to: '/nurse/profile', label: 'Profil', caption: 'Verifikation & Freigabe' },
     ],
