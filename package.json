@@ -1,7 +1,7 @@
 {
   "name": "shiftlink",
   "version": "1.0.0",
-  "description": "Digitaler Matching-Marktplatz für kurzfristige Pflegeeinsätze in Krankenhäusern, mit Fokus auf Direktvermittlung statt Zeitarbeit.",
+  "description": "Digitaler Matching-Marktplatz f\u00fcr kurzfristige Pflegeeins\u00e4tze in Krankenh\u00e4usern, mit Fokus auf Direktvermittlung statt Zeitarbeit.",
   "main": "dist/server.js",
   "directories": {
     "doc": "docs"
@@ -11,7 +11,9 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "test": "jest --runInBand",
-    "prisma:generate": "prisma generate --config prisma.config.ts"
+    "prisma:generate": "prisma generate --config prisma.config.ts",
+    "web:dev": "vite --config web/vite.config.ts",
+    "web:build": "npm --prefix web run build"
   },
   "repository": {
     "type": "git",
@@ -39,6 +41,9 @@
     "http-errors": "^2.0.1",
     "ioredis": "^5.10.1",
     "jsonwebtoken": "^9.0.3",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-router-dom": "^7.15.1",
     "zod": "^4.4.3"
   },
   "private": true,
@@ -50,12 +55,16 @@
     "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.8.0",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
     "@types/supertest": "^7.2.0",
+    "@vitejs/plugin-react": "^6.0.2",
     "jest": "^30.4.2",
     "prisma": "^7.8.0",
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.9",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vite": "^8.0.14"
   }
 }
