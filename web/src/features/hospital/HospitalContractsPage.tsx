@@ -20,6 +20,7 @@ export function HospitalContractsPage() {
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const { data: shiftData, loading: shiftsLoading, error: shiftsError } = useAsyncData(() => api.listHospitalJobShifts(), []);
+  const { data: billingSummary } = useAsyncData(() => api.getHospitalBillingSummary(), []);
   const availableShifts = shiftData?.jobShifts ?? [];
 
   const selectedShift = useMemo(
@@ -119,6 +120,14 @@ export function HospitalContractsPage() {
         title="Contract Lifecycle & Governance"
         description="Read-only Audit-Sicht plus streng kontrollierte Aktionen für Execution und Voiding. Professionell, nüchtern und nachvollziehbar gestaltet."
       />
+      <MetricList
+        items={[
+          { label: 'Signed Contracts', value: billingSummary?.signedContracts ?? '—' },
+          { label: 'Invoices', value: billingSummary?.invoiceCount ?? '—' },
+          { label: 'Pending Fees', value: billingSummary ? `${billingSummary.pendingInvoiceAmount} €` : '—' },
+          { label: 'Paid Fees', value: billingSummary ? `${billingSummary.paidInvoiceAmount} €` : '—' },
+        ]}
+      />
       <div className="content-grid master-detail-grid">
         <SectionCard title="Schichten" description="Wähle einen Bedarf, um dazugehörige Offers und Contracts schneller zu finden.">
           <AsyncState loading={shiftsLoading} error={shiftsError} isEmpty={availableShifts.length === 0} emptyMessage="Noch keine Schichten vorhanden.">
@@ -164,6 +173,8 @@ export function HospitalContractsPage() {
                     items={[
                       { label: 'Offers', value: offers.length },
                       { label: 'Lifecycle geladen', value: lifecycle ? 'Ja' : 'Nein' },
+                      { label: 'Signed Offers', value: selectedShift.offerCounts?.signed ?? '—' },
+                      { label: 'Invoiced', value: selectedShift.offerCounts?.invoiced ?? '—' },
                     ]}
                   />
                 </>
@@ -243,15 +254,43 @@ export function HospitalContractsPage() {
                   <InfoList
                     items={[
                       { label: 'Contract ID', value: lifecycle.matchContractId },
+                      { label: 'Klinik', value: lifecycle.hospital?.clinicName ?? '—' },
+                      { label: 'Pflegekraft', value: lifecycle.nurse?.displayName ?? '—' },
                       { label: 'Snapshots', value: lifecycle.snapshotSummary.totalSnapshots },
                       { label: 'Aktuelle Snapshot-Version', value: lifecycle.snapshotSummary.currentSnapshotVersion ?? '—' },
                       { label: 'Signaturen', value: lifecycle.signatureSummary.totalSignatures },
                       { label: 'PDF vorhanden', value: lifecycle.contractPdf.available ? 'Ja' : 'Nein' },
                       { label: 'PDF URL', value: lifecycle.contractPdf.fileUrl ?? '—' },
+                      { label: 'Invoice Status', value: lifecycle.invoice?.status ?? '—' },
+                      { label: 'Invoice Amount', value: lifecycle.invoice?.amount ? `${lifecycle.invoice.amount} €` : '—' },
                       { label: 'Vollständig ausgeführt', value: lifecycle.fullyExecutedAt ? new Date(lifecycle.fullyExecutedAt).toLocaleString('de-DE') : '—' },
                       { label: 'Void-Grund', value: lifecycle.voidSummary?.reason ?? '—' },
                     ]}
                   />
+                  {lifecycle.snapshotSummary.versions?.length ? (
+                    <SectionCard title="Snapshots" description="Versionshistorie des Vertragszustands.">
+                      <div className="record-list compact-list">
+                        {lifecycle.snapshotSummary.versions.map((snapshot) => (
+                          <div className="panel subpanel" key={snapshot.id}>
+                            <strong>Version {snapshot.version}</strong>
+                            <p>{snapshot.summaryText}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </SectionCard>
+                  ) : null}
+                  {lifecycle.signatureSummary.events?.length ? (
+                    <SectionCard title="Signaturen" description="Aufgezeichnete Signature-Events für den aktuellen Contract.">
+                      <div className="record-list compact-list">
+                        {lifecycle.signatureSummary.events.map((event) => (
+                          <div className="panel subpanel" key={event.id}>
+                            <strong>{event.signerRole}</strong>
+                            <p>{event.signatureIntent} · {new Date(event.createdAt).toLocaleString('de-DE')}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </SectionCard>
+                  ) : null}
                 </>
               ) : (
                 <p className="hint">Noch kein Lifecycle geladen.</p>

@@ -68,12 +68,15 @@ export type VerificationOverview = {
 
 export type HospitalJobShift = {
   id: string;
+  externalJobShiftId?: string | null;
   title?: string | null;
   locationCity?: string | null;
   startTime: string;
   endTime: string;
   status: string;
   totalPlannedHours: string;
+  requirements?: Array<{ tag: string; priority: string }>;
+  offerCounts?: { total: number; pending: number; declined: number; signed: number; expired: number; canceled: number; invoiced: number };
 };
 
 export type HospitalOffer = {
@@ -100,19 +103,37 @@ export type Candidate = {
 
 export type ContractLifecycle = {
   matchContractId: string;
+  createdAt?: string;
+  updatedAt?: string;
+  expiresAt?: string | null;
+  respondedAt?: string | null;
   status: string;
   executionStatus: string;
   signedAt?: string | null;
   fullyExecutedAt?: string | null;
+  hospital?: { hospitalProfileId: string; clinicName: string };
+  nurse?: { nurseProfileId: string; publicId: string; displayName: string };
   contractPdf: { available: boolean; fileUrl: string | null };
+  invoice?: null | { id: string; status: string; amount: string; invoicePdfUrl: string | null };
   snapshotSummary: {
+    currentSnapshotId?: string | null;
     currentSnapshotVersion: number | null;
     totalSnapshots: number;
+    versions?: Array<{ id: string; version: number; createdAt: string; summaryText: string }>;
   };
   signatureSummary: {
     totalSignatures: number;
+    events?: Array<{ id: string; signerUserId: string; signerRole: string; signatureIntent: string; snapshotId: string; createdAt: string }>;
   };
-  voidSummary: null | { reason: string; actorRole: string };
+  voidSummary: null | { id?: string; actorUserId?: string; reason: string; actorRole: string; createdAt?: string };
+};
+
+export type HospitalBillingSummary = {
+  signedContracts: number;
+  invoiceCount: number;
+  totalInvoiceAmount: number;
+  pendingInvoiceAmount: number;
+  paidInvoiceAmount: number;
 };
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api/v1';
@@ -159,12 +180,28 @@ export const api = {
     }),
   deleteOwnAvailabilityBlock: (blockId: string) =>
     request<void>(`/nurse-availability/me/${blockId}`, { method: 'DELETE' }),
+  updateOwnAvailabilityBlock: (blockId: string, input: { title?: string; city?: string; postalCode?: string; radiusKm?: number; startTime?: string; endTime?: string; notes?: string }) =>
+    request<{ block: AvailabilityBlock }>(`/nurse-availability/me/${blockId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    }),
+  replaceOwnAvailabilityBlocks: (input: { blocks: Array<{ title?: string; city: string; postalCode?: string; radiusKm: number; startTime: string; endTime: string; notes?: string }> }) =>
+    request<{ blocks: AvailabilityBlock[] }>('/nurse-availability/me', {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    }),
+  copyOwnAvailabilityBlock: (input: { sourceBlockId: string; copies: Array<{ startTime: string; endTime: string }> }) =>
+    request<{ blocks: AvailabilityBlock[] }>('/nurse-availability/me/copy', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
   respondToMatchOffer: (input: { matchContractId: string; action: 'ACCEPT' | 'DECLINE' }) =>
     request('/matches/respond', {
       method: 'POST',
       body: JSON.stringify(input),
     }),
   listHospitalJobShifts: () => request<{ jobShifts: HospitalJobShift[] }>('/job-shifts'),
+  getHospitalBillingSummary: () => request<HospitalBillingSummary>('/job-shifts/billing/summary'),
   importHospitalJobShift: (input: Record<string, unknown>) =>
     request<{ mode: 'created' | 'updated'; jobShift: HospitalJobShift }>('/job-shifts/import', {
       method: 'POST',
