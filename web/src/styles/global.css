@@ -378,3 +378,44 @@ label span { font-size: 0.92rem; }
   border-color: #9db6ff;
   background: #eef4ff;
 }
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.field-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+}
+.field-help-text {
+  color: var(--text-faint);
+  font-size: 0.82rem;
+}
+.field-error-text {
+  color: var(--danger);
+  font-size: 0.82rem;
+}
+.field.has-error input {
+  border-color: #e7a5a0;
+  background: #fff7f7;
+}
+.feedback-message {
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-soft);
+}
+.feedback-message.success {
+  border-color: #b7e4c7;
+  background: #eefaf2;
+  color: #166534;
+}
+.feedback-message.error {
+  border-color: #f5c2c0;
+  background: #fff3f2;
+  color: #b42318;
+}

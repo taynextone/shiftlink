@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Field } from '../../components/Field';
+import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { PageHeader } from '../../components/PageHeader';
 import { api } from '../../lib/api';
 import { useAuth } from '../../state/AuthContext';
@@ -12,11 +14,33 @@ export function RegisterPage() {
   const [displayName, setDisplayName] = useState('NurseNova');
   const [firstName, setFirstName] = useState('Nina');
   const [lastName, setLastName] = useState('Care');
-  const [status, setStatus] = useState<string | null>(null);
+  const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const errors = useMemo(() => ({
+    firstName: !firstName.trim() ? 'Vorname ist erforderlich' : null,
+    lastName: !lastName.trim() ? 'Nachname ist erforderlich' : null,
+    displayName: !displayName.trim() ? 'Display Name ist erforderlich' : null,
+    email: email && !email.includes('@') ? 'Ungültige E-Mail-Adresse' : null,
+    password: password && password.length < 8 ? 'Mindestens 8 Zeichen erforderlich' : null,
+  }), [displayName, email, firstName, lastName, password]);
+
+  const canSubmit =
+    Boolean(firstName.trim()) &&
+    Boolean(lastName.trim()) &&
+    Boolean(displayName.trim()) &&
+    Boolean(email) &&
+    Boolean(password) &&
+    !errors.email &&
+    !errors.password;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (!canSubmit) {
+      setStatus({ tone: 'error', message: 'Bitte Eingaben korrigieren, bevor du fortfährst.' });
+      return;
+    }
+
     setSubmitting(true);
     setStatus(null);
 
@@ -26,9 +50,9 @@ export function RegisterPage() {
         password,
         role: 'NURSE',
         nurseProfile: {
-          displayName,
-          firstName,
-          lastName,
+          displayName: displayName.trim(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
           iban: 'DE89370400440532013000',
           minHourlyRate: 42,
           phoneNumber: '+491701234567',
@@ -36,10 +60,10 @@ export function RegisterPage() {
         },
       });
       await setAuthenticatedUser(result.user);
-      setStatus('Registrierung erfolgreich.');
+      setStatus({ tone: 'success', message: 'Registrierung erfolgreich.' });
       navigate('/nurse');
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Registrierung fehlgeschlagen');
+      setStatus({ tone: 'error', message: error instanceof Error ? error.message : 'Registrierung fehlgeschlagen' });
     } finally {
       setSubmitting(false);
     }
@@ -54,30 +78,25 @@ export function RegisterPage() {
       />
       <form className="panel form-panel narrow stack" onSubmit={handleSubmit}>
         <div className="form-grid two">
-          <label>
-            <span>Vorname</span>
+          <Field label="Vorname" error={errors.firstName}>
             <input value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder="Vorname" />
-          </label>
-          <label>
-            <span>Nachname</span>
+          </Field>
+          <Field label="Nachname" error={errors.lastName}>
             <input value={lastName} onChange={(event) => setLastName(event.target.value)} placeholder="Nachname" />
-          </label>
+          </Field>
         </div>
-        <label>
-          <span>Display Name</span>
+        <Field label="Display Name" helpText="So wird dein Profil im Matching sichtbar." error={errors.displayName}>
           <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Display Name" />
-        </label>
-        <label>
-          <span>E-Mail</span>
+        </Field>
+        <Field label="E-Mail" error={errors.email}>
           <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="E-Mail" type="email" />
-        </label>
-        <label>
-          <span>Passwort</span>
+        </Field>
+        <Field label="Passwort" helpText="Mindestens 8 Zeichen." error={errors.password}>
           <input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Passwort" type="password" />
-        </label>
-        <button type="submit" disabled={submitting}>{submitting ? 'Registrieren…' : 'Registrieren'}</button>
+        </Field>
+        <button type="submit" disabled={submitting || !canSubmit}>{submitting ? 'Registrieren…' : 'Registrieren'}</button>
       </form>
-      {status ? <p className="hint">{status}</p> : null}
+      {status ? <FeedbackMessage tone={status.tone} message={status.message} /> : null}
     </section>
   );
 }
