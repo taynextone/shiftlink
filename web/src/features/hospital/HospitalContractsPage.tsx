@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { ActionBar } from '../../components/ActionBar';
 import { AsyncState } from '../../components/AsyncState';
+import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { FormSection } from '../../components/FormSection';
 import { InfoList } from '../../components/InfoList';
+import { MetricList } from '../../components/MetricList';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -15,7 +17,7 @@ export function HospitalContractsPage() {
   const [voidReason, setVoidReason] = useState('Pflegekraft kann den Einsatz in diesem Zeitraum doch nicht wahrnehmen.');
   const [lifecycle, setLifecycle] = useState<ContractLifecycle | null>(null);
   const [offers, setOffers] = useState<HospitalOffer[]>([]);
-  const [status, setStatus] = useState<string | null>(null);
+  const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const { data: shiftData, loading: shiftsLoading, error: shiftsError } = useAsyncData(() => api.listHospitalJobShifts(), []);
   const availableShifts = shiftData?.jobShifts ?? [];
@@ -32,17 +34,18 @@ export function HospitalContractsPage() {
 
   async function handleLoadOffersForShift() {
     if (!jobShiftId) {
-      setStatus('Bitte zuerst eine Schicht auswählen.');
+      setStatus({ tone: 'error', message: 'Bitte zuerst eine Schicht auswählen.' });
       return;
     }
 
     setSubmitting(true);
+    setStatus(null);
     try {
       const result = await api.listHospitalOffers(jobShiftId);
       setOffers(result.offers ?? []);
-      setStatus('Offers für die ausgewählte Schicht geladen.');
+      setStatus({ tone: 'success', message: 'Offers für die ausgewählte Schicht geladen.' });
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Offers konnten nicht geladen werden');
+      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Offers konnten nicht geladen werden' });
     } finally {
       setSubmitting(false);
     }
@@ -51,16 +54,17 @@ export function HospitalContractsPage() {
   async function handleLoadLifecycle(event: React.FormEvent) {
     event.preventDefault();
     if (!contractId) {
-      setStatus('Bitte zuerst einen Contract auswählen oder eingeben.');
+      setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
       return;
     }
 
     setSubmitting(true);
+    setStatus(null);
     try {
       await loadLifecycle(contractId);
-      setStatus('Contract Lifecycle geladen.');
+      setStatus({ tone: 'success', message: 'Contract Lifecycle geladen.' });
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Lifecycle konnte nicht geladen werden');
+      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Lifecycle konnte nicht geladen werden' });
     } finally {
       setSubmitting(false);
     }
@@ -68,17 +72,18 @@ export function HospitalContractsPage() {
 
   async function handleExecutionSign() {
     if (!contractId) {
-      setStatus('Bitte zuerst einen Contract auswählen oder eingeben.');
+      setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
       return;
     }
 
     setSubmitting(true);
+    setStatus(null);
     try {
       const result = await api.signContractExecution(contractId);
       await loadLifecycle(contractId);
-      setStatus(`Execution signiert. Neuer Status: ${result.execution.executionStatus}`);
+      setStatus({ tone: 'success', message: `Execution signiert. Neuer Status: ${result.execution.executionStatus}` });
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Execution konnte nicht signiert werden');
+      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Execution konnte nicht signiert werden' });
     } finally {
       setSubmitting(false);
     }
@@ -86,21 +91,22 @@ export function HospitalContractsPage() {
 
   async function handleVoid() {
     if (!contractId) {
-      setStatus('Bitte zuerst einen Contract auswählen oder eingeben.');
+      setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
       return;
     }
     if (!voidReason.trim()) {
-      setStatus('Bitte einen Void-Grund angeben.');
+      setStatus({ tone: 'error', message: 'Bitte einen Void-Grund angeben.' });
       return;
     }
 
     setSubmitting(true);
+    setStatus(null);
     try {
       const result = await api.voidContract(contractId, voidReason.trim());
       await loadLifecycle(contractId);
-      setStatus(`Contract voided: ${result.voiding.executionStatus}`);
+      setStatus({ tone: 'success', message: `Contract voided: ${result.voiding.executionStatus}` });
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Void-Flow fehlgeschlagen');
+      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Void-Flow fehlgeschlagen' });
     } finally {
       setSubmitting(false);
     }
@@ -146,13 +152,21 @@ export function HospitalContractsPage() {
                 <input value={jobShiftId} onChange={(event) => setJobShiftId(event.target.value)} placeholder="jobShiftId" />
               </label>
               {selectedShift ? (
-                <InfoList
-                  items={[
-                    { label: 'Titel', value: selectedShift.title ?? 'Pflegeeinsatz' },
-                    { label: 'Ort', value: selectedShift.locationCity ?? '—' },
-                    { label: 'Status', value: selectedShift.status },
-                  ]}
-                />
+                <>
+                  <InfoList
+                    items={[
+                      { label: 'Titel', value: selectedShift.title ?? 'Pflegeeinsatz' },
+                      { label: 'Ort', value: selectedShift.locationCity ?? '—' },
+                      { label: 'Status', value: selectedShift.status },
+                    ]}
+                  />
+                  <MetricList
+                    items={[
+                      { label: 'Offers', value: offers.length },
+                      { label: 'Lifecycle geladen', value: lifecycle ? 'Ja' : 'Nein' },
+                    ]}
+                  />
+                </>
               ) : null}
               <ActionBar>
                 <button type="button" className="secondary" disabled={submitting || !jobShiftId} onClick={() => void handleLoadOffersForShift()}>
@@ -245,7 +259,7 @@ export function HospitalContractsPage() {
             </SectionCard>
           </div>
 
-          {status ? <p className="hint">{status}</p> : null}
+          {status ? <FeedbackMessage tone={status.tone} message={status.message} /> : null}
         </div>
       </div>
     </section>

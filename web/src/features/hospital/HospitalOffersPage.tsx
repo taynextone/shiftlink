@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { ActionBar } from '../../components/ActionBar';
 import { AsyncState } from '../../components/AsyncState';
+import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { FormSection } from '../../components/FormSection';
 import { InfoList } from '../../components/InfoList';
+import { MetricList } from '../../components/MetricList';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -16,7 +18,7 @@ export function HospitalOffersPage() {
   const [offers, setOffers] = useState<HospitalOffer[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [activeShift, setActiveShift] = useState<HospitalJobShift | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
+  const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const selectedShift = useMemo(
@@ -28,21 +30,22 @@ export function HospitalOffersPage() {
     const result = await api.listHospitalOffers(targetShiftId);
     setOffers(result.offers ?? []);
     setActiveShift(result.jobShift);
-    setStatus(`Offers für ${result.jobShift.title ?? result.jobShift.id} geladen.`);
+    setStatus({ tone: 'success', message: `Offers für ${result.jobShift.title ?? result.jobShift.id} geladen.` });
   }
 
   async function handleLoadOffers(event: React.FormEvent) {
     event.preventDefault();
     if (!jobShiftId) {
-      setStatus('Bitte zuerst eine Schicht auswählen.');
+      setStatus({ tone: 'error', message: 'Bitte zuerst eine Schicht auswählen.' });
       return;
     }
 
     setSubmitting(true);
+    setStatus(null);
     try {
       await loadOffers(jobShiftId);
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Offers konnten nicht geladen werden');
+      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Offers konnten nicht geladen werden' });
     } finally {
       setSubmitting(false);
     }
@@ -50,17 +53,18 @@ export function HospitalOffersPage() {
 
   async function handleLoadCandidates() {
     if (!jobShiftId) {
-      setStatus('Bitte zuerst eine Schicht auswählen.');
+      setStatus({ tone: 'error', message: 'Bitte zuerst eine Schicht auswählen.' });
       return;
     }
 
     setSubmitting(true);
+    setStatus(null);
     try {
       const result = await api.findCandidates(jobShiftId);
       setCandidates(result.candidates ?? []);
-      setStatus('Kandidaten geladen.');
+      setStatus({ tone: 'success', message: 'Kandidaten geladen.' });
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Kandidaten konnten nicht geladen werden');
+      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Kandidaten konnten nicht geladen werden' });
     } finally {
       setSubmitting(false);
     }
@@ -68,17 +72,18 @@ export function HospitalOffersPage() {
 
   async function handleCreateOffer(nurseProfileId: string) {
     if (!jobShiftId) {
-      setStatus('Bitte zuerst eine Schicht auswählen.');
+      setStatus({ tone: 'error', message: 'Bitte zuerst eine Schicht auswählen.' });
       return;
     }
 
     setSubmitting(true);
+    setStatus(null);
     try {
       const result = await api.createOffer({ jobShiftId, nurseProfileId });
-      setStatus(`Offer erstellt: ${result.matchContract.id}`);
       await loadOffers(jobShiftId);
+      setStatus({ tone: 'success', message: `Offer erstellt: ${result.matchContract.id}` });
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Offer konnte nicht erstellt werden');
+      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Offer konnte nicht erstellt werden' });
     } finally {
       setSubmitting(false);
     }
@@ -124,14 +129,22 @@ export function HospitalOffersPage() {
                 <input value={jobShiftId} onChange={(event) => setJobShiftId(event.target.value)} placeholder="jobShiftId" />
               </label>
               {selectedShift ? (
-                <InfoList
-                  items={[
-                    { label: 'Titel', value: selectedShift.title ?? 'Pflegeeinsatz' },
-                    { label: 'Ort', value: selectedShift.locationCity ?? '—' },
-                    { label: 'Start', value: new Date(selectedShift.startTime).toLocaleString('de-DE') },
-                    { label: 'Ende', value: new Date(selectedShift.endTime).toLocaleString('de-DE') },
-                  ]}
-                />
+                <>
+                  <InfoList
+                    items={[
+                      { label: 'Titel', value: selectedShift.title ?? 'Pflegeeinsatz' },
+                      { label: 'Ort', value: selectedShift.locationCity ?? '—' },
+                      { label: 'Start', value: new Date(selectedShift.startTime).toLocaleString('de-DE') },
+                      { label: 'Ende', value: new Date(selectedShift.endTime).toLocaleString('de-DE') },
+                    ]}
+                  />
+                  <MetricList
+                    items={[
+                      { label: 'Offers', value: offers.length },
+                      { label: 'Kandidaten', value: candidates.length },
+                    ]}
+                  />
+                </>
               ) : null}
             </FormSection>
             <ActionBar>
@@ -142,11 +155,14 @@ export function HospitalOffersPage() {
             </ActionBar>
           </form>
 
-          {status ? <p className="hint">{status}</p> : null}
+          {status ? <FeedbackMessage tone={status.tone} message={status.message} /> : null}
 
           <div className="content-grid two-columns-equal">
             <section className="stack">
-              <h2 className="section-heading">Kandidaten</h2>
+              <div className="section-heading-row">
+                <h2 className="section-heading">Kandidaten</h2>
+                <StatusBadge value={`${candidates.length} profile`} />
+              </div>
               {candidates.map((candidate) => (
                 <SectionCard
                   key={candidate.nurseProfileId}
@@ -171,7 +187,10 @@ export function HospitalOffersPage() {
               {candidates.length === 0 ? <div className="panel empty">Noch keine Kandidaten geladen.</div> : null}
             </section>
             <section className="stack">
-              <h2 className="section-heading">Offers</h2>
+              <div className="section-heading-row">
+                <h2 className="section-heading">Offers</h2>
+                <StatusBadge value={`${offers.length} active`} />
+              </div>
               {offers.map((offer) => (
                 <SectionCard
                   key={offer.id}
