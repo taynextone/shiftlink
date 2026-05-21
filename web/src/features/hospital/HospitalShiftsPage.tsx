@@ -1,19 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { PageHeader } from '../../components/PageHeader';
-import { api, type HospitalJobShift } from '../../lib/api';
+import { AsyncState } from '../../components/AsyncState';
+import { useAsyncData } from '../../hooks/useAsyncData';
+import { api } from '../../lib/api';
 
 export function HospitalShiftsPage() {
-  const [jobShifts, setJobShifts] = useState<HospitalJobShift[]>([]);
+  const { data, loading, error, reload } = useAsyncData(() => api.listHospitalJobShifts(), []);
+  const jobShifts = data?.jobShifts ?? [];
   const [status, setStatus] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [externalJobShiftId, setExternalJobShiftId] = useState('ext-demo-1');
   const [title, setTitle] = useState('ITS Einsatz');
-
-  useEffect(() => {
-    api.listHospitalJobShifts()
-      .then((data) => setJobShifts(data.jobShifts ?? []))
-      .catch((err) => setError(err instanceof Error ? err.message : 'Schichten konnten nicht geladen werden'));
-  }, []);
 
   async function handleImport(event: React.FormEvent) {
     event.preventDefault();
@@ -28,6 +24,7 @@ export function HospitalShiftsPage() {
         requirements: [{ tag: 'Intensivstation', priority: 'REQUIRED' }],
       });
       setStatus(`Import ${result.mode === 'created' ? 'angelegt' : 'aktualisiert'}.`);
+      await reload();
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Import fehlgeschlagen');
     }
@@ -38,7 +35,7 @@ export function HospitalShiftsPage() {
       <PageHeader
         eyebrow="Krankenhaus"
         title="Schichten & Bedarfseingang"
-        description="Operative Bedarfe mit professioneller, zurückhaltender Oberfläche. Keine generische Demo-Tabelle, sondern ein klarer Arbeitskontext für Imports und Statussicht." 
+        description="Operative Bedarfe mit professioneller, zurückhaltender Oberfläche. Keine generische Demo-Tabelle, sondern ein klarer Arbeitskontext für Imports und Statussicht."
       />
       <form className="panel form-panel stack" onSubmit={handleImport}>
         <div className="form-grid two">
@@ -56,22 +53,22 @@ export function HospitalShiftsPage() {
         </div>
       </form>
       {status ? <p className="hint">{status}</p> : null}
-      {error ? <p className="hint error">{error}</p> : null}
-      <div className="record-list">
-        {jobShifts.map((shift) => (
-          <article className="panel record-card spaced" key={shift.id}>
-            <div className="record-card-main">
-              <h2>{shift.title ?? 'Pflegeeinsatz'}</h2>
-              <p>{shift.locationCity ?? 'ohne Ort'}</p>
-            </div>
-            <div className="record-card-meta align-right">
-              <strong>{shift.status}</strong>
-              <span>{new Date(shift.startTime).toLocaleString('de-DE')}</span>
-            </div>
-          </article>
-        ))}
-        {jobShifts.length === 0 && !error ? <div className="panel empty">Noch keine Schichten vorhanden.</div> : null}
-      </div>
+      <AsyncState loading={loading} error={error} isEmpty={jobShifts.length === 0} emptyMessage="Noch keine Schichten vorhanden.">
+        <div className="record-list">
+          {jobShifts.map((shift) => (
+            <article className="panel record-card spaced" key={shift.id}>
+              <div className="record-card-main">
+                <h2>{shift.title ?? 'Pflegeeinsatz'}</h2>
+                <p>{shift.locationCity ?? 'ohne Ort'}</p>
+              </div>
+              <div className="record-card-meta align-right">
+                <strong>{shift.status}</strong>
+                <span>{new Date(shift.startTime).toLocaleString('de-DE')}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </AsyncState>
     </section>
   );
 }

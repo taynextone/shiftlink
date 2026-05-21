@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import type { PropsWithChildren } from 'react';
+import { useAuth } from '../state/AuthContext';
 
 const navGroups = [
   {
@@ -24,6 +25,7 @@ const navGroups = [
 
 export function AppShell({ children }: PropsWithChildren) {
   const location = useLocation();
+  const { session, logout } = useAuth();
 
   return (
     <div className="app-shell">
@@ -40,6 +42,12 @@ export function AppShell({ children }: PropsWithChildren) {
             <span className="workspace-label">Workspace</span>
             <strong>Operations Console</strong>
             <p>Matching, contracts, verification and platform-fee workflows.</p>
+          </div>
+          <div className="workspace-card session-card">
+            <span className="workspace-label">Session</span>
+            <strong>{session ? session.role : 'Nicht eingeloggt'}</strong>
+            <p>{session ? `User ID: ${session.userId}` : 'Bitte anmelden, um geschützte Produktbereiche zu öffnen.'}</p>
+            {session ? <button className="secondary ghost-button" onClick={() => void logout()}>Logout</button> : null}
           </div>
         </div>
         <nav className="nav-groups">
@@ -59,6 +67,21 @@ export function AppShell({ children }: PropsWithChildren) {
               </div>
             </section>
           ))}
+          {!session ? (
+            <section className="nav-group">
+              <span className="section-label">Zugang</span>
+              <div className="nav-list">
+                <Link className={location.pathname === '/login' ? 'nav-link active' : 'nav-link'} to="/login">
+                  <span className="nav-link-title">Login</span>
+                  <span className="nav-link-caption">Bestehenden Zugang verwenden</span>
+                </Link>
+                <Link className={location.pathname === '/register' ? 'nav-link active' : 'nav-link'} to="/register">
+                  <span className="nav-link-title">Registrierung</span>
+                  <span className="nav-link-caption">Neue Pflegekraft anlegen</span>
+                </Link>
+              </div>
+            </section>
+          ) : null}
         </nav>
       </aside>
       <main className="content">

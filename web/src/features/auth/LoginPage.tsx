@@ -1,19 +1,31 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../../components/PageHeader';
 import { api } from '../../lib/api';
+import { useAuth } from '../../state/AuthContext';
 
 export function LoginPage() {
+  const navigate = useNavigate();
+  const { setAuthenticatedUser } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    setSubmitting(true);
+    setStatus(null);
+
     try {
-      await api.login({ email, password });
-      setStatus('Login erfolgreich. Die Session ist jetzt für die produktiven UI-Flows vorhanden.');
+      const result = await api.login({ email, password });
+      await setAuthenticatedUser(result.user);
+      setStatus('Login erfolgreich.');
+      navigate(result.user.role === 'HOSPITAL_ADMIN' ? '/hospital' : '/nurse');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Login fehlgeschlagen');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -33,7 +45,7 @@ export function LoginPage() {
           <span>Passwort</span>
           <input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Passwort" type="password" />
         </label>
-        <button type="submit">Einloggen</button>
+        <button type="submit" disabled={submitting}>{submitting ? 'Einloggen…' : 'Einloggen'}</button>
       </form>
       {status ? <p className="hint">{status}</p> : null}
     </section>

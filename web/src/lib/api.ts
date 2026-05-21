@@ -1,3 +1,18 @@
+export type AuthUser = {
+  id: string;
+  email: string;
+  role: string;
+  verificationStatus?: string;
+  nurseProfile?: unknown;
+  hospitalProfile?: unknown;
+};
+
+export type AuthState = {
+  userId: string;
+  role: string;
+  cookieName: string;
+};
+
 export type VisibleJobShift = {
   id: string;
   title?: string | null;
@@ -107,15 +122,17 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   login: (input: { email: string; password: string }) =>
-    request<{ user: { id: string; role: string; email: string } }>('/auth/login', {
+    request<{ user: AuthUser }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(input),
     }),
   registerNurse: (input: Record<string, unknown>) =>
-    request<{ user: { id: string; role: string; email: string } }>('/auth/register', {
+    request<{ user: AuthUser }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+  getSession: () => request<{ auth: AuthState }>('/auth/me'),
+  logout: () => request<{ message: string }>('/auth/logout', { method: 'POST' }),
   getVisibleJobShifts: () => request<{ jobShifts: VisibleJobShift[] }>('/matches/visible-job-shifts'),
   getOwnMatches: () => request<{ matchContracts: OwnMatchContract[] }>('/matches/me'),
   getVerificationOverview: () => request<{ verification: VerificationOverview }>('/nurse-profile/me/verification'),
@@ -151,6 +168,5 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ reason }),
     }),
-  getContractLifecycle: (contractId: string) =>
-    request<{ lifecycle: ContractLifecycle }>(`/matches/contract/${contractId}/lifecycle`),
+  getContractLifecycle: (contractId: string) => request<{ lifecycle: ContractLifecycle }>(`/matches/contract/${contractId}/lifecycle`),
 };

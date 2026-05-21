@@ -1,19 +1,27 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../../components/PageHeader';
 import { api } from '../../lib/api';
+import { useAuth } from '../../state/AuthContext';
 
 export function RegisterPage() {
+  const navigate = useNavigate();
+  const { setAuthenticatedUser } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('NurseNova');
   const [firstName, setFirstName] = useState('Nina');
   const [lastName, setLastName] = useState('Care');
   const [status, setStatus] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    setSubmitting(true);
+    setStatus(null);
+
     try {
-      await api.registerNurse({
+      const result = await api.registerNurse({
         email,
         password,
         role: 'NURSE',
@@ -27,9 +35,13 @@ export function RegisterPage() {
           whatsappOptIn: true,
         },
       });
-      setStatus('Registrierung erfolgreich. Nächster fachlicher Schritt ist Verifikation und Matching-Freigabe.');
+      await setAuthenticatedUser(result.user);
+      setStatus('Registrierung erfolgreich.');
+      navigate('/nurse');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Registrierung fehlgeschlagen');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -63,7 +75,7 @@ export function RegisterPage() {
           <span>Passwort</span>
           <input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Passwort" type="password" />
         </label>
-        <button type="submit">Registrieren</button>
+        <button type="submit" disabled={submitting}>{submitting ? 'Registrieren…' : 'Registrieren'}</button>
       </form>
       {status ? <p className="hint">{status}</p> : null}
     </section>
