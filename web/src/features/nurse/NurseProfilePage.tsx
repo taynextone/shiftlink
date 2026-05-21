@@ -1,5 +1,8 @@
-import { PageHeader } from '../../components/PageHeader';
 import { AsyncState } from '../../components/AsyncState';
+import { InfoList } from '../../components/InfoList';
+import { PageHeader } from '../../components/PageHeader';
+import { SectionCard } from '../../components/SectionCard';
+import { StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { api } from '../../lib/api';
 
@@ -16,24 +19,30 @@ export function NurseProfilePage() {
       />
       <AsyncState loading={loading} error={error} isEmpty={!verification} emptyMessage="Noch keine Verifikationsdaten vorhanden.">
         {verification ? (
-          <article className="panel detail-panel">
-            <div className="detail-row">
-              <span>Freigegeben für Matching</span>
-              <strong>{verification.isReleasedForMatching ? 'Ja' : 'Nein'}</strong>
-            </div>
-            <div className="detail-row">
-              <span>Released at</span>
-              <strong>{verification.releasedAt ? new Date(verification.releasedAt).toLocaleString('de-DE') : '—'}</strong>
-            </div>
-            <div className="document-list">
-              {verification.documents.map((document) => (
-                <div className="document-row" key={document.id}>
-                  <span>{document.documentType}</span>
-                  <strong>{document.status}</strong>
-                </div>
-              ))}
-            </div>
-          </article>
+          <div className="content-grid two-columns-equal">
+            <SectionCard
+              title="Matching-Freigabe"
+              description="Gate für Marketplace-Sichtbarkeit und Angebotsfähigkeit."
+              actions={<StatusBadge value={verification.isReleasedForMatching ? 'released' : 'pending'} />}
+            >
+              <InfoList
+                items={[
+                  { label: 'Freigegeben', value: verification.isReleasedForMatching ? 'Ja' : 'Nein' },
+                  { label: 'Released at', value: verification.releasedAt ? new Date(verification.releasedAt).toLocaleString('de-DE') : '—' },
+                ]}
+              />
+            </SectionCard>
+            <SectionCard title="Dokumente" description="Verifikationsrelevante Nachweise mit Statussicht.">
+              <div className="document-list">
+                {verification.documents.map((document) => (
+                  <div className="document-row" key={document.id}>
+                    <span>{document.documentType}</span>
+                    <StatusBadge value={document.status} />
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          </div>
         ) : null}
       </AsyncState>
     </section>

@@ -288,3 +288,16 @@ label span { font-size: 0.92rem; }
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
+
+.section-card {
+  gap: 1rem;
+}
+.section-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+.section-card-header p {
+  margin: 0.35rem 0 0;
+}

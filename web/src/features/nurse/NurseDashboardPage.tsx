@@ -1,4 +1,5 @@
 import { PageHeader } from '../../components/PageHeader';
+import { SectionCard } from '../../components/SectionCard';
 import { StatCard } from '../../components/StatCard';
 
 export function NurseDashboardPage() {
@@ -15,21 +16,25 @@ export function NurseDashboardPage() {
         <StatCard label="Verträge" value="Auditierbar" caption="Snapshots, PDFs und Execution-State sind getrennt modelliert." />
       </div>
       <div className="content-grid two-thirds">
-        <article className="panel">
-          <h2>Kernablauf</h2>
+        <SectionCard
+          title="Kernablauf"
+          description="So ist der Produktfluss für Pflegekräfte aktuell sauber organisiert."
+        >
           <ol className="ordered-list">
             <li>Profil vervollständigen und Verifikationsdokumente einreichen</li>
             <li>Release für Matching erhalten</li>
             <li>Passende Einsätze prüfen und Offers beantworten</li>
             <li>Vertrags- und Execution-Schritte nachvollziehbar abschließen</li>
           </ol>
-        </article>
-        <article className="panel emphasis-panel">
-          <h2>Produktlogik</h2>
+        </SectionCard>
+        <SectionCard
+          title="Produktlogik"
+          description="Einordnung des Nurse-Arbeitsbereichs im Geschäftsmodell."
+        >
           <p>
             Shiftlink ist kein Arbeitgeber-Frontend. Diese Oberfläche dient Matching, Vertragsfluss und Nachweisführung — nicht Payroll, Payout oder Zeiterfassung als Lohnsystem.
           </p>
-        </article>
+        </SectionCard>
       </div>
     </section>
   );

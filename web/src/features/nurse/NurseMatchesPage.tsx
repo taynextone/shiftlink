@@ -1,6 +1,10 @@
 import { useState } from 'react';
-import { PageHeader } from '../../components/PageHeader';
+import { ActionBar } from '../../components/ActionBar';
 import { AsyncState } from '../../components/AsyncState';
+import { InfoList } from '../../components/InfoList';
+import { PageHeader } from '../../components/PageHeader';
+import { SectionCard } from '../../components/SectionCard';
+import { StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { api } from '../../lib/api';
 
@@ -30,19 +34,25 @@ export function NurseMatchesPage() {
       <AsyncState loading={loading} error={error} isEmpty={contracts.length === 0} emptyMessage="Noch keine Angebote vorhanden.">
         <div className="record-list">
           {contracts.map((contract) => (
-            <article className="panel record-card spaced" key={contract.id}>
-              <div className="record-card-main">
-                <h2>{contract.jobShift.title ?? 'Pflegeeinsatz'}</h2>
-                <p>{contract.jobShift.hospitalProfile.clinicName} · {contract.jobShift.locationCity ?? 'ohne Ort'}</p>
-              </div>
-              <div className="record-card-meta align-right">
-                <strong>{contract.status}</strong>
-                <div className="actions compact">
-                  <button onClick={() => void handleRespond(contract.id, 'ACCEPT')}>Annehmen</button>
-                  <button className="secondary" onClick={() => void handleRespond(contract.id, 'DECLINE')}>Ablehnen</button>
-                </div>
-              </div>
-            </article>
+            <SectionCard
+              key={contract.id}
+              title={contract.jobShift.title ?? 'Pflegeeinsatz'}
+              description={`${contract.jobShift.hospitalProfile.clinicName} · ${contract.jobShift.locationCity ?? 'ohne Ort'}`}
+              actions={<StatusBadge value={contract.status} />}
+            >
+              <InfoList
+                items={[
+                  { label: 'Start', value: new Date(contract.jobShift.startTime).toLocaleString('de-DE') },
+                  { label: 'Ende', value: new Date(contract.jobShift.endTime).toLocaleString('de-DE') },
+                  { label: 'Expires At', value: contract.expiresAt ? new Date(contract.expiresAt).toLocaleString('de-DE') : '—' },
+                  { label: 'Signed At', value: contract.signedAt ? new Date(contract.signedAt).toLocaleString('de-DE') : '—' },
+                ]}
+              />
+              <ActionBar>
+                <button onClick={() => void handleRespond(contract.id, 'ACCEPT')}>Annehmen</button>
+                <button className="secondary" onClick={() => void handleRespond(contract.id, 'DECLINE')}>Ablehnen</button>
+              </ActionBar>
+            </SectionCard>
           ))}
         </div>
       </AsyncState>

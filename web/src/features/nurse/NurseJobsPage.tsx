@@ -1,5 +1,8 @@
-import { PageHeader } from '../../components/PageHeader';
 import { AsyncState } from '../../components/AsyncState';
+import { InfoList } from '../../components/InfoList';
+import { PageHeader } from '../../components/PageHeader';
+import { SectionCard } from '../../components/SectionCard';
+import { StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { api } from '../../lib/api';
 
@@ -17,16 +20,26 @@ export function NurseJobsPage() {
       <AsyncState loading={loading} error={error} isEmpty={jobShifts.length === 0} emptyMessage="Aktuell keine sichtbaren Einsätze.">
         <div className="record-list">
           {jobShifts.map((shift) => (
-            <article className="panel record-card" key={shift.id}>
-              <div className="record-card-main">
-                <h2>{shift.title ?? 'Pflegeeinsatz'}</h2>
-                <p>{shift.clinicName} · {shift.locationCity ?? 'ohne Ort'}</p>
-              </div>
-              <div className="record-card-meta">
-                <span>{new Date(shift.startTime).toLocaleString('de-DE')}</span>
-                <span>{new Date(shift.endTime).toLocaleString('de-DE')}</span>
-              </div>
-            </article>
+            <SectionCard
+              key={shift.id}
+              title={shift.title ?? 'Pflegeeinsatz'}
+              description={`${shift.clinicName} · ${shift.locationCity ?? 'ohne Ort'}`}
+              actions={<StatusBadge value="sichtbar" />}
+            >
+              <InfoList
+                items={[
+                  { label: 'Start', value: new Date(shift.startTime).toLocaleString('de-DE') },
+                  { label: 'Ende', value: new Date(shift.endTime).toLocaleString('de-DE') },
+                  { label: 'Geplante Stunden', value: shift.totalPlannedHours },
+                  {
+                    label: 'Anforderungen',
+                    value: shift.requirements.length
+                      ? shift.requirements.map((requirement) => `${requirement.tag} (${requirement.priority})`).join(', ')
+                      : '—',
+                  },
+                ]}
+              />
+            </SectionCard>
           ))}
         </div>
       </AsyncState>
