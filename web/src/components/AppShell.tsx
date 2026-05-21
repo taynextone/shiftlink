@@ -5,6 +5,7 @@ import { useAuth } from '../state/AuthContext';
 const navGroups = [
   {
     label: 'Pflegekraft',
+    roles: ['NURSE'],
     items: [
       { to: '/nurse', label: 'Dashboard', caption: 'Status & Überblick' },
       { to: '/nurse/jobs', label: 'Einsätze', caption: 'Verfügbare Bedarfe' },
@@ -14,6 +15,7 @@ const navGroups = [
   },
   {
     label: 'Krankenhaus',
+    roles: ['HOSPITAL_ADMIN', 'SUPER_ADMIN'],
     items: [
       { to: '/hospital', label: 'Dashboard', caption: 'Operativer Überblick' },
       { to: '/hospital/shifts', label: 'Schichten', caption: 'Bedarfe & Import' },
@@ -26,6 +28,10 @@ const navGroups = [
 export function AppShell({ children }: PropsWithChildren) {
   const location = useLocation();
   const { session, logout } = useAuth();
+
+  const visibleGroups = session
+    ? navGroups.filter((group) => group.roles.includes(session.role))
+    : [];
 
   return (
     <div className="app-shell">
@@ -51,7 +57,7 @@ export function AppShell({ children }: PropsWithChildren) {
           </div>
         </div>
         <nav className="nav-groups">
-          {navGroups.map((group) => (
+          {visibleGroups.map((group) => (
             <section key={group.label} className="nav-group">
               <span className="section-label">{group.label}</span>
               <div className="nav-list">

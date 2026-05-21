@@ -234,3 +234,57 @@ label span { font-size: 0.92rem; }
   .record-card { flex-direction: column; align-items: flex-start; }
   .record-card-meta.align-right { align-items: flex-start; text-align: left; }
 }
+
+.action-bar {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+.status-badge.neutral {
+  background: #eef2f7;
+  color: #475569;
+  border-color: #d7e0ec;
+}
+.status-badge.success {
+  background: #e8f7ef;
+  color: #166534;
+  border-color: #b7e4c7;
+}
+.status-badge.danger {
+  background: #fdecec;
+  color: #b42318;
+  border-color: #f5c2c0;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+.summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(248, 250, 252, 0.8);
+}
+.summary-card span {
+  color: var(--text-faint);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}

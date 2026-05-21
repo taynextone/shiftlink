@@ -20,14 +20,14 @@ export function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/nurse" element={<ProtectedRoute><NurseDashboardPage /></ProtectedRoute>} />
-          <Route path="/nurse/jobs" element={<ProtectedRoute><NurseJobsPage /></ProtectedRoute>} />
-          <Route path="/nurse/matches" element={<ProtectedRoute><NurseMatchesPage /></ProtectedRoute>} />
-          <Route path="/nurse/profile" element={<ProtectedRoute><NurseProfilePage /></ProtectedRoute>} />
-          <Route path="/hospital" element={<ProtectedRoute><HospitalDashboardPage /></ProtectedRoute>} />
-          <Route path="/hospital/shifts" element={<ProtectedRoute><HospitalShiftsPage /></ProtectedRoute>} />
-          <Route path="/hospital/offers" element={<ProtectedRoute><HospitalOffersPage /></ProtectedRoute>} />
-          <Route path="/hospital/contracts" element={<ProtectedRoute><HospitalContractsPage /></ProtectedRoute>} />
+          <Route path="/nurse" element={<ProtectedRoute allowedRoles={['NURSE']}><NurseDashboardPage /></ProtectedRoute>} />
+          <Route path="/nurse/jobs" element={<ProtectedRoute allowedRoles={['NURSE']}><NurseJobsPage /></ProtectedRoute>} />
+          <Route path="/nurse/matches" element={<ProtectedRoute allowedRoles={['NURSE']}><NurseMatchesPage /></ProtectedRoute>} />
+          <Route path="/nurse/profile" element={<ProtectedRoute allowedRoles={['NURSE']}><NurseProfilePage /></ProtectedRoute>} />
+          <Route path="/hospital" element={<ProtectedRoute allowedRoles={['HOSPITAL_ADMIN', 'SUPER_ADMIN']}><HospitalDashboardPage /></ProtectedRoute>} />
+          <Route path="/hospital/shifts" element={<ProtectedRoute allowedRoles={['HOSPITAL_ADMIN', 'SUPER_ADMIN']}><HospitalShiftsPage /></ProtectedRoute>} />
+          <Route path="/hospital/offers" element={<ProtectedRoute allowedRoles={['HOSPITAL_ADMIN', 'SUPER_ADMIN']}><HospitalOffersPage /></ProtectedRoute>} />
+          <Route path="/hospital/contracts" element={<ProtectedRoute allowedRoles={['HOSPITAL_ADMIN', 'SUPER_ADMIN']}><HospitalContractsPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/nurse" replace />} />
         </Routes>
       </AppShell>

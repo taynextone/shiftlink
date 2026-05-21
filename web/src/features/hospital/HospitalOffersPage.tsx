@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { ActionBar } from '../../components/ActionBar';
 import { PageHeader } from '../../components/PageHeader';
+import { StatusBadge } from '../../components/StatusBadge';
 import { api, type Candidate, type HospitalOffer } from '../../lib/api';
 
 export function HospitalOffersPage() {
@@ -33,6 +35,7 @@ export function HospitalOffersPage() {
     try {
       const result = await api.createOffer({ jobShiftId, nurseProfileId });
       setStatus(`Offer erstellt: ${result.matchContract.id}`);
+      await handleLoadOffers({ preventDefault() {} } as React.FormEvent);
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Offer konnte nicht erstellt werden');
     }
@@ -43,17 +46,17 @@ export function HospitalOffersPage() {
       <PageHeader
         eyebrow="Krankenhaus"
         title="Offers & Kandidatensteuerung"
-        description="Professionelle Arbeitsfläche für Kandidatensuche und Angebotsauslösung. Fokus auf belastbare operative Schritte statt visuellem Spielzeug." 
+        description="Professionelle Arbeitsfläche für Kandidatensuche und Angebotsauslösung. Fokus auf belastbare operative Schritte statt visuellem Spielzeug."
       />
       <form className="panel form-panel stack" onSubmit={handleLoadOffers}>
         <label>
           <span>Job Shift ID</span>
           <input value={jobShiftId} onChange={(event) => setJobShiftId(event.target.value)} placeholder="jobShiftId" />
         </label>
-        <div className="actions">
+        <ActionBar>
           <button type="submit">Offers laden</button>
-          <button type="button" className="secondary" onClick={handleLoadCandidates}>Kandidaten suchen</button>
-        </div>
+          <button type="button" className="secondary" onClick={() => void handleLoadCandidates()}>Kandidaten suchen</button>
+        </ActionBar>
       </form>
       {status ? <p className="hint">{status}</p> : null}
       <div className="content-grid two-columns-equal">
@@ -64,10 +67,11 @@ export function HospitalOffersPage() {
               <div className="record-card-main">
                 <h3>{candidate.displayName}</h3>
                 <p>{candidate.publicId} · {candidate.matchingCity}</p>
+                <p>Min. Rate: {candidate.minHourlyRate} € · Match-Fit: {candidate.preferredTagMatches}</p>
               </div>
               <div className="record-card-meta align-right">
-                <span>{candidate.preferredTagMatches} Preferred Matches</span>
-                <button onClick={() => handleCreateOffer(candidate.nurseProfileId)}>Offer erstellen</button>
+                <span>{candidate.preferredShiftType}</span>
+                <button onClick={() => void handleCreateOffer(candidate.nurseProfileId)}>Offer erstellen</button>
               </div>
             </article>
           ))}
@@ -80,9 +84,10 @@ export function HospitalOffersPage() {
               <div className="record-card-main">
                 <h3>{offer.nurse.displayName}</h3>
                 <p>{offer.nurse.publicId}</p>
+                <p>Min. Rate: {offer.nurse.minHourlyRate} €</p>
               </div>
               <div className="record-card-meta align-right">
-                <strong>{offer.status}</strong>
+                <StatusBadge value={offer.status} />
               </div>
             </article>
           ))}
