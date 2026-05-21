@@ -1,4 +1,5 @@
 import { AsyncState } from '../../components/AsyncState';
+import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { InfoList } from '../../components/InfoList';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
@@ -17,7 +18,8 @@ export function NurseJobsPage() {
         title="Sichtbare Einsätze"
         description="Nur freigegebene Pflegekräfte sehen hier passende Bedarfe. Die Liste bildet reale Produktrestriktionen ab, keine Dummy-Marktplatzromantik."
       />
-      <AsyncState loading={loading} error={error} isEmpty={jobShifts.length === 0} emptyMessage="Aktuell keine sichtbaren Einsätze.">
+      {error ? <FeedbackMessage tone="error" message={error} /> : null}
+      <AsyncState loading={loading} isEmpty={jobShifts.length === 0} emptyMessage="Aktuell keine sichtbaren Einsätze.">
         <div className="record-list">
           {jobShifts.map((shift) => (
             <SectionCard

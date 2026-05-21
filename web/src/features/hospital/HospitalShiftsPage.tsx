@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActionBar } from '../../components/ActionBar';
 import { AsyncState } from '../../components/AsyncState';
+import { FeedbackMessage } from '../../components/FeedbackMessage';
+import { Field } from '../../components/Field';
 import { FormSection } from '../../components/FormSection';
 import { InfoList } from '../../components/InfoList';
 import { PageHeader } from '../../components/PageHeader';
@@ -12,26 +14,43 @@ import { api } from '../../lib/api';
 export function HospitalShiftsPage() {
   const { data, loading, error, reload } = useAsyncData(() => api.listHospitalJobShifts(), []);
   const jobShifts = data?.jobShifts ?? [];
-  const [status, setStatus] = useState<string | null>(null);
+  const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [externalJobShiftId, setExternalJobShiftId] = useState('ext-demo-1');
   const [title, setTitle] = useState('ITS Einsatz');
+  const [submitting, setSubmitting] = useState(false);
+
+  const errors = useMemo(() => ({
+    externalJobShiftId: !externalJobShiftId.trim() ? 'Externe ID ist erforderlich' : null,
+    title: !title.trim() ? 'Titel ist erforderlich' : null,
+  }), [externalJobShiftId, title]);
+
+  const canSubmit = Boolean(externalJobShiftId.trim()) && Boolean(title.trim());
 
   async function handleImport(event: React.FormEvent) {
     event.preventDefault();
+    if (!canSubmit) {
+      setStatus({ tone: 'error', message: 'Bitte Eingaben korrigieren, bevor du fortfährst.' });
+      return;
+    }
+
+    setSubmitting(true);
+    setStatus(null);
     try {
       const result = await api.importHospitalJobShift({
-        externalJobShiftId,
-        title,
+        externalJobShiftId: externalJobShiftId.trim(),
+        title: title.trim(),
         locationCity: 'Berlin',
         startTime: '2026-06-16T06:00:00.000Z',
         endTime: '2026-06-20T18:00:00.000Z',
         totalPlannedHours: 12,
         requirements: [{ tag: 'Intensivstation', priority: 'REQUIRED' }],
       });
-      setStatus(`Import ${result.mode === 'created' ? 'angelegt' : 'aktualisiert'}.`);
+      setStatus({ tone: 'success', message: `Import ${result.mode === 'created' ? 'angelegt' : 'aktualisiert'}.` });
       await reload();
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Import fehlgeschlagen');
+      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Import fehlgeschlagen' });
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -45,21 +64,19 @@ export function HospitalShiftsPage() {
       <form className="panel form-panel stack" onSubmit={handleImport}>
         <FormSection title="Importquelle" description="Externe Schichten werden idempotent in die Plattform überführt.">
           <div className="form-grid two">
-            <label>
-              <span>External Job Shift ID</span>
+            <Field label="External Job Shift ID" helpText="Stabile Quell-ID für idempotente Re-Imports." error={errors.externalJobShiftId}>
               <input value={externalJobShiftId} onChange={(event) => setExternalJobShiftId(event.target.value)} placeholder="externalJobShiftId" />
-            </label>
-            <label>
-              <span>Titel</span>
+            </Field>
+            <Field label="Titel" helpText="Interne Bezeichnung des Bedarfs." error={errors.title}>
               <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Titel" />
-            </label>
+            </Field>
           </div>
         </FormSection>
         <ActionBar>
-          <button type="submit">Shift importieren</button>
+          <button type="submit" disabled={submitting || !canSubmit}>{submitting ? 'Import läuft…' : 'Shift importieren'}</button>
         </ActionBar>
       </form>
-      {status ? <p className="hint">{status}</p> : null}
+      {status ? <FeedbackMessage tone={status.tone} message={status.message} /> : null}
       <AsyncState loading={loading} error={error} isEmpty={jobShifts.length === 0} emptyMessage="Noch keine Schichten vorhanden.">
         <div className="record-list">
           {jobShifts.map((shift) => (

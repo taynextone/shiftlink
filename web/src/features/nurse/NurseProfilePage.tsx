@@ -1,4 +1,5 @@
 import { AsyncState } from '../../components/AsyncState';
+import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { InfoList } from '../../components/InfoList';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
@@ -17,7 +18,8 @@ export function NurseProfilePage() {
         title="Profil & Verifikation"
         description="Matching-Freigabe ist eine Sicherheits- und Compliance-Grenze. Die Oberfläche zeigt diesen Zustand bewusst prominent und nüchtern an."
       />
-      <AsyncState loading={loading} error={error} isEmpty={!verification} emptyMessage="Noch keine Verifikationsdaten vorhanden.">
+      {error ? <FeedbackMessage tone="error" message={error} /> : null}
+      <AsyncState loading={loading} isEmpty={!verification} emptyMessage="Noch keine Verifikationsdaten vorhanden.">
         {verification ? (
           <div className="content-grid two-columns-equal">
             <SectionCard
