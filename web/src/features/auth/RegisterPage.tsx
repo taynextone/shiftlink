@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { EmptyState } from '../../components/EmptyState';
 import { Field } from '../../components/Field';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { PageHeader } from '../../components/PageHeader';
@@ -70,33 +71,39 @@ export function RegisterPage() {
   }
 
   return (
-    <section className="stack page-stack auth-layout">
-      <PageHeader
-        eyebrow="Zugang"
-        title="Pflegekraft registrieren"
-        description="Erster professioneller Eintrittspunkt für neue Pflegekräfte. Das UI bleibt bewusst sachlich und operativ lesbar."
+    <section className="stack page-stack auth-layout auth-grid">
+      <div className="stack">
+        <PageHeader
+          eyebrow="Zugang"
+          title="Pflegekraft registrieren"
+          description="Erster professioneller Eintrittspunkt für neue Pflegekräfte. Das UI bleibt bewusst sachlich und operativ lesbar."
+        />
+        <form className="panel form-panel narrow stack" onSubmit={handleSubmit}>
+          <div className="form-grid two">
+            <Field label="Vorname" error={errors.firstName}>
+              <input value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder="Vorname" />
+            </Field>
+            <Field label="Nachname" error={errors.lastName}>
+              <input value={lastName} onChange={(event) => setLastName(event.target.value)} placeholder="Nachname" />
+            </Field>
+          </div>
+          <Field label="Display Name" helpText="So wird dein Profil im Matching sichtbar." error={errors.displayName}>
+            <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Display Name" />
+          </Field>
+          <Field label="E-Mail" error={errors.email}>
+            <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="E-Mail" type="email" />
+          </Field>
+          <Field label="Passwort" helpText="Mindestens 8 Zeichen." error={errors.password}>
+            <input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Passwort" type="password" />
+          </Field>
+          <button type="submit" disabled={submitting || !canSubmit}>{submitting ? 'Registrieren…' : 'Registrieren'}</button>
+        </form>
+        {status ? <FeedbackMessage tone={status.tone} message={status.message} /> : null}
+      </div>
+      <EmptyState
+        title="Registrierungslogik"
+        description="Die Registrierung legt das Nurse-Profil an und führt danach direkt in den geschützten Pflegekraft-Bereich. Matching-Freigabe bleibt weiterhin an Verifikation gekoppelt."
       />
-      <form className="panel form-panel narrow stack" onSubmit={handleSubmit}>
-        <div className="form-grid two">
-          <Field label="Vorname" error={errors.firstName}>
-            <input value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder="Vorname" />
-          </Field>
-          <Field label="Nachname" error={errors.lastName}>
-            <input value={lastName} onChange={(event) => setLastName(event.target.value)} placeholder="Nachname" />
-          </Field>
-        </div>
-        <Field label="Display Name" helpText="So wird dein Profil im Matching sichtbar." error={errors.displayName}>
-          <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Display Name" />
-        </Field>
-        <Field label="E-Mail" error={errors.email}>
-          <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="E-Mail" type="email" />
-        </Field>
-        <Field label="Passwort" helpText="Mindestens 8 Zeichen." error={errors.password}>
-          <input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Passwort" type="password" />
-        </Field>
-        <button type="submit" disabled={submitting || !canSubmit}>{submitting ? 'Registrieren…' : 'Registrieren'}</button>
-      </form>
-      {status ? <FeedbackMessage tone={status.tone} message={status.message} /> : null}
     </section>
   );
 }

@@ -1,4 +1,5 @@
 import { KpiCard } from '../../components/KpiCard';
+import { MetricList } from '../../components/MetricList';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
 
@@ -20,7 +21,14 @@ export function HospitalDashboardPage() {
           title="Empfohlene Arbeitsfolge"
           description="So ist der operative Krankenhaus-Workflow aktuell strukturiert."
         >
-          <ol className="ordered-list">
+          <MetricList
+            items={[
+              { label: 'Phase 1', value: 'Bedarf importieren' },
+              { label: 'Phase 2', value: 'Kandidaten prüfen' },
+              { label: 'Phase 3', value: 'Offers & Contracts steuern' },
+            ]}
+          />
+          <ol className="ordered-list compact-ordered-list">
             <li>Schichten importieren oder anlegen</li>
             <li>Kandidaten prüfen und Offers auslösen</li>
             <li>Contract Lifecycle beobachten und Execution-Schritte durchführen</li>
@@ -33,6 +41,12 @@ export function HospitalDashboardPage() {
           <p>
             Diese Oberfläche steuert Matching und Plattformgebühren-Prozesse. Sie modelliert keine Arbeitgeber- oder Lohnabrechnungslogik für Shiftlink.
           </p>
+          <MetricList
+            items={[
+              { label: 'Fokus', value: 'Matching & Governance' },
+              { label: 'Nicht enthalten', value: 'Lohnabrechnung' },
+            ]}
+          />
         </SectionCard>
       </div>
     </section>

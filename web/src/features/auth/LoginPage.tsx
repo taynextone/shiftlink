@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { EmptyState } from '../../components/EmptyState';
 import { Field } from '../../components/Field';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { PageHeader } from '../../components/PageHeader';
@@ -44,22 +45,28 @@ export function LoginPage() {
   }
 
   return (
-    <section className="stack page-stack auth-layout">
-      <PageHeader
-        eyebrow="Zugang"
-        title="Sign in to Shiftlink"
-        description="Professioneller Zugangspunkt für Plattformnutzer. Klar, reduziert und ohne generische Template-Ästhetik."
+    <section className="stack page-stack auth-layout auth-grid">
+      <div className="stack">
+        <PageHeader
+          eyebrow="Zugang"
+          title="Sign in to Shiftlink"
+          description="Professioneller Zugangspunkt für Plattformnutzer. Klar, reduziert und ohne generische Template-Ästhetik."
+        />
+        <form className="panel form-panel narrow stack" onSubmit={handleSubmit}>
+          <Field label="E-Mail" helpText="Nutze die E-Mail deines bestehenden Plattformkontos." error={errors.email}>
+            <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="E-Mail" type="email" />
+          </Field>
+          <Field label="Passwort" helpText="Mindestens 8 Zeichen." error={errors.password}>
+            <input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Passwort" type="password" />
+          </Field>
+          <button type="submit" disabled={submitting || !canSubmit}>{submitting ? 'Einloggen…' : 'Einloggen'}</button>
+        </form>
+        {status ? <FeedbackMessage tone={status.tone} message={status.message} /> : null}
+      </div>
+      <EmptyState
+        title="Zugangslogik"
+        description="Login schützt role-aware Produktbereiche. Nach erfolgreicher Authentifizierung führt Shiftlink Nutzer direkt in ihren operativen Arbeitskontext."
       />
-      <form className="panel form-panel narrow stack" onSubmit={handleSubmit}>
-        <Field label="E-Mail" helpText="Nutze die E-Mail deines bestehenden Plattformkontos." error={errors.email}>
-          <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="E-Mail" type="email" />
-        </Field>
-        <Field label="Passwort" helpText="Mindestens 8 Zeichen." error={errors.password}>
-          <input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Passwort" type="password" />
-        </Field>
-        <button type="submit" disabled={submitting || !canSubmit}>{submitting ? 'Einloggen…' : 'Einloggen'}</button>
-      </form>
-      {status ? <FeedbackMessage tone={status.tone} message={status.message} /> : null}
     </section>
   );
 }

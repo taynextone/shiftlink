@@ -1,0 +1,8 @@
+export function EmptyState({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="panel empty-state">
+      <strong>{title}</strong>
+      <p>{description}</p>
+    </div>
+  );
+}

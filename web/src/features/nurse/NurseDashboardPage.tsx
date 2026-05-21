@@ -1,4 +1,5 @@
 import { KpiCard } from '../../components/KpiCard';
+import { MetricList } from '../../components/MetricList';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
 
@@ -20,7 +21,15 @@ export function NurseDashboardPage() {
           title="Kernablauf"
           description="So ist der Produktfluss für Pflegekräfte aktuell sauber organisiert."
         >
-          <ol className="ordered-list">
+          <MetricList
+            items={[
+              { label: 'Schritt 1', value: 'Profil & Verifikation' },
+              { label: 'Schritt 2', value: 'Matching-Freigabe' },
+              { label: 'Schritt 3', value: 'Offers beantworten' },
+              { label: 'Schritt 4', value: 'Contract & Execution' },
+            ]}
+          />
+          <ol className="ordered-list compact-ordered-list">
             <li>Profil vervollständigen und Verifikationsdokumente einreichen</li>
             <li>Release für Matching erhalten</li>
             <li>Passende Einsätze prüfen und Offers beantworten</li>
@@ -34,6 +43,12 @@ export function NurseDashboardPage() {
           <p>
             Shiftlink ist kein Arbeitgeber-Frontend. Diese Oberfläche dient Matching, Vertragsfluss und Nachweisführung — nicht Payroll, Payout oder Zeiterfassung als Lohnsystem.
           </p>
+          <MetricList
+            items={[
+              { label: 'Fokus', value: 'Direktvermittlung' },
+              { label: 'Nicht enthalten', value: 'Payroll-System' },
+            ]}
+          />
         </SectionCard>
       </div>
     </section>
