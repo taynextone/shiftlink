@@ -67,3 +67,5 @@ nav { display: flex; flex-direction: column; gap: 0.35rem; }
 .small-gap { gap: 0.75rem; }
 .tiny-gap { gap: 0.35rem; }
 .section-label { color: #7f8aa3; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; }
+
+.section-heading { margin: 0; color: #334155; }

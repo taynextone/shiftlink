@@ -57,6 +57,17 @@ export type HospitalOffer = {
   };
 };
 
+export type Candidate = {
+  nurseProfileId: string;
+  publicId: string;
+  displayName: string;
+  minHourlyRate: string;
+  preferredShiftType: string;
+  preferredTagMatches: number;
+  matchingAvailabilityBlockId: string;
+  matchingCity: string;
+};
+
 export type ContractLifecycle = {
   matchContractId: string;
   status: string;
@@ -121,6 +132,25 @@ export const api = {
     }),
   listHospitalOffers: (jobShiftId: string) =>
     request<{ offers: HospitalOffer[]; jobShift: HospitalJobShift }>(`/matches/hospital-offers?jobShiftId=${encodeURIComponent(jobShiftId)}`),
+  findCandidates: (jobShiftId: string) =>
+    request<{ jobShiftId: string; candidates: Candidate[] }>('/matches/candidates', {
+      method: 'POST',
+      body: JSON.stringify({ jobShiftId }),
+    }),
+  createOffer: (input: { jobShiftId: string; nurseProfileId: string }) =>
+    request<{ matchContract: { id: string; status: string } }>('/matches/offer', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  signContractExecution: (contractId: string) =>
+    request<{ execution: { executionStatus: string; signatureCount: number } }>(`/matches/contract/${contractId}/execution/sign`, {
+      method: 'POST',
+    }),
+  voidContract: (contractId: string, reason: string) =>
+    request<{ voiding: { executionStatus: string; reason: string } }>(`/matches/contract/${contractId}/void`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
   getContractLifecycle: (contractId: string) =>
     request<{ lifecycle: ContractLifecycle }>(`/matches/contract/${contractId}/lifecycle`),
 };
