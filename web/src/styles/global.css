@@ -63,3 +63,7 @@ nav { display: flex; flex-direction: column; gap: 0.35rem; }
   .sidebar { position: sticky; top: 0; z-index: 10; }
   .grid.two { grid-template-columns: 1fr; }
 }
+
+.small-gap { gap: 0.75rem; }
+.tiny-gap { gap: 0.35rem; }
+.section-label { color: #7f8aa3; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; }

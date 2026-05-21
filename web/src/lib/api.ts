@@ -36,6 +36,44 @@ export type VerificationOverview = {
   }>;
 };
 
+export type HospitalJobShift = {
+  id: string;
+  title?: string | null;
+  locationCity?: string | null;
+  startTime: string;
+  endTime: string;
+  status: string;
+  totalPlannedHours: string;
+};
+
+export type HospitalOffer = {
+  id: string;
+  status: string;
+  nurse: {
+    id: string;
+    publicId: string;
+    displayName: string;
+    minHourlyRate: string;
+  };
+};
+
+export type ContractLifecycle = {
+  matchContractId: string;
+  status: string;
+  executionStatus: string;
+  signedAt?: string | null;
+  fullyExecutedAt?: string | null;
+  contractPdf: { available: boolean; fileUrl: string | null };
+  snapshotSummary: {
+    currentSnapshotVersion: number | null;
+    totalSnapshots: number;
+  };
+  signatureSummary: {
+    totalSignatures: number;
+  };
+  voidSummary: null | { reason: string; actorRole: string };
+};
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api/v1';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -75,4 +113,14 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+  listHospitalJobShifts: () => request<{ jobShifts: HospitalJobShift[] }>('/job-shifts'),
+  importHospitalJobShift: (input: Record<string, unknown>) =>
+    request<{ mode: 'created' | 'updated'; jobShift: HospitalJobShift }>('/job-shifts/import', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  listHospitalOffers: (jobShiftId: string) =>
+    request<{ offers: HospitalOffer[]; jobShift: HospitalJobShift }>(`/matches/hospital-offers?jobShiftId=${encodeURIComponent(jobShiftId)}`),
+  getContractLifecycle: (contractId: string) =>
+    request<{ lifecycle: ContractLifecycle }>(`/matches/contract/${contractId}/lifecycle`),
 };
