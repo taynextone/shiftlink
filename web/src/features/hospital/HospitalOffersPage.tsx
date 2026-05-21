@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { ActionBar } from '../../components/ActionBar';
+import { FormSection } from '../../components/FormSection';
+import { InfoList } from '../../components/InfoList';
 import { PageHeader } from '../../components/PageHeader';
+import { SectionCard } from '../../components/SectionCard';
 import { StatusBadge } from '../../components/StatusBadge';
 import { api, type Candidate, type HospitalOffer } from '../../lib/api';
 
@@ -10,12 +13,16 @@ export function HospitalOffersPage() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [status, setStatus] = useState<string | null>(null);
 
+  async function loadOffers() {
+    const result = await api.listHospitalOffers(jobShiftId);
+    setOffers(result.offers ?? []);
+    setStatus(`Offers für ${result.jobShift.title ?? result.jobShift.id} geladen.`);
+  }
+
   async function handleLoadOffers(event: React.FormEvent) {
     event.preventDefault();
     try {
-      const result = await api.listHospitalOffers(jobShiftId);
-      setOffers(result.offers ?? []);
-      setStatus(`Offers für ${result.jobShift.title ?? result.jobShift.id} geladen.`);
+      await loadOffers();
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Offers konnten nicht geladen werden');
     }
@@ -35,7 +42,7 @@ export function HospitalOffersPage() {
     try {
       const result = await api.createOffer({ jobShiftId, nurseProfileId });
       setStatus(`Offer erstellt: ${result.matchContract.id}`);
-      await handleLoadOffers({ preventDefault() {} } as React.FormEvent);
+      await loadOffers();
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Offer konnte nicht erstellt werden');
     }
@@ -49,10 +56,12 @@ export function HospitalOffersPage() {
         description="Professionelle Arbeitsfläche für Kandidatensuche und Angebotsauslösung. Fokus auf belastbare operative Schritte statt visuellem Spielzeug."
       />
       <form className="panel form-panel stack" onSubmit={handleLoadOffers}>
-        <label>
-          <span>Job Shift ID</span>
-          <input value={jobShiftId} onChange={(event) => setJobShiftId(event.target.value)} placeholder="jobShiftId" />
-        </label>
+        <FormSection title="Operativer Kontext" description="Die Job Shift ID steuert Kandidatensuche und Offer-Liste in einem gemeinsamen Arbeitsraum.">
+          <label>
+            <span>Job Shift ID</span>
+            <input value={jobShiftId} onChange={(event) => setJobShiftId(event.target.value)} placeholder="jobShiftId" />
+          </label>
+        </FormSection>
         <ActionBar>
           <button type="submit">Offers laden</button>
           <button type="button" className="secondary" onClick={() => void handleLoadCandidates()}>Kandidaten suchen</button>
@@ -63,33 +72,42 @@ export function HospitalOffersPage() {
         <section className="stack">
           <h2 className="section-heading">Kandidaten</h2>
           {candidates.map((candidate) => (
-            <article className="panel record-card spaced" key={candidate.nurseProfileId}>
-              <div className="record-card-main">
-                <h3>{candidate.displayName}</h3>
-                <p>{candidate.publicId} · {candidate.matchingCity}</p>
-                <p>Min. Rate: {candidate.minHourlyRate} € · Match-Fit: {candidate.preferredTagMatches}</p>
-              </div>
-              <div className="record-card-meta align-right">
-                <span>{candidate.preferredShiftType}</span>
+            <SectionCard
+              key={candidate.nurseProfileId}
+              title={candidate.displayName}
+              description={`${candidate.publicId} · ${candidate.matchingCity}`}
+              actions={<StatusBadge value={candidate.preferredShiftType} />}
+            >
+              <InfoList
+                items={[
+                  { label: 'Min. Rate', value: `${candidate.minHourlyRate} €` },
+                  { label: 'Match-Fit', value: candidate.preferredTagMatches },
+                  { label: 'Availability Block', value: candidate.matchingAvailabilityBlockId },
+                ]}
+              />
+              <ActionBar>
                 <button onClick={() => void handleCreateOffer(candidate.nurseProfileId)}>Offer erstellen</button>
-              </div>
-            </article>
+              </ActionBar>
+            </SectionCard>
           ))}
           {candidates.length === 0 ? <div className="panel empty">Noch keine Kandidaten geladen.</div> : null}
         </section>
         <section className="stack">
           <h2 className="section-heading">Offers</h2>
           {offers.map((offer) => (
-            <article className="panel record-card spaced" key={offer.id}>
-              <div className="record-card-main">
-                <h3>{offer.nurse.displayName}</h3>
-                <p>{offer.nurse.publicId}</p>
-                <p>Min. Rate: {offer.nurse.minHourlyRate} €</p>
-              </div>
-              <div className="record-card-meta align-right">
-                <StatusBadge value={offer.status} />
-              </div>
-            </article>
+            <SectionCard
+              key={offer.id}
+              title={offer.nurse.displayName}
+              description={offer.nurse.publicId}
+              actions={<StatusBadge value={offer.status} />}
+            >
+              <InfoList
+                items={[
+                  { label: 'Offer ID', value: offer.id },
+                  { label: 'Min. Rate', value: `${offer.nurse.minHourlyRate} €` },
+                ]}
+              />
+            </SectionCard>
           ))}
           {offers.length === 0 ? <div className="panel empty">Noch keine Offers geladen.</div> : null}
         </section>

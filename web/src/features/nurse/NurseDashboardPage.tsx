@@ -1,6 +1,6 @@
+import { KpiCard } from '../../components/KpiCard';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
-import { StatCard } from '../../components/StatCard';
 
 export function NurseDashboardPage() {
   return (
@@ -11,9 +11,9 @@ export function NurseDashboardPage() {
         description="Ein professioneller Überblick über Freigabe, sichtbare Einsätze und aktive Angebotsprozesse. Fokus auf Klarheit statt Klick-Chaos."
       />
       <div className="stats-grid">
-        <StatCard label="Release" value="Gate aktiv" caption="Marketplace-Sichtbarkeit ist hart an Verifikation gekoppelt." />
-        <StatCard label="Offers" value="Asynchron" caption="Angebote werden über Plattformstatus und nicht über Chat-Fragmente gesteuert." />
-        <StatCard label="Verträge" value="Auditierbar" caption="Snapshots, PDFs und Execution-State sind getrennt modelliert." />
+        <KpiCard label="Release" value="Gate aktiv" helper="Marketplace-Sichtbarkeit ist hart an Verifikation gekoppelt." />
+        <KpiCard label="Offers" value="Asynchron" helper="Angebote werden über Plattformstatus und nicht über Chat-Fragmente gesteuert." />
+        <KpiCard label="Verträge" value="Auditierbar" helper="Snapshots, PDFs und Execution-State sind getrennt modelliert." />
       </div>
       <div className="content-grid two-thirds">
         <SectionCard

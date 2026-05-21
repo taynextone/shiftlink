@@ -1,6 +1,11 @@
 import { useState } from 'react';
-import { PageHeader } from '../../components/PageHeader';
+import { ActionBar } from '../../components/ActionBar';
 import { AsyncState } from '../../components/AsyncState';
+import { FormSection } from '../../components/FormSection';
+import { InfoList } from '../../components/InfoList';
+import { PageHeader } from '../../components/PageHeader';
+import { SectionCard } from '../../components/SectionCard';
+import { StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { api } from '../../lib/api';
 
@@ -38,34 +43,40 @@ export function HospitalShiftsPage() {
         description="Operative Bedarfe mit professioneller, zurückhaltender Oberfläche. Keine generische Demo-Tabelle, sondern ein klarer Arbeitskontext für Imports und Statussicht."
       />
       <form className="panel form-panel stack" onSubmit={handleImport}>
-        <div className="form-grid two">
-          <label>
-            <span>External Job Shift ID</span>
-            <input value={externalJobShiftId} onChange={(event) => setExternalJobShiftId(event.target.value)} placeholder="externalJobShiftId" />
-          </label>
-          <label>
-            <span>Titel</span>
-            <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Titel" />
-          </label>
-        </div>
-        <div className="actions">
+        <FormSection title="Importquelle" description="Externe Schichten werden idempotent in die Plattform überführt.">
+          <div className="form-grid two">
+            <label>
+              <span>External Job Shift ID</span>
+              <input value={externalJobShiftId} onChange={(event) => setExternalJobShiftId(event.target.value)} placeholder="externalJobShiftId" />
+            </label>
+            <label>
+              <span>Titel</span>
+              <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Titel" />
+            </label>
+          </div>
+        </FormSection>
+        <ActionBar>
           <button type="submit">Shift importieren</button>
-        </div>
+        </ActionBar>
       </form>
       {status ? <p className="hint">{status}</p> : null}
       <AsyncState loading={loading} error={error} isEmpty={jobShifts.length === 0} emptyMessage="Noch keine Schichten vorhanden.">
         <div className="record-list">
           {jobShifts.map((shift) => (
-            <article className="panel record-card spaced" key={shift.id}>
-              <div className="record-card-main">
-                <h2>{shift.title ?? 'Pflegeeinsatz'}</h2>
-                <p>{shift.locationCity ?? 'ohne Ort'}</p>
-              </div>
-              <div className="record-card-meta align-right">
-                <strong>{shift.status}</strong>
-                <span>{new Date(shift.startTime).toLocaleString('de-DE')}</span>
-              </div>
-            </article>
+            <SectionCard
+              key={shift.id}
+              title={shift.title ?? 'Pflegeeinsatz'}
+              description={shift.locationCity ?? 'ohne Ort'}
+              actions={<StatusBadge value={shift.status} />}
+            >
+              <InfoList
+                items={[
+                  { label: 'Start', value: new Date(shift.startTime).toLocaleString('de-DE') },
+                  { label: 'Ende', value: new Date(shift.endTime).toLocaleString('de-DE') },
+                  { label: 'Geplante Stunden', value: shift.totalPlannedHours },
+                ]}
+              />
+            </SectionCard>
           ))}
         </div>
       </AsyncState>
