@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { PageHeader } from '../../components/PageHeader';
 import { api, type HospitalJobShift } from '../../lib/api';
 
 export function HospitalShiftsPage() {
@@ -33,25 +34,40 @@ export function HospitalShiftsPage() {
   }
 
   return (
-    <section className="stack">
-      <div className="panel">
-        <h1>Hospital Schichten</h1>
-        <p>Hier wird die erste operative Schichtliste und der idempotente Import-Flow abgebildet.</p>
-      </div>
-      <form className="panel stack" onSubmit={handleImport}>
-        <h2>Shift importieren</h2>
-        <input value={externalJobShiftId} onChange={(event) => setExternalJobShiftId(event.target.value)} placeholder="externalJobShiftId" />
-        <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Titel" />
-        <button type="submit">Import auslösen</button>
+    <section className="stack page-stack">
+      <PageHeader
+        eyebrow="Krankenhaus"
+        title="Schichten & Bedarfseingang"
+        description="Operative Bedarfe mit professioneller, zurückhaltender Oberfläche. Keine generische Demo-Tabelle, sondern ein klarer Arbeitskontext für Imports und Statussicht." 
+      />
+      <form className="panel form-panel stack" onSubmit={handleImport}>
+        <div className="form-grid two">
+          <label>
+            <span>External Job Shift ID</span>
+            <input value={externalJobShiftId} onChange={(event) => setExternalJobShiftId(event.target.value)} placeholder="externalJobShiftId" />
+          </label>
+          <label>
+            <span>Titel</span>
+            <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Titel" />
+          </label>
+        </div>
+        <div className="actions">
+          <button type="submit">Shift importieren</button>
+        </div>
       </form>
       {status ? <p className="hint">{status}</p> : null}
       {error ? <p className="hint error">{error}</p> : null}
-      <div className="stack">
+      <div className="record-list">
         {jobShifts.map((shift) => (
-          <article className="panel" key={shift.id}>
-            <h2>{shift.title ?? 'Pflegeeinsatz'}</h2>
-            <p>Status: <strong>{shift.status}</strong></p>
-            <p>{shift.locationCity ?? 'ohne Ort'} · {new Date(shift.startTime).toLocaleString('de-DE')}</p>
+          <article className="panel record-card spaced" key={shift.id}>
+            <div className="record-card-main">
+              <h2>{shift.title ?? 'Pflegeeinsatz'}</h2>
+              <p>{shift.locationCity ?? 'ohne Ort'}</p>
+            </div>
+            <div className="record-card-meta align-right">
+              <strong>{shift.status}</strong>
+              <span>{new Date(shift.startTime).toLocaleString('de-DE')}</span>
+            </div>
           </article>
         ))}
         {jobShifts.length === 0 && !error ? <div className="panel empty">Noch keine Schichten vorhanden.</div> : null}

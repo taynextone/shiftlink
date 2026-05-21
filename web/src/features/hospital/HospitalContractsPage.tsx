@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PageHeader } from '../../components/PageHeader';
 import { api, type ContractLifecycle } from '../../lib/api';
 
 export function HospitalContractsPage() {
@@ -37,34 +38,48 @@ export function HospitalContractsPage() {
   }
 
   return (
-    <section className="stack">
-      <div className="panel">
-        <h1>Contract Lifecycle</h1>
-        <p>Read-only Audit-Sicht plus kontrollierte Hospital-Aktionen für Execution und Voiding.</p>
-      </div>
-      <form className="panel stack" onSubmit={handleLoad}>
-        <input value={contractId} onChange={(event) => setContractId(event.target.value)} placeholder="matchContractId" />
-        <button type="submit">Lifecycle laden</button>
-      </form>
-      <div className="panel stack">
-        <h2>Aktionen</h2>
+    <section className="stack page-stack">
+      <PageHeader
+        eyebrow="Krankenhaus"
+        title="Contract Lifecycle & Governance"
+        description="Read-only Audit-Sicht plus streng kontrollierte Aktionen für Execution und Voiding. Professionell, nüchtern und nachvollziehbar gestaltet." 
+      />
+      <form className="panel form-panel stack" onSubmit={handleLoad}>
+        <label>
+          <span>Match Contract ID</span>
+          <input value={contractId} onChange={(event) => setContractId(event.target.value)} placeholder="matchContractId" />
+        </label>
         <div className="actions">
-          <button type="button" onClick={handleExecutionSign}>Execution signieren</button>
+          <button type="submit">Lifecycle laden</button>
         </div>
-        <input value={voidReason} onChange={(event) => setVoidReason(event.target.value)} placeholder="Void reason" />
-        <button type="button" className="secondary" onClick={handleVoid}>Contract voiden</button>
+      </form>
+      <div className="content-grid two-columns-equal">
+        <div className="panel form-panel stack">
+          <h2>Aktionen</h2>
+          <button type="button" onClick={handleExecutionSign}>Execution signieren</button>
+          <label>
+            <span>Void Reason</span>
+            <input value={voidReason} onChange={(event) => setVoidReason(event.target.value)} placeholder="Void reason" />
+          </label>
+          <button type="button" className="secondary" onClick={handleVoid}>Contract voiden</button>
+        </div>
+        <div className="panel detail-panel stack">
+          <h2>Lifecycle Summary</h2>
+          {lifecycle ? (
+            <>
+              <div className="detail-row"><span>Status</span><strong>{lifecycle.status}</strong></div>
+              <div className="detail-row"><span>Execution</span><strong>{lifecycle.executionStatus}</strong></div>
+              <div className="detail-row"><span>Snapshots</span><strong>{lifecycle.snapshotSummary.totalSnapshots}</strong></div>
+              <div className="detail-row"><span>Signaturen</span><strong>{lifecycle.signatureSummary.totalSignatures}</strong></div>
+              <div className="detail-row"><span>PDF vorhanden</span><strong>{lifecycle.contractPdf.available ? 'Ja' : 'Nein'}</strong></div>
+              {lifecycle.voidSummary ? <div className="detail-row"><span>Void-Grund</span><strong>{lifecycle.voidSummary.reason}</strong></div> : null}
+            </>
+          ) : (
+            <p className="hint">Noch kein Lifecycle geladen.</p>
+          )}
+        </div>
       </div>
       {status ? <p className="hint">{status}</p> : null}
-      {lifecycle ? (
-        <article className="panel stack">
-          <p>Status: <strong>{lifecycle.status}</strong></p>
-          <p>Execution: <strong>{lifecycle.executionStatus}</strong></p>
-          <p>Snapshots: {lifecycle.snapshotSummary.totalSnapshots}</p>
-          <p>Signaturen: {lifecycle.signatureSummary.totalSignatures}</p>
-          <p>PDF vorhanden: {lifecycle.contractPdf.available ? 'Ja' : 'Nein'}</p>
-          {lifecycle.voidSummary ? <p>Void-Grund: {lifecycle.voidSummary.reason}</p> : null}
-        </article>
-      ) : null}
     </section>
   );
 }

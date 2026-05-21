@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { PageHeader } from '../../components/PageHeader';
 import { api, type OwnMatchContract } from '../../lib/api';
 
 export function NurseMatchesPage() {
@@ -22,25 +23,32 @@ export function NurseMatchesPage() {
   }
 
   return (
-    <section className="stack">
-      <div className="panel">
-        <h1>Eigene Angebote</h1>
-        <p>Hier werden Offer-Status und nächste Aktionen sichtbar gemacht.</p>
-      </div>
+    <section className="stack page-stack">
+      <PageHeader
+        eyebrow="Pflegekraft"
+        title="Angebote & Match-Status"
+        description="Offer-Entscheidungen werden kontrolliert über den Backend-Lifecycle geführt. Diese Ansicht macht Status und Aktion professionell nachvollziehbar."
+      />
       {error ? <p className="hint error">{error}</p> : null}
       {status ? <p className="hint">{status}</p> : null}
-      {contracts.map((contract) => (
-        <article className="panel" key={contract.id}>
-          <h2>{contract.jobShift.title ?? 'Pflegeeinsatz'}</h2>
-          <p>{contract.jobShift.hospitalProfile.clinicName} · {contract.jobShift.locationCity ?? 'ohne Ort'}</p>
-          <p>Status: <strong>{contract.status}</strong></p>
-          <div className="actions">
-            <button onClick={() => handleRespond(contract.id, 'ACCEPT')}>Annehmen</button>
-            <button className="secondary" onClick={() => handleRespond(contract.id, 'DECLINE')}>Ablehnen</button>
-          </div>
-        </article>
-      ))}
-      {contracts.length === 0 && !error ? <div className="panel empty">Noch keine Angebote vorhanden.</div> : null}
+      <div className="record-list">
+        {contracts.map((contract) => (
+          <article className="panel record-card spaced" key={contract.id}>
+            <div className="record-card-main">
+              <h2>{contract.jobShift.title ?? 'Pflegeeinsatz'}</h2>
+              <p>{contract.jobShift.hospitalProfile.clinicName} · {contract.jobShift.locationCity ?? 'ohne Ort'}</p>
+            </div>
+            <div className="record-card-meta align-right">
+              <strong>{contract.status}</strong>
+              <div className="actions compact">
+                <button onClick={() => handleRespond(contract.id, 'ACCEPT')}>Annehmen</button>
+                <button className="secondary" onClick={() => handleRespond(contract.id, 'DECLINE')}>Ablehnen</button>
+              </div>
+            </div>
+          </article>
+        ))}
+        {contracts.length === 0 && !error ? <div className="panel empty">Noch keine Angebote vorhanden.</div> : null}
+      </div>
     </section>
   );
 }

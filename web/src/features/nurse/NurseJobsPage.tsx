@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { PageHeader } from '../../components/PageHeader';
 import { api, type VisibleJobShift } from '../../lib/api';
 
 export function NurseJobsPage() {
@@ -12,18 +13,24 @@ export function NurseJobsPage() {
   }, []);
 
   return (
-    <section className="stack">
-      <div className="panel">
-        <h1>Sichtbare Einsätze</h1>
-        <p>Unreleased Pflegekräfte sehen hier bewusst nichts. Sichtbarkeit ist an Verifikation und Freigabe gekoppelt.</p>
-      </div>
+    <section className="stack page-stack">
+      <PageHeader
+        eyebrow="Pflegekraft"
+        title="Sichtbare Einsätze"
+        description="Nur freigegebene Pflegekräfte sehen hier passende Bedarfe. Die Liste bildet reale Produktrestriktionen ab, keine Dummy-Marktplatzromantik."
+      />
       {error ? <p className="hint error">{error}</p> : null}
-      <div className="stack">
+      <div className="record-list">
         {jobShifts.map((shift) => (
-          <article className="panel" key={shift.id}>
-            <h2>{shift.title ?? 'Pflegeeinsatz'}</h2>
-            <p>{shift.clinicName} · {shift.locationCity ?? 'ohne Ort'}</p>
-            <p>{new Date(shift.startTime).toLocaleString('de-DE')} – {new Date(shift.endTime).toLocaleString('de-DE')}</p>
+          <article className="panel record-card" key={shift.id}>
+            <div className="record-card-main">
+              <h2>{shift.title ?? 'Pflegeeinsatz'}</h2>
+              <p>{shift.clinicName} · {shift.locationCity ?? 'ohne Ort'}</p>
+            </div>
+            <div className="record-card-meta">
+              <span>{new Date(shift.startTime).toLocaleString('de-DE')}</span>
+              <span>{new Date(shift.endTime).toLocaleString('de-DE')}</span>
+            </div>
           </article>
         ))}
         {jobShifts.length === 0 && !error ? <div className="panel empty">Aktuell keine sichtbaren Einsätze.</div> : null}

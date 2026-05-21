@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PageHeader } from '../../components/PageHeader';
 import { api, type Candidate, type HospitalOffer } from '../../lib/api';
 
 export function HospitalOffersPage() {
@@ -38,43 +39,55 @@ export function HospitalOffersPage() {
   }
 
   return (
-    <section className="stack">
-      <div className="panel">
-        <h1>Offers & Kandidaten</h1>
-        <p>Hier wird der Hospital-Flow von Kandidatensuche bis Offer-Erstellung sichtbar gemacht.</p>
-      </div>
-      <form className="panel stack" onSubmit={handleLoadOffers}>
-        <input value={jobShiftId} onChange={(event) => setJobShiftId(event.target.value)} placeholder="jobShiftId" />
+    <section className="stack page-stack">
+      <PageHeader
+        eyebrow="Krankenhaus"
+        title="Offers & Kandidatensteuerung"
+        description="Professionelle Arbeitsfläche für Kandidatensuche und Angebotsauslösung. Fokus auf belastbare operative Schritte statt visuellem Spielzeug." 
+      />
+      <form className="panel form-panel stack" onSubmit={handleLoadOffers}>
+        <label>
+          <span>Job Shift ID</span>
+          <input value={jobShiftId} onChange={(event) => setJobShiftId(event.target.value)} placeholder="jobShiftId" />
+        </label>
         <div className="actions">
           <button type="submit">Offers laden</button>
           <button type="button" className="secondary" onClick={handleLoadCandidates}>Kandidaten suchen</button>
         </div>
       </form>
       {status ? <p className="hint">{status}</p> : null}
-      <div className="grid two">
-        <div className="stack">
+      <div className="content-grid two-columns-equal">
+        <section className="stack">
           <h2 className="section-heading">Kandidaten</h2>
           {candidates.map((candidate) => (
-            <article className="panel" key={candidate.nurseProfileId}>
-              <h3>{candidate.displayName}</h3>
-              <p>{candidate.publicId} · {candidate.matchingCity}</p>
-              <p>Tag-Matches: {candidate.preferredTagMatches}</p>
-              <button onClick={() => handleCreateOffer(candidate.nurseProfileId)}>Offer erstellen</button>
+            <article className="panel record-card spaced" key={candidate.nurseProfileId}>
+              <div className="record-card-main">
+                <h3>{candidate.displayName}</h3>
+                <p>{candidate.publicId} · {candidate.matchingCity}</p>
+              </div>
+              <div className="record-card-meta align-right">
+                <span>{candidate.preferredTagMatches} Preferred Matches</span>
+                <button onClick={() => handleCreateOffer(candidate.nurseProfileId)}>Offer erstellen</button>
+              </div>
             </article>
           ))}
           {candidates.length === 0 ? <div className="panel empty">Noch keine Kandidaten geladen.</div> : null}
-        </div>
-        <div className="stack">
+        </section>
+        <section className="stack">
           <h2 className="section-heading">Offers</h2>
           {offers.map((offer) => (
-            <article className="panel" key={offer.id}>
-              <h3>{offer.nurse.displayName}</h3>
-              <p>{offer.nurse.publicId}</p>
-              <p>Status: <strong>{offer.status}</strong></p>
+            <article className="panel record-card spaced" key={offer.id}>
+              <div className="record-card-main">
+                <h3>{offer.nurse.displayName}</h3>
+                <p>{offer.nurse.publicId}</p>
+              </div>
+              <div className="record-card-meta align-right">
+                <strong>{offer.status}</strong>
+              </div>
             </article>
           ))}
           {offers.length === 0 ? <div className="panel empty">Noch keine Offers geladen.</div> : null}
-        </div>
+        </section>
       </div>
     </section>
   );
