@@ -238,7 +238,11 @@ model MatchContract {
 
   @@unique([jobShiftId, nurseProfileId])
   @@index([status])
+  @@index([executionStatus])
+  @@index([signedAt])
+  @@index([fullyExecutedAt])
   @@index([nurseProfileId])
+  @@index([jobShiftId, status])
 }
 
 model Invoice {
@@ -252,6 +256,7 @@ model Invoice {
   matchContract     MatchContract @relation(fields: [matchContractId], references: [id], onDelete: Cascade)
 
   @@index([status])
+  @@index([createdAt])
 }
 
 model WebhookEvent {
@@ -313,8 +318,11 @@ model ContractSignatureEvent {
   createdAt             DateTime                @default(now())
   matchContract         MatchContract           @relation(fields: [matchContractId], references: [id], onDelete: Cascade)
 
+  @@unique([matchContractId, signerUserId])
   @@index([matchContractId, createdAt])
+  @@index([matchContractId, signerRole, createdAt])
   @@index([signerUserId, createdAt])
+  @@index([snapshotId])
 }
 
 model ContractVoidEvent {
@@ -328,5 +336,6 @@ model ContractVoidEvent {
   matchContract     MatchContract @relation(fields: [matchContractId], references: [id], onDelete: Cascade)
 
   @@index([actorUserId, createdAt])
+  @@index([actorRole, createdAt])
   @@index([createdAt])
 }
