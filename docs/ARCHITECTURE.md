@@ -185,3 +185,9 @@ Persistiert und retrybar über Outbox/Queue:
 - `contract.execution.signed`
 - `contract.execution.fully-executed`
 - `contract.voided`
+
+
+## Formale Schnittstellen-Doku
+
+Die aktuelle API- und Webhook-Vertragsbeschreibung liegt in `docs/API_CONTRACTS.md`.
+Sie dient als operative Referenz für Integrationen, bis eine vollständige OpenAPI-/JSON-Schema-Ebene ergänzt wird.

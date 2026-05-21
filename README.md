@@ -27,6 +27,7 @@ Das Repo ist nicht mehr nur Konzept oder Doku. Es enthält bereits ein erstes la
 - `docs/ARCHITECTURE.md` – technisches Zielbild, Ist-Stand und Architekturleitplanken
 - `docs/IMPLEMENTATION_PLAN.md` – erledigte Schritte und nächste Prioritäten
 - `docs/AI_INSTRUCTIONS.md` – Arbeitsanweisung für KI-/Coding-Agents
+- `docs/API_CONTRACTS.md` – konkrete API- und Webhook-Verträge des aktuellen Backends
 
 ## Lokaler Einstieg
 
