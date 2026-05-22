@@ -71,6 +71,26 @@ export type VerificationDocumentReviewResult = {
 };
 
 
+
+export type AdminReleaseControlResult = {
+  nurseProfile: {
+    id: string;
+    publicId: string;
+    displayName: string;
+    isReleasedForMatching: boolean;
+    releasedAt?: string | null;
+  };
+  documents: Array<{
+    id: string;
+    documentType: string;
+    status: string;
+    reviewedAt?: string | null;
+    rejectionReason?: string | null;
+    createdAt: string;
+  }>;
+  reason?: string | null;
+};
+
 export type AdminVerificationOverview = {
   nurseProfile: {
     id: string;
@@ -293,6 +313,11 @@ export const api = {
   getOwnMatches: () => request<{ matchContracts: OwnMatchContract[] }>('/matches/me'),
   getVerificationOverview: () => request<{ verification: VerificationOverview }>('/nurse-profile/me/verification'),
   getAdminVerificationOverview: (publicId: string) => request<{ verification: AdminVerificationOverview }>(`/nurse-profile/verification/admin/${encodeURIComponent(publicId)}`),
+  setMatchingRelease: (input: { publicId: string; release: boolean; reason?: string }) =>
+    request<{ releaseControl: AdminReleaseControlResult }>('/nurse-profile/verification/release', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
   reviewVerificationDocument: (input: { documentId: string; status: 'VERIFIED' | 'REJECTED'; rejectionReason?: string }) =>
     request<{ verificationDocument: VerificationDocumentReviewResult }>('/nurse-profile/verification/review', {
       method: 'POST',

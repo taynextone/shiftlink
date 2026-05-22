@@ -89,6 +89,13 @@ export const updateNurseProfileSchema = z
     }
   });
 
+
+export const setMatchingReleaseSchema = z.object({
+  publicId: z.string().trim().min(1),
+  release: z.boolean(),
+  reason: z.string().trim().min(3).max(500).optional(),
+});
+
 export const reviewVerificationDocumentSchema = z.object({
   documentId: z.string().trim().min(1),
   status: z.enum(['VERIFIED', 'REJECTED']),
@@ -97,3 +104,4 @@ export const reviewVerificationDocumentSchema = z.object({
 
 export type UpdateNurseProfileInput = z.infer<typeof updateNurseProfileSchema>;
 export type ReviewVerificationDocumentInput = z.infer<typeof reviewVerificationDocumentSchema>;
+export type SetMatchingReleaseInput = z.infer<typeof setMatchingReleaseSchema>;

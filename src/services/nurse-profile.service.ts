@@ -1,7 +1,7 @@
 import createHttpError from 'http-errors';
 import { Prisma, UserRole, VerificationDocumentStatus, VerificationDocumentType } from '@prisma/client';
 import { prisma } from '../config/prisma';
-import { ReviewVerificationDocumentInput, UpdateNurseProfileInput } from '../schemas/nurse-profile.schema';
+import { ReviewVerificationDocumentInput, SetMatchingReleaseInput, UpdateNurseProfileInput } from '../schemas/nurse-profile.schema';
 
 const REQUIRED_DOCUMENT_TYPES: VerificationDocumentType[] = [
   VerificationDocumentType.EXAMEN,
@@ -211,6 +211,65 @@ export async function getOwnVerificationOverview(actor: { userId: string; role: 
   };
 }
 
+
+
+export async function setMatchingReleaseByPublicId(
+  actor: { userId: string; role: UserRole },
+  input: SetMatchingReleaseInput,
+) {
+  if (actor.role !== UserRole.SUPER_ADMIN) {
+    throw createHttpError(403, 'Only super admins can change matching release state');
+  }
+
+  const profile = await prisma.nurseProfile.findUnique({
+    where: { publicId: input.publicId },
+    include: {
+      verificationDocuments: true,
+    },
+  });
+
+  if (!profile) {
+    throw createHttpError(404, 'Nurse profile not found');
+  }
+
+  if (input.release && !isReleasedForMatching(profile)) {
+    throw createHttpError(409, 'This nurse cannot be released because required documents are not verified');
+  }
+
+  const updated = await prisma.nurseProfile.update({
+    where: { id: profile.id },
+    data: {
+      isReleasedForMatching: input.release,
+      releasedAt: input.release ? new Date() : null,
+    },
+    include: {
+      verificationDocuments: {
+        orderBy: {
+          createdAt: 'desc',
+        },
+      },
+    },
+  });
+
+  return {
+    nurseProfile: {
+      id: updated.id,
+      publicId: updated.publicId,
+      displayName: updated.displayName,
+      isReleasedForMatching: updated.isReleasedForMatching,
+      releasedAt: updated.releasedAt,
+    },
+    documents: updated.verificationDocuments.map((document) => ({
+      id: document.id,
+      documentType: document.documentType,
+      status: document.status,
+      reviewedAt: document.reviewedAt,
+      rejectionReason: document.rejectionReason,
+      createdAt: document.createdAt,
+    })),
+    reason: input.reason ?? null,
+  };
+}
 
 export async function getSuperadminVerificationOverviewByPublicId(
   actor: { userId: string; role: UserRole },

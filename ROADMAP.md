@@ -24,16 +24,18 @@ Status: in_progress
 Priority: critical
 
 Needed:
-- Superadmin / operations dashboard
-- Nurse verification review workflow
-- Release / unrelease controls
-- Hospital dossier access workflows in UI
-- Contract exception / dispute / intervention tooling
-- Queue / webhook / processing failure visibility
-- Billing operations surface
+- [done] Nurse verification review workflow
+- [done] Hospital dossier access workflows in UI
+- [done] Billing operations surface
+- [partial] Contract exception / dispute / intervention tooling
+- [partial] linked contract / dossier / offer operational workflows
+- [todo] Superadmin / operations dashboard
+- [todo] Release / unrelease controls
+- [todo] Queue / webhook / processing failure visibility
 
 Definition of done:
 - key non-end-user operational workflows are possible without DB/manual shell work
+- Current gap to done: no central ops dashboard yet, no release/unrelease controls yet, no queue/webhook failure visibility yet
 
 ### 2. Verification / Documents / Dossier End-to-End
 Status: pending
@@ -51,17 +53,17 @@ Definition of done:
 - verification and dossier flows work end-to-end in product UI with correct permissions
 
 ### 3. Contract / Billing Completion
-Status: pending
+Status: in_progress
 Priority: critical
 
 Needed:
-- invoice detail UX
-- invoice export UX
-- contract snapshot detail UX refinement
-- signature event detail UX refinement
-- PDF artifact handling UX
-- clearer contract state machine views
-- exception states for void / paid / fully executed contracts
+- [partial] invoice detail UX
+- [partial] invoice export UX
+- [partial] contract snapshot detail UX refinement
+- [partial] signature event detail UX refinement
+- [partial] PDF artifact handling UX
+- [partial] clearer contract state machine views
+- [todo] exception states for void / paid / fully executed contracts
 
 Definition of done:
 - contract governance and billing are operable through the app, not just inspectable by developers
@@ -99,10 +101,10 @@ Status: in_progress
 Priority: high
 
 Needed:
-- reduce remaining raw/manual ID-driven interactions
-- improve context handoff across views
-- deepen master-detail patterns where backend supports it
-- refine action emphasis and information hierarchy
+- [partial] reduce remaining raw/manual ID-driven interactions
+- [partial] improve context handoff across views
+- [partial] deepen master-detail patterns where backend supports it
+- [partial] refine action emphasis and information hierarchy
 
 Definition of done:
 - operational flows feel connected and product-like instead of tool-like
@@ -192,4 +194,14 @@ Needed:
 - Operations / Admin Surface
 - Progress in this block:
   - superadmin verification review UI added
+  - admin verification lookup improved via nurse public ID context
   - hospital dossier access UI added
+  - hospital billing operations page added
+  - contract lifecycle / execution / snapshot / PDF ops flows added and improved
+  - offers / dossiers / contracts linked into a connected ops workflow
+  - backend-backed operational summaries improved across offers and contracts
+- Remaining focus inside this block:
+  - central superadmin/ops dashboard
+  - release / unrelease controls
+  - queue / webhook / processing failure visibility
+  - stronger exception / intervention tooling

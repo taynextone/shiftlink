@@ -5,6 +5,7 @@ import {
   getPublicNurseProfile,
   getSuperadminVerificationOverviewByPublicId,
   reviewVerificationDocument,
+  setMatchingReleaseByPublicId,
   updateOwnNurseProfile,
 } from '../services/nurse-profile.service';
 
@@ -44,6 +45,19 @@ export async function getOwnVerificationOverviewController(req: Request, res: Re
   });
 }
 
+
+
+export async function setMatchingReleaseByPublicIdController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const result = await setMatchingReleaseByPublicId(req.auth, req.body);
+
+  res.status(200).json({
+    releaseControl: result,
+  });
+}
 
 export async function getSuperadminVerificationOverviewByPublicIdController(req: Request, res: Response): Promise<void> {
   if (!req.auth) {

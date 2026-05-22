@@ -15,6 +15,7 @@ export function AdminVerificationPage() {
   const [status, setStatus] = useState<'VERIFIED' | 'REJECTED'>('VERIFIED');
   const [rejectionReason, setRejectionReason] = useState('');
   const [overview, setOverview] = useState<AdminVerificationOverview | null>(null);
+  const [releaseReason, setReleaseReason] = useState('Operativ geprüft und für Matching freigegeben.');
   const [result, setResult] = useState<VerificationDocumentReviewResult | null>(null);
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -39,6 +40,30 @@ export function AdminVerificationPage() {
       setFeedback({ tone: 'success', message: 'Verification-Kontext geladen.' });
     } catch (error) {
       setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Lookup fehlgeschlagen' });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+
+  async function handleReleaseChange(release: boolean) {
+    if (!overview?.nurseProfile.publicId) {
+      setFeedback({ tone: 'error', message: 'Bitte zuerst Verifikationskontext laden.' });
+      return;
+    }
+
+    setSubmitting(true);
+    setFeedback(null);
+    try {
+      const response = await api.setMatchingRelease({
+        publicId: overview.nurseProfile.publicId,
+        release,
+        reason: releaseReason.trim() || undefined,
+      });
+      setOverview(response.releaseControl);
+      setFeedback({ tone: 'success', message: release ? 'Pflegekraft für Matching freigegeben.' : 'Pflegekraft für Matching zurückgezogen.' });
+    } catch (error) {
+      setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Release-Änderung fehlgeschlagen' });
     } finally {
       setSubmitting(false);
     }
