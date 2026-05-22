@@ -55,6 +55,21 @@ export type OwnMatchContract = {
   };
 };
 
+
+export type VerificationDocumentReviewResult = {
+  id: string;
+  documentType: string;
+  status: string;
+  reviewedAt?: string | null;
+  rejectionReason?: string | null;
+  nurseProfile: {
+    id: string;
+    publicId: string;
+    displayName: string;
+    isReleasedForMatching: boolean;
+  };
+};
+
 export type VerificationOverview = {
   isReleasedForMatching: boolean;
   releasedAt?: string | null;
@@ -172,6 +187,11 @@ export const api = {
   getVisibleJobShifts: () => request<{ jobShifts: VisibleJobShift[] }>('/matches/visible-job-shifts'),
   getOwnMatches: () => request<{ matchContracts: OwnMatchContract[] }>('/matches/me'),
   getVerificationOverview: () => request<{ verification: VerificationOverview }>('/nurse-profile/me/verification'),
+  reviewVerificationDocument: (input: { documentId: string; status: 'VERIFIED' | 'REJECTED'; rejectionReason?: string }) =>
+    request<{ verificationDocument: VerificationDocumentReviewResult }>('/nurse-profile/verification/review', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
   listOwnAvailabilityBlocks: () => request<{ blocks: AvailabilityBlock[] }>('/nurse-availability/me'),
   createOwnAvailabilityBlock: (input: { title?: string; city: string; postalCode?: string; radiusKm: number; startTime: string; endTime: string; notes?: string }) =>
     request<{ block: AvailabilityBlock }>('/nurse-availability/me', {

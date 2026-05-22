@@ -4,6 +4,7 @@ import { ProtectedRoute } from '../components/ProtectedRoute';
 import { AuthProvider } from '../state/AuthContext';
 import { LoginPage } from '../features/auth/LoginPage';
 import { RegisterPage } from '../features/auth/RegisterPage';
+import { AdminVerificationPage } from '../features/admin/AdminVerificationPage';
 import { HospitalContractsPage } from '../features/hospital/HospitalContractsPage';
 import { HospitalDashboardPage } from '../features/hospital/HospitalDashboardPage';
 import { HospitalOffersPage } from '../features/hospital/HospitalOffersPage';
@@ -30,6 +31,7 @@ export function App() {
           <Route path="/hospital/shifts" element={<ProtectedRoute allowedRoles={['HOSPITAL_ADMIN', 'SUPER_ADMIN']}><HospitalShiftsPage /></ProtectedRoute>} />
           <Route path="/hospital/offers" element={<ProtectedRoute allowedRoles={['HOSPITAL_ADMIN', 'SUPER_ADMIN']}><HospitalOffersPage /></ProtectedRoute>} />
           <Route path="/hospital/contracts" element={<ProtectedRoute allowedRoles={['HOSPITAL_ADMIN', 'SUPER_ADMIN']}><HospitalContractsPage /></ProtectedRoute>} />
+          <Route path="/admin/verification" element={<ProtectedRoute allowedRoles={['SUPER_ADMIN']}><AdminVerificationPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/nurse" replace />} />
         </Routes>
       </AppShell>
