@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ActionBar } from '../../components/ActionBar';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { Field } from '../../components/Field';
@@ -9,10 +10,32 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { api, type HospitalNurseDossier } from '../../lib/api';
 
 export function HospitalDossierPage() {
-  const [nurseProfileId, setNurseProfileId] = useState('');
+  const [searchParams] = useSearchParams();
+  const initialNurseProfileId = searchParams.get('nurseProfileId') ?? '';
+  const initialContractId = searchParams.get('contractId') ?? '';
+  const [nurseProfileId, setNurseProfileId] = useState(initialNurseProfileId);
   const [dossier, setDossier] = useState<HospitalNurseDossier | null>(null);
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  async function loadDossier(targetNurseProfileId: string) {
+    const response = await api.getHospitalNurseDossier(targetNurseProfileId.trim());
+    setDossier(response.dossier);
+    setFeedback({ tone: 'success', message: 'Dossier geladen.' });
+  }
+
+  useEffect(() => {
+    if (!initialNurseProfileId) {
+      return;
+    }
+    setSubmitting(true);
+    setFeedback(null);
+    void loadDossier(initialNurseProfileId)
+      .catch((error) => {
+        setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Dossier konnte nicht geladen werden' });
+      })
+      .finally(() => setSubmitting(false));
+  }, [initialNurseProfileId]);
 
   async function handleLoad(event: React.FormEvent) {
     event.preventDefault();
@@ -24,9 +47,7 @@ export function HospitalDossierPage() {
     setSubmitting(true);
     setFeedback(null);
     try {
-      const response = await api.getHospitalNurseDossier(nurseProfileId.trim());
-      setDossier(response.dossier);
-      setFeedback({ tone: 'success', message: 'Dossier geladen.' });
+      await loadDossier(nurseProfileId);
     } catch (error) {
       setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Dossier konnte nicht geladen werden' });
     } finally {
@@ -39,12 +60,13 @@ export function HospitalDossierPage() {
       <PageHeader
         eyebrow="Krankenhaus"
         title="Nurse Dossier Access"
-        description="Geschützter Hospital-Zugriff auf verifizierte Dossierdaten bereits signierter Pflegekräfte."
+        description="Geschützter Hospital-Zugriff auf verifizierte Dossierdaten bereits signierter Pflegekräfte. Der Flow kann direkt aus Offers und Contracts angesprungen werden."
       />
       <form className="panel form-panel stack" onSubmit={handleLoad}>
         <Field label="Nurse Profile ID" helpText="Nur zulässig, wenn bereits eine signierte Beziehung zwischen Krankenhaus und Pflegekraft besteht.">
           <input value={nurseProfileId} onChange={(event) => setNurseProfileId(event.target.value)} placeholder="nurseProfileId" />
         </Field>
+        {initialContractId ? <p className="hint">Geöffnet aus Contract-Kontext: {initialContractId}</p> : null}
         <ActionBar>
           <button type="submit" disabled={submitting}>{submitting ? 'Lädt…' : 'Dossier laden'}</button>
         </ActionBar>
@@ -52,7 +74,11 @@ export function HospitalDossierPage() {
       {feedback ? <FeedbackMessage tone={feedback.tone} message={feedback.message} /> : null}
       {dossier ? (
         <div className="content-grid two-columns-equal">
-          <SectionCard title="Nurse Overview" description="Freigegebene Stammdaten und Matching-Kontext.">
+          <SectionCard
+            title="Nurse Overview"
+            description="Freigegebene Stammdaten und Matching-Kontext."
+            actions={<Link to={`/hospital/offers?focusNurseProfileId=${encodeURIComponent(dossier.nurseProfileId)}`}>Zu Offers</Link>}
+          >
             <div className="summary-grid">
               <div className="summary-card">
                 <span>Release</span>
@@ -65,6 +91,7 @@ export function HospitalDossierPage() {
             </div>
             <InfoList
               items={[
+                { label: 'Profile ID', value: dossier.nurseProfileId },
                 { label: 'Public ID', value: dossier.publicId },
                 { label: 'Name', value: `${dossier.firstName ?? ''} ${dossier.lastName ?? ''}`.trim() || dossier.displayName },
                 { label: 'Display Name', value: dossier.displayName },
@@ -97,6 +124,9 @@ export function HospitalDossierPage() {
                   <strong>{assignment.clinicName}</strong>
                   <p>{assignment.locationCity ?? 'ohne Ort'}</p>
                   <p>{new Date(assignment.startTime).toLocaleString('de-DE')} → {new Date(assignment.endTime).toLocaleString('de-DE')}</p>
+                  <ActionBar>
+                    <Link to={`/hospital/contracts?contractId=${encodeURIComponent(assignment.matchContractId)}`}>Contract öffnen</Link>
+                  </ActionBar>
                 </div>
               ))}
               {dossier.signedAssignments.length === 0 ? <p className="hint">Keine signierten Einsätze verfügbar.</p> : null}

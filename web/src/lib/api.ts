@@ -116,6 +116,8 @@ export type HospitalJobShift = {
 export type HospitalOffer = {
   id: string;
   status: string;
+  nurseProfileId?: string;
+  jobShiftId?: string;
   nurse: {
     id: string;
     publicId: string;

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ActionBar } from '../../components/ActionBar';
 import { AsyncState } from '../../components/AsyncState';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
@@ -12,6 +13,8 @@ import { useAsyncData } from '../../hooks/useAsyncData';
 import { api, type Candidate, type HospitalJobShift, type HospitalOffer } from '../../lib/api';
 
 export function HospitalOffersPage() {
+  const [searchParams] = useSearchParams();
+  const focusNurseProfileId = searchParams.get('focusNurseProfileId') ?? '';
   const { data: shiftData, loading: shiftsLoading, error: shiftsError } = useAsyncData(() => api.listHospitalJobShifts(), []);
   const availableShifts = shiftData?.jobShifts ?? [];
   const [jobShiftId, setJobShiftId] = useState('');
@@ -25,6 +28,9 @@ export function HospitalOffersPage() {
     () => availableShifts.find((shift) => shift.id === jobShiftId) ?? activeShift,
     [availableShifts, activeShift, jobShiftId],
   );
+
+  const focusedOffers = focusNurseProfileId ? offers.filter((offer) => offer.nurseProfileId === focusNurseProfileId) : offers;
+  const focusedCandidates = focusNurseProfileId ? candidates.filter((candidate) => candidate.nurseProfileId === focusNurseProfileId) : candidates;
 
   async function loadOffers(targetShiftId: string) {
     const result = await api.listHospitalOffers(targetShiftId);
@@ -128,6 +134,7 @@ export function HospitalOffersPage() {
                 <span>Ausgewählte Job Shift ID</span>
                 <input value={jobShiftId} onChange={(event) => setJobShiftId(event.target.value)} placeholder="jobShiftId" />
               </label>
+              {focusNurseProfileId ? <p className="hint">Gefiltert auf Nurse Profile ID: {focusNurseProfileId}</p> : null}
               {selectedShift ? (
                 <>
                   <InfoList
@@ -140,8 +147,8 @@ export function HospitalOffersPage() {
                   />
                   <MetricList
                     items={[
-                      { label: 'Offers', value: offers.length },
-                      { label: 'Kandidaten', value: candidates.length },
+                      { label: 'Offers', value: focusedOffers.length },
+                      { label: 'Kandidaten', value: focusedCandidates.length },
                     ]}
                   />
                 </>
@@ -161,9 +168,9 @@ export function HospitalOffersPage() {
             <section className="stack">
               <div className="section-heading-row">
                 <h2 className="section-heading">Kandidaten</h2>
-                <StatusBadge value={`${candidates.length} profile`} />
+                <StatusBadge value={`${focusedCandidates.length} profile`} />
               </div>
-              {candidates.map((candidate) => (
+              {focusedCandidates.map((candidate) => (
                 <SectionCard
                   key={candidate.nurseProfileId}
                   title={candidate.displayName}
@@ -172,26 +179,28 @@ export function HospitalOffersPage() {
                 >
                   <InfoList
                     items={[
+                      { label: 'Nurse Profile ID', value: candidate.nurseProfileId },
                       { label: 'Min. Rate', value: `${candidate.minHourlyRate} €` },
                       { label: 'Match-Fit', value: candidate.preferredTagMatches },
                       { label: 'Availability Block', value: candidate.matchingAvailabilityBlockId },
                     ]}
                   />
                   <ActionBar>
+                    <Link to={`/hospital/dossier?nurseProfileId=${encodeURIComponent(candidate.nurseProfileId)}`}>Dossier öffnen</Link>
                     <button disabled={submitting} onClick={() => void handleCreateOffer(candidate.nurseProfileId)}>
                       {submitting ? 'Bitte warten…' : 'Offer erstellen'}
                     </button>
                   </ActionBar>
                 </SectionCard>
               ))}
-              {candidates.length === 0 ? <div className="panel empty">Noch keine Kandidaten geladen.</div> : null}
+              {focusedCandidates.length === 0 ? <div className="panel empty">Noch keine Kandidaten geladen.</div> : null}
             </section>
             <section className="stack">
               <div className="section-heading-row">
                 <h2 className="section-heading">Offers</h2>
-                <StatusBadge value={`${offers.length} active`} />
+                <StatusBadge value={`${focusedOffers.length} active`} />
               </div>
-              {offers.map((offer) => (
+              {focusedOffers.map((offer) => (
                 <SectionCard
                   key={offer.id}
                   title={offer.nurse.displayName}
@@ -201,12 +210,17 @@ export function HospitalOffersPage() {
                   <InfoList
                     items={[
                       { label: 'Offer ID', value: offer.id },
+                      { label: 'Nurse Profile ID', value: offer.nurseProfileId ?? '—' },
                       { label: 'Min. Rate', value: `${offer.nurse.minHourlyRate} €` },
                     ]}
                   />
+                  <ActionBar>
+                    {offer.nurseProfileId ? <Link to={`/hospital/dossier?nurseProfileId=${encodeURIComponent(offer.nurseProfileId)}&contractId=${encodeURIComponent(offer.id)}`}>Dossier öffnen</Link> : null}
+                    <Link to={`/hospital/contracts?contractId=${encodeURIComponent(offer.id)}`}>Contract öffnen</Link>
+                  </ActionBar>
                 </SectionCard>
               ))}
-              {offers.length === 0 ? <div className="panel empty">Noch keine Offers geladen.</div> : null}
+              {focusedOffers.length === 0 ? <div className="panel empty">Noch keine Offers geladen.</div> : null}
             </section>
           </div>
         </div>

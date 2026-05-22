@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActionBar } from '../../components/ActionBar';
 import { AsyncState } from '../../components/AsyncState';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
@@ -9,11 +9,13 @@ import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
 import { StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api, type ContractExecutionOverview, type ContractLifecycle, type ContractPdfResponse, type ContractSnapshotResponse, type HospitalOffer } from '../../lib/api';
 
 export function HospitalContractsPage() {
+  const [searchParams] = useSearchParams();
   const [jobShiftId, setJobShiftId] = useState('');
-  const [contractId, setContractId] = useState('');
+  const [contractId, setContractId] = useState(searchParams.get('contractId') ?? '');
   const [voidReason, setVoidReason] = useState('Pflegekraft kann den Einsatz in diesem Zeitraum doch nicht wahrnehmen.');
   const [lifecycle, setLifecycle] = useState<ContractLifecycle | null>(null);
   const [offers, setOffers] = useState<HospitalOffer[]>([]);
@@ -25,6 +27,13 @@ export function HospitalContractsPage() {
   const { data: shiftData, loading: shiftsLoading, error: shiftsError } = useAsyncData(() => api.listHospitalJobShifts(), []);
   const { data: billingSummaryData } = useAsyncData(() => api.getHospitalBillingSummary(), []);
   const availableShifts = shiftData?.jobShifts ?? [];
+
+  useEffect(() => {
+    const linkedContractId = searchParams.get('contractId');
+    if (linkedContractId) {
+      setContractId(linkedContractId);
+    }
+  }, [searchParams]);
 
   const selectedShift = useMemo(
     () => availableShifts.find((shift) => shift.id === jobShiftId) ?? null,
@@ -301,7 +310,11 @@ export function HospitalContractsPage() {
                 </ActionBar>
               </FormSection>
             </SectionCard>
-            <SectionCard title="Lifecycle Summary" description="Auditierbare Sicht auf Status, Signaturen und Vertragsartefakte.">
+            <SectionCard
+              title="Lifecycle Summary"
+              description="Auditierbare Sicht auf Status, Signaturen und Vertragsartefakte."
+              actions={lifecycle?.nurse?.nurseProfileId ? <Link to={`/hospital/dossier?nurseProfileId=${encodeURIComponent(lifecycle.nurse.nurseProfileId)}&contractId=${encodeURIComponent(lifecycle.matchContractId)}`}>Dossier öffnen</Link> : undefined}
+            >
               {lifecycle ? (
                 <>
                   <div className="summary-grid">
