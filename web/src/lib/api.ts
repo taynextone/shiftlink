@@ -190,6 +190,23 @@ export type ContractLifecycle = {
   voidSummary: null | { id?: string; actorUserId?: string; reason: string; actorRole: string; createdAt?: string };
 };
 
+
+export type HospitalBillingExportRow = {
+  invoiceId: string;
+  invoiceStatus: string;
+  invoiceAmount: string;
+  createdAt: string;
+  matchContractId: string;
+  matchStatus: string;
+  externalJobShiftId: string;
+  jobShiftId: string;
+  jobShiftTitle: string;
+  locationCity: string;
+  nursePublicId: string;
+  nurseDisplayName: string;
+  signedAt: string;
+};
+
 export type HospitalBillingSummary = {
   signedContracts: number;
   invoiceCount: number;
@@ -268,7 +285,15 @@ export const api = {
       body: JSON.stringify(input),
     }),
   listHospitalJobShifts: () => request<{ jobShifts: HospitalJobShift[] }>('/job-shifts'),
-  getHospitalBillingSummary: () => request<HospitalBillingSummary>('/job-shifts/billing/summary'),
+  getHospitalBillingSummary: () => request<{ summary: HospitalBillingSummary }>('/job-shifts/billing/summary'),
+  exportHospitalBilling: (query?: { status?: 'PENDING' | 'PAID'; format?: 'json' | 'csv'; limit?: number }) => {
+    const params = new URLSearchParams();
+    if (query?.status) params.set('status', query.status);
+    if (query?.format) params.set('format', query.format);
+    if (query?.limit) params.set('limit', String(query.limit));
+    const suffix = params.toString() ? `?${params.toString()}` : '';
+    return request<{ format: 'json'; rows: HospitalBillingExportRow[] }>(`/job-shifts/billing/export${suffix}`);
+  },
   getHospitalNurseDossier: (nurseProfileId: string) => request<{ dossier: HospitalNurseDossier }>(`/documents/dossier/${nurseProfileId}`),
   importHospitalJobShift: (input: Record<string, unknown>) =>
     request<{ mode: 'created' | 'updated'; jobShift: HospitalJobShift }>('/job-shifts/import', {

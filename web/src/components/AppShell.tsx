@@ -23,6 +23,7 @@ const navGroups = [
       { to: '/hospital/offers', label: 'Offers', caption: 'Kandidaten & Angebote' },
       { to: '/hospital/dossier', label: 'Dossiers', caption: 'Verifizierte Profile' },
       { to: '/hospital/contracts', label: 'Verträge', caption: 'Lifecycle & Aktionen' },
+      { to: '/hospital/billing', label: 'Billing', caption: 'Gebühren & Exporte' },
     ],
   },
 ];

@@ -22,7 +22,7 @@ export function HospitalContractsPage() {
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const { data: shiftData, loading: shiftsLoading, error: shiftsError } = useAsyncData(() => api.listHospitalJobShifts(), []);
-  const { data: billingSummary } = useAsyncData(() => api.getHospitalBillingSummary(), []);
+  const { data: billingSummaryData } = useAsyncData(() => api.getHospitalBillingSummary(), []);
   const availableShifts = shiftData?.jobShifts ?? [];
 
   const selectedShift = useMemo(
@@ -162,10 +162,10 @@ export function HospitalContractsPage() {
       />
       <MetricList
         items={[
-          { label: 'Signed Contracts', value: billingSummary?.signedContracts ?? '—' },
-          { label: 'Invoices', value: billingSummary?.invoiceCount ?? '—' },
-          { label: 'Pending Fees', value: billingSummary ? `${billingSummary.pendingInvoiceAmount} €` : '—' },
-          { label: 'Paid Fees', value: billingSummary ? `${billingSummary.paidInvoiceAmount} €` : '—' },
+          { label: 'Signed Contracts', value: billingSummaryData?.summary.signedContracts ?? '—' },
+          { label: 'Invoices', value: billingSummaryData?.summary.invoiceCount ?? '—' },
+          { label: 'Pending Fees', value: billingSummaryData ? `${billingSummaryData.summary.pendingInvoiceAmount} €` : '—' },
+          { label: 'Paid Fees', value: billingSummaryData ? `${billingSummaryData.summary.paidInvoiceAmount} €` : '—' },
         ]}
       />
       <div className="content-grid master-detail-grid">
