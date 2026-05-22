@@ -9,7 +9,7 @@ import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
 import { StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
-import { api, type ContractLifecycle, type ContractPdfResponse, type ContractSnapshotResponse, type HospitalOffer } from '../../lib/api';
+import { api, type ContractExecutionOverview, type ContractLifecycle, type ContractPdfResponse, type ContractSnapshotResponse, type HospitalOffer } from '../../lib/api';
 
 export function HospitalContractsPage() {
   const [jobShiftId, setJobShiftId] = useState('');
@@ -19,6 +19,7 @@ export function HospitalContractsPage() {
   const [offers, setOffers] = useState<HospitalOffer[]>([]);
   const [snapshot, setSnapshot] = useState<ContractSnapshotResponse | null>(null);
   const [pdf, setPdf] = useState<ContractPdfResponse | null>(null);
+  const [execution, setExecution] = useState<ContractExecutionOverview | null>(null);
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const { data: shiftData, loading: shiftsLoading, error: shiftsError } = useAsyncData(() => api.listHospitalJobShifts(), []);
@@ -68,6 +69,25 @@ export function HospitalContractsPage() {
       setStatus({ tone: 'success', message: 'Contract Lifecycle geladen.' });
     } catch (err) {
       setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Lifecycle konnte nicht geladen werden' });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleLoadExecutionOverview() {
+    if (!contractId) {
+      setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
+      return;
+    }
+
+    setSubmitting(true);
+    setStatus(null);
+    try {
+      const result = await api.getContractExecutionOverview(contractId);
+      setExecution(result.execution);
+      setStatus({ tone: 'success', message: 'Execution Overview geladen.' });
+    } catch (err) {
+      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Execution Overview konnte nicht geladen werden' });
     } finally {
       setSubmitting(false);
     }
@@ -233,6 +253,7 @@ export function HospitalContractsPage() {
             </FormSection>
             <ActionBar>
               <button type="submit" disabled={submitting || !contractId}>{submitting ? 'Lädt…' : 'Lifecycle laden'}</button>
+              <button type="button" className="secondary" disabled={submitting || !contractId} onClick={() => void handleLoadExecutionOverview()}>{submitting ? 'Bitte warten…' : 'Execution laden'}</button>
               <button type="button" className="secondary" disabled={submitting || !contractId} onClick={() => void handleLoadSnapshot()}>{submitting ? 'Bitte warten…' : 'Snapshot laden'}</button>
               <button type="button" className="secondary" disabled={submitting || !contractId} onClick={() => void handleLoadPdf()}>{submitting ? 'Bitte warten…' : 'PDF laden'}</button>
             </ActionBar>
@@ -314,6 +335,27 @@ export function HospitalContractsPage() {
               )}
             </SectionCard>
           </div>
+
+          {execution ? (
+            <SectionCard title="Execution Detail" description="Signaturfortschritt und Rollenverteilung der Execution-Stufe.">
+              <InfoList
+                items={[
+                  { label: 'Execution Status', value: execution.executionStatus },
+                  { label: 'Signature Events', value: execution.signatureEvents.length },
+                  { label: 'Fully Executed At', value: execution.fullyExecutedAt ? new Date(execution.fullyExecutedAt).toLocaleString('de-DE') : '—' },
+                ]}
+              />
+              <div className="record-list compact-list">
+                {execution.signatureEvents.map((event) => (
+                  <div className="panel subpanel" key={event.id}>
+                    <strong>{event.signerRole}</strong>
+                    <p>{event.signatureIntent}</p>
+                    <p>{new Date(event.createdAt).toLocaleString('de-DE')}</p>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          ) : null}
 
           {snapshot ? (
             <SectionCard title="Snapshot Detail" description="Aktuell geladene Vertrags-Snapshot-Version.">

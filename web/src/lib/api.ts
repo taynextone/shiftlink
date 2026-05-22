@@ -150,6 +150,20 @@ export type HospitalNurseDossier = {
 };
 
 
+
+export type ContractExecutionOverview = {
+  matchContractId: string;
+  executionStatus: string;
+  fullyExecutedAt?: string | null;
+  signatureEvents: Array<{
+    id: string;
+    signerUserId: string;
+    signerRole: string;
+    signatureIntent: string;
+    createdAt: string;
+  }>;
+};
+
 export type ContractSnapshotResponse = {
   snapshotId: string;
   version: number;
@@ -324,4 +338,5 @@ export const api = {
   getContractLifecycle: (contractId: string) => request<{ lifecycle: ContractLifecycle }>(`/matches/contract/${contractId}/lifecycle`),
   getContractSnapshot: (contractId: string) => request<{ contractSnapshot: ContractSnapshotResponse }>(`/matches/contract/${contractId}/snapshot`),
   getContractPdf: (contractId: string) => request<{ contractPdf: ContractPdfResponse }>(`/matches/contract/${contractId}/pdf`),
+  getContractExecutionOverview: (contractId: string) => request<{ execution: ContractExecutionOverview }>(`/matches/contract/${contractId}/execution`),
 };
