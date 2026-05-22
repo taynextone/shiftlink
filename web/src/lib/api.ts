@@ -149,6 +149,20 @@ export type HospitalNurseDossier = {
   }>;
 };
 
+
+export type ContractSnapshotResponse = {
+  snapshotId: string;
+  version: number;
+  summaryText: string;
+  snapshot: Record<string, unknown>;
+};
+
+export type ContractPdfResponse = {
+  fileUrl: string;
+  objectKey: string;
+  expiresIn: number;
+};
+
 export type ContractLifecycle = {
   matchContractId: string;
   createdAt?: string;
@@ -283,4 +297,6 @@ export const api = {
       body: JSON.stringify({ reason }),
     }),
   getContractLifecycle: (contractId: string) => request<{ lifecycle: ContractLifecycle }>(`/matches/contract/${contractId}/lifecycle`),
+  getContractSnapshot: (contractId: string) => request<{ contractSnapshot: ContractSnapshotResponse }>(`/matches/contract/${contractId}/snapshot`),
+  getContractPdf: (contractId: string) => request<{ contractPdf: ContractPdfResponse }>(`/matches/contract/${contractId}/pdf`),
 };

@@ -9,7 +9,7 @@ import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
 import { StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
-import { api, type ContractLifecycle, type HospitalOffer } from '../../lib/api';
+import { api, type ContractLifecycle, type ContractPdfResponse, type ContractSnapshotResponse, type HospitalOffer } from '../../lib/api';
 
 export function HospitalContractsPage() {
   const [jobShiftId, setJobShiftId] = useState('');
@@ -17,6 +17,8 @@ export function HospitalContractsPage() {
   const [voidReason, setVoidReason] = useState('Pflegekraft kann den Einsatz in diesem Zeitraum doch nicht wahrnehmen.');
   const [lifecycle, setLifecycle] = useState<ContractLifecycle | null>(null);
   const [offers, setOffers] = useState<HospitalOffer[]>([]);
+  const [snapshot, setSnapshot] = useState<ContractSnapshotResponse | null>(null);
+  const [pdf, setPdf] = useState<ContractPdfResponse | null>(null);
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const { data: shiftData, loading: shiftsLoading, error: shiftsError } = useAsyncData(() => api.listHospitalJobShifts(), []);
@@ -66,6 +68,44 @@ export function HospitalContractsPage() {
       setStatus({ tone: 'success', message: 'Contract Lifecycle geladen.' });
     } catch (err) {
       setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Lifecycle konnte nicht geladen werden' });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleLoadSnapshot() {
+    if (!contractId) {
+      setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
+      return;
+    }
+
+    setSubmitting(true);
+    setStatus(null);
+    try {
+      const result = await api.getContractSnapshot(contractId);
+      setSnapshot(result.contractSnapshot);
+      setStatus({ tone: 'success', message: 'Contract Snapshot geladen.' });
+    } catch (err) {
+      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Snapshot konnte nicht geladen werden' });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleLoadPdf() {
+    if (!contractId) {
+      setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
+      return;
+    }
+
+    setSubmitting(true);
+    setStatus(null);
+    try {
+      const result = await api.getContractPdf(contractId);
+      setPdf(result.contractPdf);
+      setStatus({ tone: 'success', message: 'Contract PDF geladen.' });
+    } catch (err) {
+      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'PDF konnte nicht geladen werden' });
     } finally {
       setSubmitting(false);
     }
@@ -193,6 +233,8 @@ export function HospitalContractsPage() {
             </FormSection>
             <ActionBar>
               <button type="submit" disabled={submitting || !contractId}>{submitting ? 'Lädt…' : 'Lifecycle laden'}</button>
+              <button type="button" className="secondary" disabled={submitting || !contractId} onClick={() => void handleLoadSnapshot()}>{submitting ? 'Bitte warten…' : 'Snapshot laden'}</button>
+              <button type="button" className="secondary" disabled={submitting || !contractId} onClick={() => void handleLoadPdf()}>{submitting ? 'Bitte warten…' : 'PDF laden'}</button>
             </ActionBar>
           </form>
 
@@ -260,43 +302,42 @@ export function HospitalContractsPage() {
                       { label: 'Aktuelle Snapshot-Version', value: lifecycle.snapshotSummary.currentSnapshotVersion ?? '—' },
                       { label: 'Signaturen', value: lifecycle.signatureSummary.totalSignatures },
                       { label: 'PDF vorhanden', value: lifecycle.contractPdf.available ? 'Ja' : 'Nein' },
-                      { label: 'PDF URL', value: lifecycle.contractPdf.fileUrl ?? '—' },
                       { label: 'Invoice Status', value: lifecycle.invoice?.status ?? '—' },
                       { label: 'Invoice Amount', value: lifecycle.invoice?.amount ? `${lifecycle.invoice.amount} €` : '—' },
                       { label: 'Vollständig ausgeführt', value: lifecycle.fullyExecutedAt ? new Date(lifecycle.fullyExecutedAt).toLocaleString('de-DE') : '—' },
                       { label: 'Void-Grund', value: lifecycle.voidSummary?.reason ?? '—' },
                     ]}
                   />
-                  {lifecycle.snapshotSummary.versions?.length ? (
-                    <SectionCard title="Snapshots" description="Versionshistorie des Vertragszustands.">
-                      <div className="record-list compact-list">
-                        {lifecycle.snapshotSummary.versions.map((snapshot) => (
-                          <div className="panel subpanel" key={snapshot.id}>
-                            <strong>Version {snapshot.version}</strong>
-                            <p>{snapshot.summaryText}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </SectionCard>
-                  ) : null}
-                  {lifecycle.signatureSummary.events?.length ? (
-                    <SectionCard title="Signaturen" description="Aufgezeichnete Signature-Events für den aktuellen Contract.">
-                      <div className="record-list compact-list">
-                        {lifecycle.signatureSummary.events.map((event) => (
-                          <div className="panel subpanel" key={event.id}>
-                            <strong>{event.signerRole}</strong>
-                            <p>{event.signatureIntent} · {new Date(event.createdAt).toLocaleString('de-DE')}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </SectionCard>
-                  ) : null}
                 </>
               ) : (
                 <p className="hint">Noch kein Lifecycle geladen.</p>
               )}
             </SectionCard>
           </div>
+
+          {snapshot ? (
+            <SectionCard title="Snapshot Detail" description="Aktuell geladene Vertrags-Snapshot-Version.">
+              <InfoList
+                items={[
+                  { label: 'Snapshot ID', value: snapshot.snapshotId },
+                  { label: 'Version', value: snapshot.version },
+                  { label: 'Summary', value: snapshot.summaryText },
+                ]}
+              />
+            </SectionCard>
+          ) : null}
+
+          {pdf ? (
+            <SectionCard title="PDF Artifact" description="Temporärer Download-Kontext für das Vertrags-PDF.">
+              <InfoList
+                items={[
+                  { label: 'Object Key', value: pdf.objectKey },
+                  { label: 'Expires In', value: `${pdf.expiresIn} s` },
+                  { label: 'Download', value: <a href={pdf.fileUrl} target="_blank" rel="noreferrer">PDF öffnen</a> },
+                ]}
+              />
+            </SectionCard>
+          ) : null}
 
           {status ? <FeedbackMessage tone={status.tone} message={status.message} /> : null}
         </div>

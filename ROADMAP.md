@@ -20,7 +20,7 @@ Principles:
 ## Phase 1 — Core Product Completion
 
 ### 1. Operations / Admin Surface
-Status: pending
+Status: in_progress
 Priority: critical
 
 Needed:
@@ -190,3 +190,6 @@ Needed:
 
 ## Current Active Block
 - Operations / Admin Surface
+- Progress in this block:
+  - superadmin verification review UI added
+  - hospital dossier access UI added
