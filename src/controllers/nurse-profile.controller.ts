@@ -3,6 +3,7 @@ import createHttpError from 'http-errors';
 import {
   getOwnVerificationOverview,
   getPublicNurseProfile,
+  getSuperadminVerificationOverviewByPublicId,
   reviewVerificationDocument,
   updateOwnNurseProfile,
 } from '../services/nurse-profile.service';
@@ -40,6 +41,25 @@ export async function getOwnVerificationOverviewController(req: Request, res: Re
 
   res.status(200).json({
     verification: overview,
+  });
+}
+
+
+export async function getSuperadminVerificationOverviewByPublicIdController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const publicId = req.params.publicId;
+
+  if (typeof publicId !== 'string' || publicId.length === 0) {
+    throw createHttpError(400, 'Invalid public nurse profile id');
+  }
+
+  const verification = await getSuperadminVerificationOverviewByPublicId(req.auth, publicId);
+
+  res.status(200).json({
+    verification,
   });
 }
 

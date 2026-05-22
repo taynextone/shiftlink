@@ -70,6 +70,25 @@ export type VerificationDocumentReviewResult = {
   };
 };
 
+
+export type AdminVerificationOverview = {
+  nurseProfile: {
+    id: string;
+    publicId: string;
+    displayName: string;
+    isReleasedForMatching: boolean;
+    releasedAt?: string | null;
+  };
+  documents: Array<{
+    id: string;
+    documentType: string;
+    status: string;
+    reviewedAt?: string | null;
+    rejectionReason?: string | null;
+    createdAt: string;
+  }>;
+};
+
 export type VerificationOverview = {
   isReleasedForMatching: boolean;
   releasedAt?: string | null;
@@ -265,6 +284,7 @@ export const api = {
   getVisibleJobShifts: () => request<{ jobShifts: VisibleJobShift[] }>('/matches/visible-job-shifts'),
   getOwnMatches: () => request<{ matchContracts: OwnMatchContract[] }>('/matches/me'),
   getVerificationOverview: () => request<{ verification: VerificationOverview }>('/nurse-profile/me/verification'),
+  getAdminVerificationOverview: (publicId: string) => request<{ verification: AdminVerificationOverview }>(`/nurse-profile/verification/admin/${encodeURIComponent(publicId)}`),
   reviewVerificationDocument: (input: { documentId: string; status: 'VERIFIED' | 'REJECTED'; rejectionReason?: string }) =>
     request<{ verificationDocument: VerificationDocumentReviewResult }>('/nurse-profile/verification/review', {
       method: 'POST',

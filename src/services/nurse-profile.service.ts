@@ -211,6 +211,49 @@ export async function getOwnVerificationOverview(actor: { userId: string; role: 
   };
 }
 
+
+export async function getSuperadminVerificationOverviewByPublicId(
+  actor: { userId: string; role: UserRole },
+  publicId: string,
+) {
+  if (actor.role !== UserRole.SUPER_ADMIN) {
+    throw createHttpError(403, 'Only super admins can access verification overview');
+  }
+
+  const profile = await prisma.nurseProfile.findUnique({
+    where: { publicId },
+    include: {
+      verificationDocuments: {
+        orderBy: {
+          createdAt: 'desc',
+        },
+      },
+    },
+  });
+
+  if (!profile) {
+    throw createHttpError(404, 'Nurse profile not found');
+  }
+
+  return {
+    nurseProfile: {
+      id: profile.id,
+      publicId: profile.publicId,
+      displayName: profile.displayName,
+      isReleasedForMatching: profile.isReleasedForMatching,
+      releasedAt: profile.releasedAt,
+    },
+    documents: profile.verificationDocuments.map((document) => ({
+      id: document.id,
+      documentType: document.documentType,
+      status: document.status,
+      reviewedAt: document.reviewedAt,
+      rejectionReason: document.rejectionReason,
+      createdAt: document.createdAt,
+    })),
+  };
+}
+
 export async function getPublicNurseProfile(publicId: string) {
   const profile = await prisma.nurseProfile.findUnique({
     where: { publicId },

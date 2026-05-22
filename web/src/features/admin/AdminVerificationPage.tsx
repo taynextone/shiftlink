@@ -7,18 +7,42 @@ import { InfoList } from '../../components/InfoList';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
 import { StatusBadge } from '../../components/StatusBadge';
-import { api, type VerificationDocumentReviewResult } from '../../lib/api';
+import { api, type AdminVerificationOverview, type VerificationDocumentReviewResult } from '../../lib/api';
 
 export function AdminVerificationPage() {
+  const [nursePublicId, setNursePublicId] = useState('');
   const [documentId, setDocumentId] = useState('');
   const [status, setStatus] = useState<'VERIFIED' | 'REJECTED'>('VERIFIED');
   const [rejectionReason, setRejectionReason] = useState('');
+  const [overview, setOverview] = useState<AdminVerificationOverview | null>(null);
   const [result, setResult] = useState<VerificationDocumentReviewResult | null>(null);
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const rejectionRequired = status === 'REJECTED';
   const canSubmit = documentId.trim().length > 0 && (!rejectionRequired || rejectionReason.trim().length >= 3);
+
+  async function handleLookup() {
+    if (!nursePublicId.trim()) {
+      setFeedback({ tone: 'error', message: 'Bitte zuerst eine Nurse Public ID eingeben.' });
+      return;
+    }
+
+    setSubmitting(true);
+    setFeedback(null);
+    try {
+      const response = await api.getAdminVerificationOverview(nursePublicId.trim());
+      setOverview(response.verification);
+      if (response.verification.documents.length > 0) {
+        setDocumentId(response.verification.documents[0].id);
+      }
+      setFeedback({ tone: 'success', message: 'Verification-Kontext geladen.' });
+    } catch (error) {
+      setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Lookup fehlgeschlagen' });
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -54,9 +78,38 @@ export function AdminVerificationPage() {
       <div className="content-grid two-columns-equal">
         <form className="panel form-panel stack" onSubmit={handleSubmit}>
           <FormSection title="Dokumentenreview" description="Greift auf den echten Superadmin-Review-Endpoint zurück und aktualisiert den Release-Zustand der Pflegekraft.">
-            <Field label="Document ID" helpText="Echte VerificationDocument-ID aus dem Backoffice-/Datenkontext.">
-              <input value={documentId} onChange={(event) => setDocumentId(event.target.value)} placeholder="documentId" />
+            <Field label="Nurse Public ID" helpText="Lädt die echte Verifikationslage einer Pflegekraft, damit Dokumente nicht blind per ID gesucht werden müssen.">
+              <input value={nursePublicId} onChange={(event) => setNursePublicId(event.target.value)} placeholder="NUR-..." />
             </Field>
+            <ActionBar>
+              <button type="button" className="secondary" disabled={submitting || !nursePublicId.trim()} onClick={() => void handleLookup()}>
+                {submitting ? 'Lädt…' : 'Verifikationskontext laden'}
+              </button>
+            </ActionBar>
+            {overview ? (
+              <>
+                <InfoList
+                  items={[
+                    { label: 'Pflegekraft', value: `${overview.nurseProfile.displayName} (${overview.nurseProfile.publicId})` },
+                    { label: 'Release', value: overview.nurseProfile.isReleasedForMatching ? 'released' : 'pending' },
+                    { label: 'Dokumente', value: overview.documents.length },
+                  ]}
+                />
+                <Field label="Dokument auswählen" helpText="Vorausgewählt ist das neueste Dokument.">
+                  <select value={documentId} onChange={(event) => setDocumentId(event.target.value)}>
+                    {overview.documents.map((document) => (
+                      <option key={document.id} value={document.id}>
+                        {document.documentType} · {document.status} · {new Date(document.createdAt).toLocaleDateString('de-DE')}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </>
+            ) : (
+              <Field label="Document ID" helpText="Fallback, falls du direkt mit einer Dokument-ID arbeitest.">
+                <input value={documentId} onChange={(event) => setDocumentId(event.target.value)} placeholder="documentId" />
+              </Field>
+            )}
             <Field label="Entscheidung">
               <select value={status} onChange={(event) => setStatus(event.target.value as 'VERIFIED' | 'REJECTED')}>
                 <option value="VERIFIED">VERIFIED</option>

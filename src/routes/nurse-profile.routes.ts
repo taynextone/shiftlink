@@ -3,6 +3,7 @@ import { UserRole } from '@prisma/client';
 import {
   getOwnVerificationOverviewController,
   getPublicNurseProfileController,
+  getSuperadminVerificationOverviewByPublicIdController,
   reviewVerificationDocumentController,
   updateOwnNurseProfileController,
 } from '../controllers/nurse-profile.controller';
@@ -27,6 +28,13 @@ router.patch(
   validateBody(updateNurseProfileSchema),
   asyncHandler(updateOwnNurseProfileController),
 );
+router.get(
+  '/verification/admin/:publicId',
+  requireAuth,
+  requireRole(UserRole.SUPER_ADMIN),
+  asyncHandler(getSuperadminVerificationOverviewByPublicIdController),
+);
+
 router.post(
   '/verification/review',
   requireAuth,
