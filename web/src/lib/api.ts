@@ -116,6 +116,12 @@ export type HospitalJobShift = {
 export type HospitalOffer = {
   id: string;
   status: string;
+  expiresAt?: string | null;
+  respondedAt?: string | null;
+  signedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  invoiceId?: string | null;
   nurseProfileId?: string;
   jobShiftId?: string;
   nurse: {

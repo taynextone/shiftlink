@@ -12,6 +12,22 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { api, type Candidate, type HospitalJobShift, type HospitalOffer } from '../../lib/api';
 
+function computeOfferHealth(offer: HospitalOffer) {
+  if (offer.status === 'SIGNED') {
+    return { label: 'vertraglich gebunden', nextAction: 'Vertrag / Dossier prüfen' };
+  }
+  if (offer.status === 'DECLINED') {
+    return { label: 'durch Pflegekraft beendet', nextAction: 'neue Schicht oder Reopen-Entscheidung' };
+  }
+  if (offer.status === 'EXPIRED') {
+    return { label: 'abgelaufen', nextAction: 'neues Angebot vorbereiten' };
+  }
+  if (offer.status === 'PENDING') {
+    return { label: 'wartet auf Antwort', nextAction: 'Antwortstatus beobachten' };
+  }
+  return { label: 'operativ beobachten', nextAction: 'Kontext prüfen' };
+}
+
 export function HospitalOffersPage() {
   const [searchParams] = useSearchParams();
   const focusNurseProfileId = searchParams.get('focusNurseProfileId') ?? '';
@@ -32,9 +48,29 @@ export function HospitalOffersPage() {
   const focusedOffers = focusNurseProfileId ? offers.filter((offer) => offer.nurseProfileId === focusNurseProfileId) : offers;
   const focusedCandidates = focusNurseProfileId ? candidates.filter((candidate) => candidate.nurseProfileId === focusNurseProfileId) : candidates;
 
+  const offerSummary = useMemo(() => {
+    return focusedOffers.reduce(
+      (acc, offer) => {
+        acc.total += 1;
+        acc[offer.status] = (acc[offer.status] ?? 0) + 1;
+        if (offer.invoiceId) {
+          acc.invoiced += 1;
+        }
+        return acc;
+      },
+      { total: 0, invoiced: 0 } as Record<string, number>,
+    );
+  }, [focusedOffers]);
+
   async function loadOffers(targetShiftId: string) {
     const result = await api.listHospitalOffers(targetShiftId);
-    setOffers(result.offers ?? []);
+    setOffers(
+      (result.offers ?? []).map((offer) => ({
+        ...offer,
+        nurseProfileId: offer.nurseProfileId ?? offer.nurse.id,
+        jobShiftId: result.jobShift.id,
+      })),
+    );
     setActiveShift(result.jobShift);
     setStatus({ tone: 'success', message: `Offers für ${result.jobShift.title ?? result.jobShift.id} geladen.` });
   }
@@ -147,8 +183,10 @@ export function HospitalOffersPage() {
                   />
                   <MetricList
                     items={[
-                      { label: 'Offers', value: focusedOffers.length },
-                      { label: 'Kandidaten', value: focusedCandidates.length },
+                      { label: 'Offers gesamt', value: offerSummary.total },
+                      { label: 'Pending', value: offerSummary.PENDING ?? 0 },
+                      { label: 'Signed', value: offerSummary.SIGNED ?? 0 },
+                      { label: 'Invoiced', value: offerSummary.invoiced },
                     ]}
                   />
                 </>
@@ -200,26 +238,34 @@ export function HospitalOffersPage() {
                 <h2 className="section-heading">Offers</h2>
                 <StatusBadge value={`${focusedOffers.length} active`} />
               </div>
-              {focusedOffers.map((offer) => (
-                <SectionCard
-                  key={offer.id}
-                  title={offer.nurse.displayName}
-                  description={offer.nurse.publicId}
-                  actions={<StatusBadge value={offer.status} />}
-                >
-                  <InfoList
-                    items={[
-                      { label: 'Offer ID', value: offer.id },
-                      { label: 'Nurse Profile ID', value: offer.nurseProfileId ?? '—' },
-                      { label: 'Min. Rate', value: `${offer.nurse.minHourlyRate} €` },
-                    ]}
-                  />
-                  <ActionBar>
-                    {offer.nurseProfileId ? <Link to={`/hospital/dossier?nurseProfileId=${encodeURIComponent(offer.nurseProfileId)}&contractId=${encodeURIComponent(offer.id)}`}>Dossier öffnen</Link> : null}
-                    <Link to={`/hospital/contracts?contractId=${encodeURIComponent(offer.id)}`}>Contract öffnen</Link>
-                  </ActionBar>
-                </SectionCard>
-              ))}
+              {focusedOffers.map((offer) => {
+                const health = computeOfferHealth(offer);
+                return (
+                  <SectionCard
+                    key={offer.id}
+                    title={offer.nurse.displayName}
+                    description={`${offer.nurse.publicId} · ${health.label}`}
+                    actions={<StatusBadge value={offer.status} />}
+                  >
+                    <InfoList
+                      items={[
+                        { label: 'Offer ID', value: offer.id },
+                        { label: 'Nurse Profile ID', value: offer.nurseProfileId ?? '—' },
+                        { label: 'Min. Rate', value: `${offer.nurse.minHourlyRate} €` },
+                        { label: 'Nächster Schritt', value: health.nextAction },
+                        { label: 'Expires At', value: offer.expiresAt ? new Date(offer.expiresAt).toLocaleString('de-DE') : '—' },
+                        { label: 'Responded At', value: offer.respondedAt ? new Date(offer.respondedAt).toLocaleString('de-DE') : '—' },
+                        { label: 'Signed At', value: offer.signedAt ? new Date(offer.signedAt).toLocaleString('de-DE') : '—' },
+                        { label: 'Invoice', value: offer.invoiceId ?? 'noch keine Rechnung' },
+                      ]}
+                    />
+                    <ActionBar>
+                      {offer.nurseProfileId ? <Link to={`/hospital/dossier?nurseProfileId=${encodeURIComponent(offer.nurseProfileId)}&contractId=${encodeURIComponent(offer.id)}`}>Dossier öffnen</Link> : null}
+                      <Link to={`/hospital/contracts?contractId=${encodeURIComponent(offer.id)}`}>Contract öffnen</Link>
+                    </ActionBar>
+                  </SectionCard>
+                );
+              })}
               {focusedOffers.length === 0 ? <div className="panel empty">Noch keine Offers geladen.</div> : null}
             </section>
           </div>
