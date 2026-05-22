@@ -14,18 +14,18 @@ import { api, type Candidate, type HospitalJobShift, type HospitalOffer } from '
 
 function computeOfferHealth(offer: HospitalOffer) {
   if (offer.status === 'SIGNED') {
-    return { label: 'vertraglich gebunden', nextAction: 'Vertrag / Dossier prüfen' };
+    return { label: 'vertraglich gebunden', nextAction: 'Vertrag / Dossier prüfen', exceptionNote: 'Offer ist bereits im Vertragskontext gebunden.' };
   }
   if (offer.status === 'DECLINED') {
-    return { label: 'durch Pflegekraft beendet', nextAction: 'neue Schicht oder Reopen-Entscheidung' };
+    return { label: 'durch Pflegekraft beendet', nextAction: 'neue Schicht oder Reopen-Entscheidung', exceptionNote: 'Backend-Regel: neue Schicht oder explizite spätere Wiederöffnung nötig.' };
   }
   if (offer.status === 'EXPIRED') {
-    return { label: 'abgelaufen', nextAction: 'neues Angebot vorbereiten' };
+    return { label: 'abgelaufen', nextAction: 'neues Angebot vorbereiten', exceptionNote: 'Abgelaufene Offers bleiben historisch sichtbar, sind aber operativ abgeschlossen.' };
   }
   if (offer.status === 'PENDING') {
-    return { label: 'wartet auf Antwort', nextAction: 'Antwortstatus beobachten' };
+    return { label: 'wartet auf Antwort', nextAction: 'Antwortstatus beobachten', exceptionNote: 'Noch kein technischer Blocker sichtbar.' };
   }
-  return { label: 'operativ beobachten', nextAction: 'Kontext prüfen' };
+  return { label: 'operativ beobachten', nextAction: 'Kontext prüfen', exceptionNote: 'Sonderfall manuell prüfen.' };
 }
 
 export function HospitalOffersPage() {
@@ -38,6 +38,7 @@ export function HospitalOffersPage() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [activeShift, setActiveShift] = useState<HospitalJobShift | null>(null);
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
+  const [lastOfferFailure, setLastOfferFailure] = useState<{ nurseProfileId: string; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const selectedShift = useMemo(
@@ -120,12 +121,15 @@ export function HospitalOffersPage() {
 
     setSubmitting(true);
     setStatus(null);
+    setLastOfferFailure(null);
     try {
       const result = await api.createOffer({ jobShiftId, nurseProfileId });
       await loadOffers(jobShiftId);
       setStatus({ tone: 'success', message: `Offer erstellt: ${result.matchContract.id}` });
     } catch (err) {
-      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Offer konnte nicht erstellt werden' });
+      const message = err instanceof Error ? err.message : 'Offer konnte nicht erstellt werden';
+      setLastOfferFailure({ nurseProfileId, message });
+      setStatus({ tone: 'error', message });
     } finally {
       setSubmitting(false);
     }
@@ -208,29 +212,33 @@ export function HospitalOffersPage() {
                 <h2 className="section-heading">Kandidaten</h2>
                 <StatusBadge value={`${focusedCandidates.length} profile`} />
               </div>
-              {focusedCandidates.map((candidate) => (
-                <SectionCard
-                  key={candidate.nurseProfileId}
-                  title={candidate.displayName}
-                  description={`${candidate.publicId} · ${candidate.matchingCity}`}
-                  actions={<StatusBadge value={candidate.preferredShiftType} />}
-                >
-                  <InfoList
-                    items={[
-                      { label: 'Nurse Profile ID', value: candidate.nurseProfileId },
-                      { label: 'Min. Rate', value: `${candidate.minHourlyRate} €` },
-                      { label: 'Match-Fit', value: candidate.preferredTagMatches },
-                      { label: 'Availability Block', value: candidate.matchingAvailabilityBlockId },
-                    ]}
-                  />
-                  <ActionBar>
-                    <Link to={`/hospital/dossier?nurseProfileId=${encodeURIComponent(candidate.nurseProfileId)}`}>Dossier öffnen</Link>
-                    <button disabled={submitting} onClick={() => void handleCreateOffer(candidate.nurseProfileId)}>
-                      {submitting ? 'Bitte warten…' : 'Offer erstellen'}
-                    </button>
-                  </ActionBar>
-                </SectionCard>
-              ))}
+              {focusedCandidates.map((candidate) => {
+                const candidateFailure = lastOfferFailure?.nurseProfileId === candidate.nurseProfileId ? lastOfferFailure.message : null;
+                return (
+                  <SectionCard
+                    key={candidate.nurseProfileId}
+                    title={candidate.displayName}
+                    description={`${candidate.publicId} · ${candidate.matchingCity}`}
+                    actions={<StatusBadge value={candidate.preferredShiftType} />}
+                  >
+                    <InfoList
+                      items={[
+                        { label: 'Nurse Profile ID', value: candidate.nurseProfileId },
+                        { label: 'Min. Rate', value: `${candidate.minHourlyRate} €` },
+                        { label: 'Match-Fit', value: candidate.preferredTagMatches },
+                        { label: 'Availability Block', value: candidate.matchingAvailabilityBlockId },
+                        { label: 'Letzter Offer-Blocker', value: candidateFailure ?? 'kein letzter Fehler gespeichert' },
+                      ]}
+                    />
+                    <ActionBar>
+                      <Link to={`/hospital/dossier?nurseProfileId=${encodeURIComponent(candidate.nurseProfileId)}`}>Dossier öffnen</Link>
+                      <button disabled={submitting} onClick={() => void handleCreateOffer(candidate.nurseProfileId)}>
+                        {submitting ? 'Bitte warten…' : 'Offer erstellen'}
+                      </button>
+                    </ActionBar>
+                  </SectionCard>
+                );
+              })}
               {focusedCandidates.length === 0 ? <div className="panel empty">Noch keine Kandidaten geladen.</div> : null}
             </section>
             <section className="stack">
@@ -253,6 +261,7 @@ export function HospitalOffersPage() {
                         { label: 'Nurse Profile ID', value: offer.nurseProfileId ?? '—' },
                         { label: 'Min. Rate', value: `${offer.nurse.minHourlyRate} €` },
                         { label: 'Nächster Schritt', value: health.nextAction },
+                        { label: 'Exception-Hinweis', value: health.exceptionNote },
                         { label: 'Expires At', value: offer.expiresAt ? new Date(offer.expiresAt).toLocaleString('de-DE') : '—' },
                         { label: 'Responded At', value: offer.respondedAt ? new Date(offer.respondedAt).toLocaleString('de-DE') : '—' },
                         { label: 'Signed At', value: offer.signedAt ? new Date(offer.signedAt).toLocaleString('de-DE') : '—' },
