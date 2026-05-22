@@ -21,6 +21,7 @@ const navGroups = [
       { to: '/hospital', label: 'Dashboard', caption: 'Operativer Überblick' },
       { to: '/hospital/shifts', label: 'Schichten', caption: 'Bedarfe & Import' },
       { to: '/hospital/offers', label: 'Offers', caption: 'Kandidaten & Angebote' },
+      { to: '/hospital/dossier', label: 'Dossiers', caption: 'Verifizierte Profile' },
       { to: '/hospital/contracts', label: 'Verträge', caption: 'Lifecycle & Aktionen' },
     ],
   },

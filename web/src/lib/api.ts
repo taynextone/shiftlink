@@ -116,6 +116,39 @@ export type Candidate = {
   matchingCity: string;
 };
 
+
+export type HospitalNurseDossier = {
+  nurseProfileId: string;
+  publicId: string;
+  displayName: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  phoneNumber?: string | null;
+  minHourlyRate: string;
+  preferredShiftType?: string | null;
+  isReleasedForMatching: boolean;
+  releasedAt?: string | null;
+  specializations: string[];
+  verifiedDocuments: Array<{
+    id: string;
+    documentType: string;
+    status: string;
+    reviewedAt?: string | null;
+    objectKey: string;
+    signedUrl: string;
+    expiresIn: number;
+  }>;
+  signedAssignments: Array<{
+    matchContractId: string;
+    jobShiftId: string;
+    startTime: string;
+    endTime: string;
+    locationCity?: string | null;
+    hospitalProfileId: string;
+    clinicName: string;
+  }>;
+};
+
 export type ContractLifecycle = {
   matchContractId: string;
   createdAt?: string;
@@ -222,6 +255,7 @@ export const api = {
     }),
   listHospitalJobShifts: () => request<{ jobShifts: HospitalJobShift[] }>('/job-shifts'),
   getHospitalBillingSummary: () => request<HospitalBillingSummary>('/job-shifts/billing/summary'),
+  getHospitalNurseDossier: (nurseProfileId: string) => request<{ dossier: HospitalNurseDossier }>(`/documents/dossier/${nurseProfileId}`),
   importHospitalJobShift: (input: Record<string, unknown>) =>
     request<{ mode: 'created' | 'updated'; jobShift: HospitalJobShift }>('/job-shifts/import', {
       method: 'POST',

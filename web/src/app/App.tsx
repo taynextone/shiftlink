@@ -7,6 +7,7 @@ import { RegisterPage } from '../features/auth/RegisterPage';
 import { AdminVerificationPage } from '../features/admin/AdminVerificationPage';
 import { HospitalContractsPage } from '../features/hospital/HospitalContractsPage';
 import { HospitalDashboardPage } from '../features/hospital/HospitalDashboardPage';
+import { HospitalDossierPage } from '../features/hospital/HospitalDossierPage';
 import { HospitalOffersPage } from '../features/hospital/HospitalOffersPage';
 import { HospitalShiftsPage } from '../features/hospital/HospitalShiftsPage';
 import { NurseDashboardPage } from '../features/nurse/NurseDashboardPage';
@@ -30,6 +31,7 @@ export function App() {
           <Route path="/hospital" element={<ProtectedRoute allowedRoles={['HOSPITAL_ADMIN', 'SUPER_ADMIN']}><HospitalDashboardPage /></ProtectedRoute>} />
           <Route path="/hospital/shifts" element={<ProtectedRoute allowedRoles={['HOSPITAL_ADMIN', 'SUPER_ADMIN']}><HospitalShiftsPage /></ProtectedRoute>} />
           <Route path="/hospital/offers" element={<ProtectedRoute allowedRoles={['HOSPITAL_ADMIN', 'SUPER_ADMIN']}><HospitalOffersPage /></ProtectedRoute>} />
+          <Route path="/hospital/dossier" element={<ProtectedRoute allowedRoles={['HOSPITAL_ADMIN', 'SUPER_ADMIN']}><HospitalDossierPage /></ProtectedRoute>} />
           <Route path="/hospital/contracts" element={<ProtectedRoute allowedRoles={['HOSPITAL_ADMIN', 'SUPER_ADMIN']}><HospitalContractsPage /></ProtectedRoute>} />
           <Route path="/admin/verification" element={<ProtectedRoute allowedRoles={['SUPER_ADMIN']}><AdminVerificationPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/nurse" replace />} />
