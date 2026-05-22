@@ -12,6 +12,36 @@ import { useAsyncData } from '../../hooks/useAsyncData';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, type ContractExecutionOverview, type ContractLifecycle, type ContractPdfResponse, type ContractSnapshotResponse, type HospitalOffer } from '../../lib/api';
 
+function interpretContractState(lifecycle: ContractLifecycle | null, execution: ContractExecutionOverview | null) {
+  if (!lifecycle) {
+    return null;
+  }
+
+  if (lifecycle.status === 'SIGNED' && lifecycle.executionStatus === 'FULLY_EXECUTED') {
+    return { label: 'vollständig ausgeführt', nextAction: lifecycle.invoice ? 'Abrechnung und PDF prüfen' : 'Rechnungserstellung beobachten' };
+  }
+  if (lifecycle.status === 'SIGNED' && lifecycle.executionStatus === 'PENDING_NURSE_SIGNATURE') {
+    return { label: 'wartet auf Nurse-Signatur', nextAction: 'Signaturstatus überwachen oder nachfassen' };
+  }
+  if (lifecycle.status === 'SIGNED' && lifecycle.executionStatus === 'PENDING_HOSPITAL_SIGNATURE') {
+    return { label: 'wartet auf Hospital-Signatur', nextAction: 'Execution signieren' };
+  }
+  if (lifecycle.status === 'PENDING') {
+    return { label: 'Offer noch offen', nextAction: 'Antwortstatus im Offer-Kontext prüfen' };
+  }
+  if (lifecycle.status === 'DECLINED') {
+    return { label: 'durch Pflegekraft beendet', nextAction: 'Schicht-/Reopen-Entscheidung treffen' };
+  }
+  if (lifecycle.status === 'EXPIRED') {
+    return { label: 'Angebot abgelaufen', nextAction: 'neues Angebot vorbereiten' };
+  }
+  if (lifecycle.status === 'CANCELED') {
+    return { label: 'abgebrochen', nextAction: 'Historie dokumentieren und Kontext prüfen' };
+  }
+
+  return { label: execution ? execution.executionStatus : lifecycle.executionStatus, nextAction: 'Lifecycle-Details prüfen' };
+}
+
 export function HospitalContractsPage() {
   const [searchParams] = useSearchParams();
   const [jobShiftId, setJobShiftId] = useState('');
@@ -40,9 +70,16 @@ export function HospitalContractsPage() {
     [availableShifts, jobShiftId],
   );
 
+  const contractState = useMemo(() => interpretContractState(lifecycle, execution), [execution, lifecycle]);
+
   async function loadLifecycle(targetContractId: string) {
     const result = await api.getContractLifecycle(targetContractId);
     setLifecycle(result.lifecycle);
+  }
+
+  async function loadExecution(targetContractId: string) {
+    const result = await api.getContractExecutionOverview(targetContractId);
+    setExecution(result.execution);
   }
 
   async function handleLoadOffersForShift() {
@@ -74,8 +111,8 @@ export function HospitalContractsPage() {
     setSubmitting(true);
     setStatus(null);
     try {
-      await loadLifecycle(contractId);
-      setStatus({ tone: 'success', message: 'Contract Lifecycle geladen.' });
+      await Promise.all([loadLifecycle(contractId), loadExecution(contractId)]);
+      setStatus({ tone: 'success', message: 'Contract-Kontext geladen.' });
     } catch (err) {
       setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Lifecycle konnte nicht geladen werden' });
     } finally {
@@ -92,8 +129,7 @@ export function HospitalContractsPage() {
     setSubmitting(true);
     setStatus(null);
     try {
-      const result = await api.getContractExecutionOverview(contractId);
-      setExecution(result.execution);
+      await loadExecution(contractId);
       setStatus({ tone: 'success', message: 'Execution Overview geladen.' });
     } catch (err) {
       setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Execution Overview konnte nicht geladen werden' });
@@ -150,7 +186,7 @@ export function HospitalContractsPage() {
     setStatus(null);
     try {
       const result = await api.signContractExecution(contractId);
-      await loadLifecycle(contractId);
+      await Promise.all([loadLifecycle(contractId), loadExecution(contractId)]);
       setStatus({ tone: 'success', message: `Execution signiert. Neuer Status: ${result.execution.executionStatus}` });
     } catch (err) {
       setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Execution konnte nicht signiert werden' });
@@ -173,7 +209,7 @@ export function HospitalContractsPage() {
     setStatus(null);
     try {
       const result = await api.voidContract(contractId, voidReason.trim());
-      await loadLifecycle(contractId);
+      await Promise.all([loadLifecycle(contractId), loadExecution(contractId)]);
       setStatus({ tone: 'success', message: `Contract voided: ${result.voiding.executionStatus}` });
     } catch (err) {
       setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Void-Flow fehlgeschlagen' });
@@ -261,7 +297,7 @@ export function HospitalContractsPage() {
               </label>
             </FormSection>
             <ActionBar>
-              <button type="submit" disabled={submitting || !contractId}>{submitting ? 'Lädt…' : 'Lifecycle laden'}</button>
+              <button type="submit" disabled={submitting || !contractId}>{submitting ? 'Lädt…' : 'Contract-Kontext laden'}</button>
               <button type="button" className="secondary" disabled={submitting || !contractId} onClick={() => void handleLoadExecutionOverview()}>{submitting ? 'Bitte warten…' : 'Execution laden'}</button>
               <button type="button" className="secondary" disabled={submitting || !contractId} onClick={() => void handleLoadSnapshot()}>{submitting ? 'Bitte warten…' : 'Snapshot laden'}</button>
               <button type="button" className="secondary" disabled={submitting || !contractId} onClick={() => void handleLoadPdf()}>{submitting ? 'Bitte warten…' : 'PDF laden'}</button>
@@ -280,7 +316,7 @@ export function HospitalContractsPage() {
                   >
                     <div>
                       <strong>{offer.nurse.displayName}</strong>
-                      <p>{offer.id}</p>
+                      <p>{offer.status} · {offer.id}</p>
                     </div>
                     <StatusBadge value={offer.status} />
                   </button>
@@ -327,6 +363,14 @@ export function HospitalContractsPage() {
                       <StatusBadge value={lifecycle.executionStatus} />
                     </div>
                   </div>
+                  {contractState ? (
+                    <InfoList
+                      items={[
+                        { label: 'Operativer Zustand', value: contractState.label },
+                        { label: 'Nächster Schritt', value: contractState.nextAction },
+                      ]}
+                    />
+                  ) : null}
                   <InfoList
                     items={[
                       { label: 'Contract ID', value: lifecycle.matchContractId },
