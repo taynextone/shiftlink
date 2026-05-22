@@ -198,6 +198,19 @@ export type HospitalNurseDossier = {
 
 
 
+
+export type ContractVoidOverview = {
+  matchContractId: string;
+  status: string;
+  executionStatus: string;
+  voidEvent: null | {
+    actorUserId: string;
+    actorRole: string;
+    reason: string;
+    createdAt: string;
+  };
+};
+
 export type ContractExecutionOverview = {
   matchContractId: string;
   executionStatus: string;
@@ -407,4 +420,5 @@ export const api = {
   getContractSnapshot: (contractId: string) => request<{ contractSnapshot: ContractSnapshotResponse }>(`/matches/contract/${contractId}/snapshot`),
   getContractPdf: (contractId: string) => request<{ contractPdf: ContractPdfResponse }>(`/matches/contract/${contractId}/pdf`),
   getContractExecutionOverview: (contractId: string) => request<{ execution: ContractExecutionOverview }>(`/matches/contract/${contractId}/execution`),
+  getContractVoidOverview: (contractId: string) => request<{ voiding: ContractVoidOverview }>(`/matches/contract/${contractId}/void`),
 };

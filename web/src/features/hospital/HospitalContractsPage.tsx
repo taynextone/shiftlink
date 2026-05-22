@@ -10,7 +10,7 @@ import { SectionCard } from '../../components/SectionCard';
 import { StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { Link, useSearchParams } from 'react-router-dom';
-import { api, type ContractExecutionOverview, type ContractLifecycle, type ContractPdfResponse, type ContractSnapshotResponse, type HospitalOffer } from '../../lib/api';
+import { api, type ContractExecutionOverview, type ContractLifecycle, type ContractPdfResponse, type ContractSnapshotResponse, type ContractVoidOverview, type HospitalOffer } from '../../lib/api';
 
 function interpretContractState(lifecycle: ContractLifecycle | null, execution: ContractExecutionOverview | null) {
   if (!lifecycle) {
@@ -42,6 +42,25 @@ function interpretContractState(lifecycle: ContractLifecycle | null, execution: 
   return { label: execution ? execution.executionStatus : lifecycle.executionStatus, nextAction: 'Lifecycle-Details prüfen' };
 }
 
+function interpretVoidIntervention(lifecycle: ContractLifecycle | null, voiding: ContractVoidOverview | null) {
+  if (!lifecycle) {
+    return null;
+  }
+  if (voiding?.voidEvent) {
+    return { label: 'bereits voided', blocker: 'Der Vertrag wurde bereits beendet und dokumentiert.' };
+  }
+  if (lifecycle.executionStatus === 'FULLY_EXECUTED') {
+    return { label: 'Void blockiert', blocker: 'Vollständig ausgeführte Verträge können über diesen Flow nicht voided werden.' };
+  }
+  if (lifecycle.invoice?.status === 'PAID') {
+    return { label: 'Void blockiert', blocker: 'Bereits bezahlte Plattformrechnungen blockieren diesen Void-Flow.' };
+  }
+  if (lifecycle.status === 'CANCELED') {
+    return { label: 'bereits storniert', blocker: 'Dieser Vertrag ist bereits storniert.' };
+  }
+  return { label: 'Void möglich', blocker: 'Kein technischer Blocker sichtbar. Grund sauber dokumentieren.' };
+}
+
 export function HospitalContractsPage() {
   const [searchParams] = useSearchParams();
   const [jobShiftId, setJobShiftId] = useState('');
@@ -52,6 +71,7 @@ export function HospitalContractsPage() {
   const [snapshot, setSnapshot] = useState<ContractSnapshotResponse | null>(null);
   const [pdf, setPdf] = useState<ContractPdfResponse | null>(null);
   const [execution, setExecution] = useState<ContractExecutionOverview | null>(null);
+  const [voiding, setVoiding] = useState<ContractVoidOverview | null>(null);
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const { data: shiftData, loading: shiftsLoading, error: shiftsError } = useAsyncData(() => api.listHospitalJobShifts(), []);
@@ -71,6 +91,7 @@ export function HospitalContractsPage() {
   );
 
   const contractState = useMemo(() => interpretContractState(lifecycle, execution), [execution, lifecycle]);
+  const voidIntervention = useMemo(() => interpretVoidIntervention(lifecycle, voiding), [lifecycle, voiding]);
 
   async function loadLifecycle(targetContractId: string) {
     const result = await api.getContractLifecycle(targetContractId);
@@ -80,6 +101,11 @@ export function HospitalContractsPage() {
   async function loadExecution(targetContractId: string) {
     const result = await api.getContractExecutionOverview(targetContractId);
     setExecution(result.execution);
+  }
+
+  async function loadVoiding(targetContractId: string) {
+    const result = await api.getContractVoidOverview(targetContractId);
+    setVoiding(result.voiding);
   }
 
   async function handleLoadOffersForShift() {
@@ -111,7 +137,7 @@ export function HospitalContractsPage() {
     setSubmitting(true);
     setStatus(null);
     try {
-      await Promise.all([loadLifecycle(contractId), loadExecution(contractId)]);
+      await Promise.all([loadLifecycle(contractId), loadExecution(contractId), loadVoiding(contractId)]);
       setStatus({ tone: 'success', message: 'Contract-Kontext geladen.' });
     } catch (err) {
       setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Lifecycle konnte nicht geladen werden' });
@@ -186,7 +212,7 @@ export function HospitalContractsPage() {
     setStatus(null);
     try {
       const result = await api.signContractExecution(contractId);
-      await Promise.all([loadLifecycle(contractId), loadExecution(contractId)]);
+      await Promise.all([loadLifecycle(contractId), loadExecution(contractId), loadVoiding(contractId)]);
       setStatus({ tone: 'success', message: `Execution signiert. Neuer Status: ${result.execution.executionStatus}` });
     } catch (err) {
       setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Execution konnte nicht signiert werden' });
@@ -209,7 +235,7 @@ export function HospitalContractsPage() {
     setStatus(null);
     try {
       const result = await api.voidContract(contractId, voidReason.trim());
-      await Promise.all([loadLifecycle(contractId), loadExecution(contractId)]);
+      await Promise.all([loadLifecycle(contractId), loadExecution(contractId), loadVoiding(contractId)]);
       setStatus({ tone: 'success', message: `Contract voided: ${result.voiding.executionStatus}` });
     } catch (err) {
       setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Void-Flow fehlgeschlagen' });
@@ -339,6 +365,14 @@ export function HospitalContractsPage() {
                   <span>Void Reason</span>
                   <input value={voidReason} onChange={(event) => setVoidReason(event.target.value)} placeholder="Void reason" />
                 </label>
+                {voidIntervention ? (
+                  <InfoList
+                    items={[
+                      { label: 'Interventionsstatus', value: voidIntervention.label },
+                      { label: 'Blocker / Hinweis', value: voidIntervention.blocker },
+                    ]}
+                  />
+                ) : null}
                 <ActionBar>
                   <button type="button" className="secondary" disabled={submitting || !contractId || !voidReason.trim()} onClick={() => void handleVoid()}>
                     {submitting ? 'Bitte warten…' : 'Contract voiden'}
@@ -411,6 +445,21 @@ export function HospitalContractsPage() {
                   </div>
                 ))}
               </div>
+            </SectionCard>
+          ) : null}
+
+          {voiding ? (
+            <SectionCard title="Void Detail" description="Dokumentierte Void-Lage und Interventionskontext.">
+              <InfoList
+                items={[
+                  { label: 'Contract Status', value: voiding.status },
+                  { label: 'Execution Status', value: voiding.executionStatus },
+                  { label: 'Void vorhanden', value: voiding.voidEvent ? 'Ja' : 'Nein' },
+                  { label: 'Void Actor', value: voiding.voidEvent?.actorRole ?? '—' },
+                  { label: 'Void At', value: voiding.voidEvent?.createdAt ? new Date(voiding.voidEvent.createdAt).toLocaleString('de-DE') : '—' },
+                  { label: 'Void Reason', value: voiding.voidEvent?.reason ?? '—' },
+                ]}
+              />
             </SectionCard>
           ) : null}
 
