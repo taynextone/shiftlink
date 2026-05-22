@@ -7,6 +7,7 @@ import {
   importHospitalJobShift,
   listHospitalJobShifts,
 } from '../services/job-shift.service';
+import { listHospitalWebhookEvents } from '../services/webhook.service';
 
 export async function createJobShiftController(req: Request, res: Response): Promise<void> {
   if (!req.auth) {
@@ -72,3 +73,17 @@ export async function exportHospitalBillingController(req: Request, res: Respons
 
   res.status(200).json(result);
 }
+
+
+export async function listHospitalWebhookEventsController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const result = await listHospitalWebhookEvents(req.auth, {
+    limit: req.query.limit ? Number(req.query.limit) : undefined,
+  });
+
+  res.status(200).json(result);
+}
+

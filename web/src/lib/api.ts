@@ -252,6 +252,20 @@ export type ContractLifecycle = {
 };
 
 
+
+export type HospitalWebhookEventRow = {
+  id: string;
+  hospitalProfileId: string;
+  clinicName: string;
+  eventType: string;
+  deliveryAttempts: number;
+  lastAttemptAt?: string | null;
+  deliveredAt?: string | null;
+  lastError?: string | null;
+  createdAt: string;
+  status: string;
+};
+
 export type HospitalBillingExportRow = {
   invoiceId: string;
   invoiceStatus: string;
@@ -353,6 +367,7 @@ export const api = {
     }),
   listHospitalJobShifts: () => request<{ jobShifts: HospitalJobShift[] }>('/job-shifts'),
   getHospitalBillingSummary: () => request<{ summary: HospitalBillingSummary }>('/job-shifts/billing/summary'),
+  listHospitalWebhookEvents: (limit = 25) => request<{ events: HospitalWebhookEventRow[] }>(`/job-shifts/webhooks?limit=${encodeURIComponent(String(limit))}`),
   exportHospitalBilling: (query?: { status?: 'PENDING' | 'PAID'; format?: 'json' | 'csv'; limit?: number }) => {
     const params = new URLSearchParams();
     if (query?.status) params.set('status', query.status);

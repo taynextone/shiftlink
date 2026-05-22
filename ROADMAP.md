@@ -29,13 +29,13 @@ Needed:
 - [done] Billing operations surface
 - [partial] Contract exception / dispute / intervention tooling
 - [partial] linked contract / dossier / offer operational workflows
-- [todo] Superadmin / operations dashboard
-- [todo] Release / unrelease controls
+- [partial] Superadmin / operations dashboard
+- [done] Release / unrelease controls
 - [todo] Queue / webhook / processing failure visibility
 
 Definition of done:
 - key non-end-user operational workflows are possible without DB/manual shell work
-- Current gap to done: no central ops dashboard yet, no release/unrelease controls yet, no queue/webhook failure visibility yet
+- Current gap to done: dashboard is improved but not yet a full central superadmin control plane; no queue/webhook failure visibility yet
 
 ### 2. Verification / Documents / Dossier End-to-End
 Status: pending
@@ -197,6 +197,8 @@ Needed:
   - admin verification lookup improved via nurse public ID context
   - hospital dossier access UI added
   - hospital billing operations page added
+  - release / unrelease controls added for superadmin verification workflow
+  - hospital dashboard upgraded into a real ops surface with backend-backed summaries
   - contract lifecycle / execution / snapshot / PDF ops flows added and improved
   - offers / dossiers / contracts linked into a connected ops workflow
   - backend-backed operational summaries improved across offers and contracts

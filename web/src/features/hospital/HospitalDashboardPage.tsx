@@ -9,9 +9,11 @@ import { api } from '../../lib/api';
 export function HospitalDashboardPage() {
   const { data: shiftData } = useAsyncData(() => api.listHospitalJobShifts(), []);
   const { data: billingData } = useAsyncData(() => api.getHospitalBillingSummary(), []);
+  const { data: webhookData } = useAsyncData(() => api.listHospitalWebhookEvents(10), []);
 
   const shifts = shiftData?.jobShifts ?? [];
   const billing = billingData?.summary;
+  const webhookEvents = webhookData?.events ?? [];
 
   const openShifts = shifts.filter((shift) => shift.status === 'OPEN');
   const matchedShifts = shifts.filter((shift) => shift.status === 'MATCHED');
@@ -19,10 +21,13 @@ export function HospitalDashboardPage() {
   const totalPendingOffers = shifts.reduce((sum, shift) => sum + (shift.offerCounts?.pending ?? 0), 0);
   const totalInvoiced = shifts.reduce((sum, shift) => sum + (shift.offerCounts?.invoiced ?? 0), 0);
 
+  const failedWebhookEvents = webhookEvents.filter((event) => event.status === 'FAILED_OR_PENDING_RETRY');
+
   const nextOperationalFocus = [
     totalPendingOffers > 0 ? 'Pending Offers nachfassen' : null,
     openShifts.length > 0 ? 'offene Schichten in Kandidaten-/Offer-Flow ziehen' : null,
     billing && billing.pendingInvoiceAmount > 0 ? 'offene Gebühren im Billing prüfen' : null,
+    failedWebhookEvents.length > 0 ? 'fehlgeschlagene oder hängende Webhooks prüfen' : null,
   ].filter(Boolean) as string[];
 
   return (
@@ -37,6 +42,7 @@ export function HospitalDashboardPage() {
         <KpiCard label="Pending Offers" value={String(totalPendingOffers)} helper="Angebote, bei denen operatives Follow-up oder Beobachtung nötig ist." />
         <KpiCard label="Signed Offers" value={String(totalSignedOffers)} helper="Bereits vertraglich gebundene Matchings mit weiterem Governance-/Execution-Bedarf." />
         <KpiCard label="Invoices" value={billing ? String(billing.invoiceCount) : '—'} helper="Rechnungsobjekte aus den bestehenden Plattformgebühren-Flows." />
+        <KpiCard label="Webhook Issues" value={String(failedWebhookEvents.length)} helper="Fehlgeschlagene oder noch nicht sauber zugestellte Webhook-Events." />
       </div>
       <div className="content-grid two-thirds">
         <SectionCard title="Operative Lage" description="Zusammenführung der wichtigsten Arbeitslage aus Schicht-, Offer- und Billing-Kontext.">
@@ -51,6 +57,26 @@ export function HospitalDashboardPage() {
           <ol className="ordered-list compact-ordered-list">
             {nextOperationalFocus.length > 0 ? nextOperationalFocus.map((item) => <li key={item}>{item}</li>) : <li>Keine akute operative Spannung aus den aktuellen Kernmetriken sichtbar.</li>}
           </ol>
+        </SectionCard>
+        <SectionCard title="Webhook / Processing Visibility" description="Erste echte Sicht auf Delivery-Probleme und asynchrone Prozessspannung.">
+          <MetricList
+            items={[
+              { label: 'Webhook Events', value: webhookEvents.length },
+              { label: 'Probleme', value: failedWebhookEvents.length },
+              { label: 'Zuletzt zugestellt', value: webhookEvents.find((event) => event.deliveredAt)?.eventType ?? '—' },
+            ]}
+          />
+          <div className="record-list compact-list">
+            {webhookEvents.slice(0, 5).map((event) => (
+              <div className="panel subpanel" key={event.id}>
+                <strong>{event.eventType}</strong>
+                <p>{event.clinicName}</p>
+                <p>{event.status} · Attempts: {event.deliveryAttempts}</p>
+                <p>{event.lastError ?? 'keine Fehlermeldung'}</p>
+              </div>
+            ))}
+            {webhookEvents.length === 0 ? <p className="hint">Noch keine Webhook-Events sichtbar.</p> : null}
+          </div>
         </SectionCard>
         <SectionCard title="Direkte Arbeitswege" description="Schneller Einstieg in die bereits ausgebauten Operations-Flows.">
           <MetricList

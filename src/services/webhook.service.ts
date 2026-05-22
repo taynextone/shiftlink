@@ -98,3 +98,45 @@ export async function deliverHospitalWebhookEvent(webhookEventId: string): Promi
     },
   });
 }
+
+
+export async function listHospitalWebhookEvents(actor: { userId: string; role: string }, input?: { limit?: number }) {
+  const limit = Math.min(Math.max(input?.limit ?? 25, 1), 100);
+
+  const hospitalProfile = actor.role === 'SUPER_ADMIN'
+    ? null
+    : await prisma.hospitalProfile.findUnique({
+        where: { userId: actor.userId },
+      });
+
+  if (actor.role !== 'SUPER_ADMIN' && !hospitalProfile) {
+    throw new Error('Hospital profile not found');
+  }
+
+  const events = await prisma.webhookEvent.findMany({
+    where: actor.role === 'SUPER_ADMIN' ? undefined : { hospitalProfileId: hospitalProfile!.id },
+    include: {
+      hospitalProfile: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    take: limit,
+  });
+
+  return {
+    events: events.map((event) => ({
+      id: event.id,
+      hospitalProfileId: event.hospitalProfileId,
+      clinicName: event.hospitalProfile.clinicName,
+      eventType: event.eventType,
+      deliveryAttempts: event.deliveryAttempts,
+      lastAttemptAt: event.lastAttemptAt,
+      deliveredAt: event.deliveredAt,
+      lastError: event.lastError,
+      createdAt: event.createdAt,
+      status: event.deliveredAt ? 'DELIVERED' : event.lastError ? 'FAILED_OR_PENDING_RETRY' : 'QUEUED',
+    })),
+  };
+}
+
