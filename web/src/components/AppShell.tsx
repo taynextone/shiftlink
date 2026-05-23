@@ -31,7 +31,7 @@ const navGroups = [
     roles: ['SUPER_ADMIN'],
     items: [
       { to: '/admin/verification', label: 'Verification Ops', caption: 'Review, Release, Intervention' },
-      { to: '/hospital', label: 'Ops Control Plane', caption: 'Hotspots, Failures, Prioritäten' },
+      { to: '/admin/ops', label: 'Ops Control Plane', caption: 'Hotspots, Failures, Prioritäten' },
     ],
   },
 ];
