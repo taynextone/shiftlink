@@ -73,6 +73,14 @@ export function HospitalBillingPage() {
       </SectionCard>
 
       <SectionCard title="Billing Export" description="Lädt die aktuellen Rechnungszeilen aus dem echten Export-Endpoint als Arbeitsansicht.">
+        <MetricList
+          items={[
+            { label: 'Geladene Rows', value: rows.length },
+            { label: 'Pending im Export', value: pendingRows.length },
+            { label: 'Paid im Export', value: paidRows.length },
+            { label: 'Filter', value: statusFilter || 'Alle' },
+          ]}
+        />
         <div className="form-grid two">
           <Field label="Statusfilter">
             <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as 'PENDING' | 'PAID' | '')}>
@@ -102,7 +110,7 @@ export function HospitalBillingPage() {
               </ActionBar>
             </div>
           ))}
-          {rows.length === 0 ? <p className="hint">Noch kein Export geladen.</p> : null}
+          {rows.length === 0 ? <p className="hint">{statusFilter ? `Kein Billing-Export für Filter ${statusFilter} geladen oder gefunden.` : 'Noch kein Export geladen.'}</p> : null}
         </div>
       </SectionCard>
     </section>
