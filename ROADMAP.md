@@ -28,14 +28,14 @@ Needed:
 - [done] Hospital dossier access workflows in UI
 - [done] Billing operations surface
 - [partial] Contract exception / dispute / intervention tooling
-- [partial] linked contract / dossier / offer operational workflows
+- [done] linked contract / dossier / offer operational workflows
 - [partial] Superadmin / operations dashboard
 - [done] Release / unrelease controls
 - [partial] Queue / webhook / processing failure visibility
 
 Definition of done:
 - key non-end-user operational workflows are possible without DB/manual shell work
-- Current gap to done: dashboard/control-plane is materially improved; remaining gap is broader superadmin-centralization and deeper end-to-end intervention handling across all async and exception paths
+- Current gap to done: dashboard/control-plane and linked ops navigation are materially improved; remaining gap is broader superadmin-centralization, deeper queue/worker intervention depth, and fuller exception handling across contract/billing edge states
 
 ### 2. Verification / Documents / Dossier End-to-End
 Status: pending
@@ -201,6 +201,8 @@ Needed:
   - hospital dashboard upgraded into a real ops surface with backend-backed summaries
   - webhook and async worker failure visibility added to the ops dashboard
   - intervention hotspots are now prioritized on the dashboard as a control-plane view
+  - dashboard hotspot routing is now more role-aware and operationally precise
+  - async failure visibility is now gated cleanly by role instead of leaking into hospital-admin error paths
   - offer, shift import, and contract void intervention guidance was added to operational surfaces
   - contract lifecycle / execution / snapshot / PDF ops flows added and improved
   - offers / dossiers / contracts linked into a connected ops workflow
