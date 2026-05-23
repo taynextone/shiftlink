@@ -5,7 +5,7 @@ import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { api } from '../../lib/api';
-import { buildInterventionHotspots, getCriticalAsyncFailures, getFailedWebhookEvents, getImportBlockedShifts } from './dashboard-helpers';
+import { buildInterventionHotspots, getCriticalAsyncFailures, getFailedWebhookEvents, getImportBlockedShifts, rankAsyncFailures } from './dashboard-helpers';
 
 export function HospitalDashboardPage() {
   const { data: shiftData } = useAsyncData(() => api.listHospitalJobShifts(), []);
@@ -26,6 +26,7 @@ export function HospitalDashboardPage() {
   const importBlockedShifts = getImportBlockedShifts(shifts);
   const failedWebhookEvents = getFailedWebhookEvents(webhookEvents);
   const criticalAsyncFailures = getCriticalAsyncFailures(asyncFailures);
+  const rankedAsyncFailures = rankAsyncFailures(asyncFailures);
 
   const interventionHotspots = buildInterventionHotspots({
     failedWebhookEvents,
@@ -118,7 +119,7 @@ export function HospitalDashboardPage() {
             ]}
           />
           <div className="record-list compact-list">
-            {asyncFailures.slice(0, 5).map((failure) => (
+            {rankedAsyncFailures.slice(0, 5).map((failure) => (
               <div className="panel subpanel" key={failure.id}>
                 <strong>{failure.queueName} · {failure.jobName}</strong>
                 <p>{failure.errorMessage}</p>

@@ -12,6 +12,15 @@ export function getCriticalAsyncFailures(asyncFailures: AsyncProcessFailureRow[]
   return asyncFailures.filter((failure) => failure.queueName === 'billing' || failure.queueName === 'webhook');
 }
 
+export function rankAsyncFailures(asyncFailures: AsyncProcessFailureRow[]) {
+  const severity = { billing: 3, webhook: 2, whatsapp: 1 } as Record<string, number>;
+  return [...asyncFailures].sort((a, b) => {
+    const severityDiff = (severity[b.queueName] ?? 0) - (severity[a.queueName] ?? 0);
+    if (severityDiff !== 0) return severityDiff;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+}
+
 export function buildInterventionHotspots(input: {
   failedWebhookEvents: HospitalWebhookEventRow[];
   criticalAsyncFailures: AsyncProcessFailureRow[];
@@ -21,21 +30,23 @@ export function buildInterventionHotspots(input: {
 }) {
   const { failedWebhookEvents, criticalAsyncFailures, totalPendingOffers, importBlockedShifts, billing } = input;
 
-  return [
+  const hotspots = [
     failedWebhookEvents.length > 0
-      ? { label: 'Webhook Delivery', value: `${failedWebhookEvents.length} Probleme`, action: '/hospital', hint: 'fehlgeschlagene oder hängende Webhook-Zustellungen prüfen' }
+      ? { label: 'Webhook Delivery', value: `${failedWebhookEvents.length} Probleme`, action: '/hospital', hint: 'fehlgeschlagene oder hängende Webhook-Zustellungen prüfen', priority: 2 }
       : null,
     criticalAsyncFailures.length > 0
-      ? { label: 'Async Worker Failures', value: `${criticalAsyncFailures.length} kritisch`, action: '/hospital', hint: 'persistierte Billing-/Webhook-Fehler priorisieren' }
+      ? { label: 'Async Worker Failures', value: `${criticalAsyncFailures.length} kritisch`, action: '/hospital', hint: 'persistierte Billing-/Webhook-Fehler priorisieren', priority: 1 }
       : null,
     totalPendingOffers > 0
-      ? { label: 'Pending Offers', value: `${totalPendingOffers} offen`, action: '/hospital/offers', hint: 'Antwortlage und Blocker im Offer-Flow prüfen' }
+      ? { label: 'Pending Offers', value: `${totalPendingOffers} offen`, action: '/hospital/offers', hint: 'Antwortlage und Blocker im Offer-Flow prüfen', priority: 3 }
       : null,
     importBlockedShifts.length > 0
-      ? { label: 'Shift Import Blockers', value: `${importBlockedShifts.length} betroffen`, action: '/hospital/shifts', hint: 'offene/pending/signed Lagen blockieren Re-Imports' }
+      ? { label: 'Shift Import Blockers', value: `${importBlockedShifts.length} betroffen`, action: '/hospital/shifts', hint: 'offene/pending/signed Lagen blockieren Re-Imports', priority: 4 }
       : null,
     billing && billing.pendingInvoiceAmount > 0
-      ? { label: 'Pending Fees', value: `${billing.pendingInvoiceAmount} €`, action: '/hospital/billing', hint: 'offene Gebühren operativ nachhalten' }
+      ? { label: 'Pending Fees', value: `${billing.pendingInvoiceAmount} €`, action: '/hospital/billing', hint: 'offene Gebühren operativ nachhalten', priority: 5 }
       : null,
-  ].filter(Boolean) as Array<{ label: string; value: string; action: string; hint: string }>;
+  ].filter((item): item is { label: string; value: string; action: string; hint: string; priority: number } => Boolean(item));
+
+  return hotspots.sort((a, b) => a.priority - b.priority);
 }
