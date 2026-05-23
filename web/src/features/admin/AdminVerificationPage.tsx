@@ -35,11 +35,7 @@ export function AdminVerificationPage() {
     setSubmitting(true);
     setFeedback(null);
     try {
-      const response = await api.getAdminVerificationOverview(nursePublicId.trim());
-      setOverview(response.verification);
-      if (response.verification.documents.length > 0) {
-        setDocumentId(response.verification.documents[0].id);
-      }
+      await refreshOverviewContext(nursePublicId.trim());
       setFeedback({ tone: 'success', message: 'Verification-Kontext geladen.' });
     } catch (error) {
       setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Lookup fehlgeschlagen' });
@@ -73,6 +69,15 @@ export function AdminVerificationPage() {
     }
   }
 
+
+  async function refreshOverviewContext(publicId: string) {
+    const response = await api.getAdminVerificationOverview(publicId);
+    setOverview(response.verification);
+    if (response.verification.documents.length > 0) {
+      setDocumentId((current) => current || response.verification.documents[0].id);
+    }
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!canSubmit) {
@@ -89,6 +94,7 @@ export function AdminVerificationPage() {
         rejectionReason: rejectionRequired ? rejectionReason.trim() : undefined,
       });
       setResult(response.verificationDocument);
+      await refreshOverviewContext(response.verificationDocument.nurseProfile.publicId);
       setFeedback({ tone: 'success', message: `Dokument ${status === 'VERIFIED' ? 'verifiziert' : 'abgelehnt'}.` });
     } catch (error) {
       setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Review fehlgeschlagen' });
