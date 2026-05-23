@@ -35,7 +35,7 @@ Needed:
 
 Definition of done:
 - key non-end-user operational workflows are possible without DB/manual shell work
-- Current gap to done: dashboard/control-plane, linked ops navigation, and superadmin entry structure are materially improved; remaining gap is deeper queue/worker intervention depth and the final stretch of contract/billing exception handling across edge states
+- Current gap to done: dashboard/control-plane, linked ops navigation, and superadmin entry structure are materially improved; remaining gap is deeper queue/worker intervention depth (including DB-applied failure telemetry) and the final stretch of contract/billing exception handling across edge states
 
 ### 2. Verification / Documents / Dossier End-to-End
 Status: pending
@@ -207,6 +207,7 @@ Needed:
   - offer, shift import, and contract void intervention guidance was added to operational surfaces
   - contract lifecycle / execution / snapshot / PDF ops flows added and improved
   - contract summary now includes billing exception guidance and invoice PDF visibility when available
+  - async worker failures now expose retry attempt counts in persisted telemetry and dashboard visibility (pending DB schema apply)
   - offers / dossiers / contracts linked into a connected ops workflow
   - backend-backed operational summaries improved across offers and contracts
 - Remaining focus inside this block:
