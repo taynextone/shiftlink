@@ -10,10 +10,12 @@ export function HospitalDashboardPage() {
   const { data: shiftData } = useAsyncData(() => api.listHospitalJobShifts(), []);
   const { data: billingData } = useAsyncData(() => api.getHospitalBillingSummary(), []);
   const { data: webhookData } = useAsyncData(() => api.listHospitalWebhookEvents(10), []);
+  const { data: asyncFailureData } = useAsyncData(() => api.listAsyncProcessFailures(10), []);
 
   const shifts = shiftData?.jobShifts ?? [];
   const billing = billingData?.summary;
   const webhookEvents = webhookData?.events ?? [];
+  const asyncFailures = asyncFailureData?.failures ?? [];
 
   const openShifts = shifts.filter((shift) => shift.status === 'OPEN');
   const matchedShifts = shifts.filter((shift) => shift.status === 'MATCHED');
@@ -28,6 +30,7 @@ export function HospitalDashboardPage() {
     openShifts.length > 0 ? 'offene Schichten in Kandidaten-/Offer-Flow ziehen' : null,
     billing && billing.pendingInvoiceAmount > 0 ? 'offene Gebühren im Billing prüfen' : null,
     failedWebhookEvents.length > 0 ? 'fehlgeschlagene oder hängende Webhooks prüfen' : null,
+    asyncFailures.length > 0 ? 'persistierte Worker-Fehler in Billing/WhatsApp/Webhook prüfen' : null,
   ].filter(Boolean) as string[];
 
   return (
@@ -43,6 +46,7 @@ export function HospitalDashboardPage() {
         <KpiCard label="Signed Offers" value={String(totalSignedOffers)} helper="Bereits vertraglich gebundene Matchings mit weiterem Governance-/Execution-Bedarf." />
         <KpiCard label="Invoices" value={billing ? String(billing.invoiceCount) : '—'} helper="Rechnungsobjekte aus den bestehenden Plattformgebühren-Flows." />
         <KpiCard label="Webhook Issues" value={String(failedWebhookEvents.length)} helper="Fehlgeschlagene oder noch nicht sauber zugestellte Webhook-Events." />
+        <KpiCard label="Async Failures" value={String(asyncFailures.length)} helper="Persistierte Worker-Fehler aus Billing-, WhatsApp- und Webhook-Verarbeitung." />
       </div>
       <div className="content-grid two-thirds">
         <SectionCard title="Operative Lage" description="Zusammenführung der wichtigsten Arbeitslage aus Schicht-, Offer- und Billing-Kontext.">
@@ -76,6 +80,26 @@ export function HospitalDashboardPage() {
               </div>
             ))}
             {webhookEvents.length === 0 ? <p className="hint">Noch keine Webhook-Events sichtbar.</p> : null}
+          </div>
+        </SectionCard>
+        <SectionCard title="Persistierte Worker-Fehler" description="Erste echte Sicht auf nicht nur Webhook-, sondern auch Billing-/WhatsApp-Verarbeitungsfehler.">
+          <MetricList
+            items={[
+              { label: 'Fehler gesamt', value: asyncFailures.length },
+              { label: 'Billing', value: asyncFailures.filter((item) => item.queueName === 'billing').length },
+              { label: 'WhatsApp', value: asyncFailures.filter((item) => item.queueName === 'whatsapp').length },
+              { label: 'Webhook', value: asyncFailures.filter((item) => item.queueName === 'webhook').length },
+            ]}
+          />
+          <div className="record-list compact-list">
+            {asyncFailures.slice(0, 5).map((failure) => (
+              <div className="panel subpanel" key={failure.id}>
+                <strong>{failure.queueName} · {failure.jobName}</strong>
+                <p>{failure.errorMessage}</p>
+                <p>{new Date(failure.createdAt).toLocaleString('de-DE')}</p>
+              </div>
+            ))}
+            {asyncFailures.length === 0 ? <p className="hint">Noch keine persistierten Worker-Fehler sichtbar.</p> : null}
           </div>
         </SectionCard>
         <SectionCard title="Direkte Arbeitswege" description="Schneller Einstieg in die bereits ausgebauten Operations-Flows.">

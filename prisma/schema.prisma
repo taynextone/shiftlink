@@ -339,3 +339,19 @@ model ContractVoidEvent {
   @@index([actorRole, createdAt])
   @@index([createdAt])
 }
+
+
+model AsyncProcessFailure {
+  id             String   @id @default(cuid())
+  queueName      String
+  jobName        String
+  jobId          String?
+  relatedEntityId String?
+  errorMessage   String
+  createdAt      DateTime @default(now())
+
+  @@index([queueName, createdAt])
+  @@index([relatedEntityId])
+  @@index([createdAt])
+}
+

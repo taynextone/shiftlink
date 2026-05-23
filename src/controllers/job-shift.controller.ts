@@ -8,6 +8,7 @@ import {
   listHospitalJobShifts,
 } from '../services/job-shift.service';
 import { listHospitalWebhookEvents } from '../services/webhook.service';
+import { listAsyncProcessFailures } from '../services/async-process.service';
 
 export async function createJobShiftController(req: Request, res: Response): Promise<void> {
   if (!req.auth) {
@@ -83,6 +84,22 @@ export async function listHospitalWebhookEventsController(req: Request, res: Res
   const result = await listHospitalWebhookEvents(req.auth, {
     limit: req.query.limit ? Number(req.query.limit) : undefined,
   });
+
+  res.status(200).json(result);
+}
+
+
+
+export async function listAsyncProcessFailuresController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  if (req.auth.role !== 'SUPER_ADMIN') {
+    throw createHttpError(403, 'Only super admins can access async process failures');
+  }
+
+  const result = await listAsyncProcessFailures(req.query.limit ? Number(req.query.limit) : undefined);
 
   res.status(200).json(result);
 }

@@ -1,0 +1,32 @@
+import { prisma } from '../config/prisma';
+
+export async function recordAsyncProcessFailure(input: {
+  queueName: string;
+  jobName: string;
+  jobId?: string | null;
+  relatedEntityId?: string | null;
+  errorMessage: string;
+}) {
+  await prisma.asyncProcessFailure.create({
+    data: {
+      queueName: input.queueName,
+      jobName: input.jobName,
+      jobId: input.jobId ?? null,
+      relatedEntityId: input.relatedEntityId ?? null,
+      errorMessage: input.errorMessage.slice(0, 1000),
+    },
+  });
+}
+
+export async function listAsyncProcessFailures(limit = 25) {
+  const failures = await prisma.asyncProcessFailure.findMany({
+    orderBy: {
+      createdAt: 'desc',
+    },
+    take: Math.min(Math.max(limit, 1), 100),
+  });
+
+  return {
+    failures,
+  };
+}

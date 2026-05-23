@@ -266,6 +266,17 @@ export type ContractLifecycle = {
 
 
 
+
+export type AsyncProcessFailureRow = {
+  id: string;
+  queueName: string;
+  jobName: string;
+  jobId?: string | null;
+  relatedEntityId?: string | null;
+  errorMessage: string;
+  createdAt: string;
+};
+
 export type HospitalWebhookEventRow = {
   id: string;
   hospitalProfileId: string;
@@ -381,6 +392,7 @@ export const api = {
   listHospitalJobShifts: () => request<{ jobShifts: HospitalJobShift[] }>('/job-shifts'),
   getHospitalBillingSummary: () => request<{ summary: HospitalBillingSummary }>('/job-shifts/billing/summary'),
   listHospitalWebhookEvents: (limit = 25) => request<{ events: HospitalWebhookEventRow[] }>(`/job-shifts/webhooks?limit=${encodeURIComponent(String(limit))}`),
+  listAsyncProcessFailures: (limit = 25) => request<{ failures: AsyncProcessFailureRow[] }>(`/job-shifts/async-failures?limit=${encodeURIComponent(String(limit))}`),
   exportHospitalBilling: (query?: { status?: 'PENDING' | 'PAID'; format?: 'json' | 'csv'; limit?: number }) => {
     const params = new URLSearchParams();
     if (query?.status) params.set('status', query.status);

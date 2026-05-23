@@ -7,6 +7,7 @@ import {
   importHospitalJobShiftController,
   listHospitalJobShiftsController,
   listHospitalWebhookEventsController,
+  listAsyncProcessFailuresController,
 } from '../controllers/job-shift.controller';
 import { requireAuth, requireRole } from '../middlewares/auth';
 import { validateBody } from '../middlewares/validate';
@@ -36,6 +37,14 @@ router.get(
   asyncHandler(exportHospitalBillingController),
 );
 
+
+
+router.get(
+  '/async-failures',
+  requireAuth,
+  requireRole(UserRole.SUPER_ADMIN),
+  asyncHandler(listAsyncProcessFailuresController),
+);
 
 router.get(
   '/webhooks',
