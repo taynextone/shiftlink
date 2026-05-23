@@ -22,20 +22,21 @@ export function rankAsyncFailures(asyncFailures: AsyncProcessFailureRow[]) {
 }
 
 export function buildInterventionHotspots(input: {
+  isSuperAdmin: boolean;
   failedWebhookEvents: HospitalWebhookEventRow[];
   criticalAsyncFailures: AsyncProcessFailureRow[];
   totalPendingOffers: number;
   importBlockedShifts: HospitalJobShift[];
   billing?: HospitalBillingSummary;
 }) {
-  const { failedWebhookEvents, criticalAsyncFailures, totalPendingOffers, importBlockedShifts, billing } = input;
+  const { isSuperAdmin, failedWebhookEvents, criticalAsyncFailures, totalPendingOffers, importBlockedShifts, billing } = input;
 
   const hotspots = [
     failedWebhookEvents.length > 0
-      ? { label: 'Webhook Delivery', value: `${failedWebhookEvents.length} Probleme`, action: '/hospital', hint: 'fehlgeschlagene oder hängende Webhook-Zustellungen prüfen', priority: 2 }
+      ? { label: 'Webhook Delivery', value: `${failedWebhookEvents.length} Probleme`, action: '/hospital', hint: 'fehlgeschlagene oder hängende Webhook-Zustellungen im Processing-Bereich prüfen', priority: 2 }
       : null,
     criticalAsyncFailures.length > 0
-      ? { label: 'Async Worker Failures', value: `${criticalAsyncFailures.length} kritisch`, action: '/hospital', hint: 'persistierte Billing-/Webhook-Fehler priorisieren', priority: 1 }
+      ? { label: 'Async Worker Failures', value: `${criticalAsyncFailures.length} kritisch`, action: isSuperAdmin ? '/admin/verification' : '/hospital', hint: isSuperAdmin ? 'kritische Worker-Fehler aus der Superadmin-Sicht priorisieren' : 'kritische Worker-Fehler erfordern Superadmin-Einbezug', priority: 1 }
       : null,
     totalPendingOffers > 0
       ? { label: 'Pending Offers', value: `${totalPendingOffers} offen`, action: '/hospital/offers', hint: 'Antwortlage und Blocker im Offer-Flow prüfen', priority: 3 }
@@ -44,7 +45,7 @@ export function buildInterventionHotspots(input: {
       ? { label: 'Shift Import Blockers', value: `${importBlockedShifts.length} betroffen`, action: '/hospital/shifts', hint: 'offene/pending/signed Lagen blockieren Re-Imports', priority: 4 }
       : null,
     billing && billing.pendingInvoiceAmount > 0
-      ? { label: 'Pending Fees', value: `${billing.pendingInvoiceAmount} €`, action: '/hospital/billing', hint: 'offene Gebühren operativ nachhalten', priority: 5 }
+      ? { label: 'Pending Fees', value: `${billing.pendingInvoiceAmount} €`, action: '/hospital/billing', hint: 'offene Gebühren und Rechnungsfälle operativ nachhalten', priority: 5 }
       : null,
   ].filter((item): item is { label: string; value: string; action: string; hint: string; priority: number } => Boolean(item));
 

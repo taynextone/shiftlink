@@ -33,6 +33,7 @@ export function HospitalDashboardPage() {
   const rankedAsyncFailures = rankAsyncFailures(asyncFailures);
 
   const interventionHotspots = buildInterventionHotspots({
+    isSuperAdmin,
     failedWebhookEvents,
     criticalAsyncFailures,
     totalPendingOffers,
