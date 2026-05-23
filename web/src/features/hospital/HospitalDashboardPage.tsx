@@ -4,14 +4,18 @@ import { MetricList } from '../../components/MetricList';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
 import { useAsyncData } from '../../hooks/useAsyncData';
+import { useAuth } from '../../state/AuthContext';
 import { api } from '../../lib/api';
 import { buildInterventionHotspots, getCriticalAsyncFailures, getFailedWebhookEvents, getImportBlockedShifts, rankAsyncFailures } from './dashboard-helpers';
 
 export function HospitalDashboardPage() {
+  const { session } = useAuth();
+  const isSuperAdmin = session?.role === 'SUPER_ADMIN';
+
   const { data: shiftData } = useAsyncData(() => api.listHospitalJobShifts(), []);
   const { data: billingData } = useAsyncData(() => api.getHospitalBillingSummary(), []);
   const { data: webhookData } = useAsyncData(() => api.listHospitalWebhookEvents(10), []);
-  const { data: asyncFailureData } = useAsyncData(() => api.listAsyncProcessFailures(10), []);
+  const { data: asyncFailureData } = useAsyncData(() => (isSuperAdmin ? api.listAsyncProcessFailures(10) : Promise.resolve({ failures: [] })), [isSuperAdmin]);
 
   const shifts = shiftData?.jobShifts ?? [];
   const billing = billingData?.summary;
@@ -51,7 +55,7 @@ export function HospitalDashboardPage() {
         <KpiCard label="Signed Offers" value={String(totalSignedOffers)} helper="Bereits vertraglich gebundene Matchings mit weiterem Governance-/Execution-Bedarf." />
         <KpiCard label="Invoices" value={billing ? String(billing.invoiceCount) : '—'} helper="Rechnungsobjekte aus den bestehenden Plattformgebühren-Flows." />
         <KpiCard label="Webhook Issues" value={String(failedWebhookEvents.length)} helper="Fehlgeschlagene oder noch nicht sauber zugestellte Webhook-Events." />
-        <KpiCard label="Async Failures" value={String(asyncFailures.length)} helper="Persistierte Worker-Fehler aus Billing-, WhatsApp- und Webhook-Verarbeitung." />
+        <KpiCard label="Async Failures" value={String(asyncFailures.length)} helper={isSuperAdmin ? 'Persistierte Worker-Fehler aus Billing-, WhatsApp- und Webhook-Verarbeitung.' : 'Persistierte Worker-Fehler sind nur in der Superadmin-Sicht sichtbar.'} />
       </div>
       <div className="content-grid two-thirds">
         <SectionCard title="Intervention Hotspots" description="Die wichtigsten operativen Spannungen, priorisiert für direkte Bearbeitung.">
@@ -109,7 +113,7 @@ export function HospitalDashboardPage() {
             {webhookEvents.length === 0 ? <p className="hint">Noch keine Webhook-Events sichtbar.</p> : null}
           </div>
         </SectionCard>
-        <SectionCard title="Persistierte Worker-Fehler" description="Erste echte Sicht auf nicht nur Webhook-, sondern auch Billing-/WhatsApp-Verarbeitungsfehler.">
+        <SectionCard title="Persistierte Worker-Fehler" description={isSuperAdmin ? 'Erste echte Sicht auf nicht nur Webhook-, sondern auch Billing-/WhatsApp-Verarbeitungsfehler.' : 'Diese Sicht ist bewusst auf Superadmin-Ebene begrenzt und erscheint für Hospital Admins nur als Governance-Hinweis.'}>
           <MetricList
             items={[
               { label: 'Fehler gesamt', value: asyncFailures.length },
@@ -126,7 +130,7 @@ export function HospitalDashboardPage() {
                 <p>{new Date(failure.createdAt).toLocaleString('de-DE')}</p>
               </div>
             ))}
-            {asyncFailures.length === 0 ? <p className="hint">Noch keine persistierten Worker-Fehler sichtbar.</p> : null}
+            {asyncFailures.length === 0 ? <p className="hint">{isSuperAdmin ? 'Noch keine persistierten Worker-Fehler sichtbar.' : 'Für Hospital Admins ist diese Fehlerklasse nicht direkt sichtbar; bei Bedarf Superadmin einbeziehen.'}</p> : null}
           </div>
         </SectionCard>
         <SectionCard title="Direkte Arbeitswege" description="Schneller Einstieg in die bereits ausgebauten Operations-Flows.">
