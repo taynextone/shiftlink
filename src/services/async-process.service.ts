@@ -5,6 +5,7 @@ export async function recordAsyncProcessFailure(input: {
   jobName: string;
   jobId?: string | null;
   relatedEntityId?: string | null;
+  attemptCount?: number | null;
   errorMessage: string;
 }) {
   await prisma.asyncProcessFailure.create({
@@ -13,6 +14,7 @@ export async function recordAsyncProcessFailure(input: {
       jobName: input.jobName,
       jobId: input.jobId ?? null,
       relatedEntityId: input.relatedEntityId ?? null,
+      attemptCount: input.attemptCount ?? null,
       errorMessage: input.errorMessage.slice(0, 1000),
     },
   });

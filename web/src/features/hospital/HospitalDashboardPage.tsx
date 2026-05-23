@@ -128,6 +128,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
               <div className="panel subpanel" key={failure.id}>
                 <strong>{failure.queueName} · {failure.jobName}</strong>
                 <p>{failure.errorMessage}</p>
+                <p>Attempts: {failure.attemptCount ?? 0}</p>
                 <p>{new Date(failure.createdAt).toLocaleString('de-DE')}</p>
               </div>
             ))}

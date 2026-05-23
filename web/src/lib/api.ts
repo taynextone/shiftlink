@@ -273,6 +273,7 @@ export type AsyncProcessFailureRow = {
   jobName: string;
   jobId?: string | null;
   relatedEntityId?: string | null;
+  attemptCount?: number | null;
   errorMessage: string;
   createdAt: string;
 };

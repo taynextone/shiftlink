@@ -11,6 +11,7 @@ export function startWorkers(): void {
       jobName: job?.name ?? 'unknown',
       jobId: job?.id?.toString(),
       relatedEntityId: job?.data?.matchContractId ?? null,
+      attemptCount: job?.attemptsMade ?? null,
       errorMessage: err.message,
     });
   });
@@ -22,6 +23,7 @@ export function startWorkers(): void {
       jobName: job?.name ?? 'unknown',
       jobId: job?.id?.toString(),
       relatedEntityId: job?.data?.matchContractId ?? null,
+      attemptCount: job?.attemptsMade ?? null,
       errorMessage: err.message,
     });
   });
@@ -33,6 +35,7 @@ export function startWorkers(): void {
       jobName: job?.name ?? 'unknown',
       jobId: job?.id?.toString(),
       relatedEntityId: job?.data?.webhookEventId ?? null,
+      attemptCount: job?.attemptsMade ?? null,
       errorMessage: err.message,
     });
   });

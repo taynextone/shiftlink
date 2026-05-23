@@ -347,6 +347,7 @@ model AsyncProcessFailure {
   jobName        String
   jobId          String?
   relatedEntityId String?
+  attemptCount   Int?
   errorMessage   String
   createdAt      DateTime @default(now())
 
