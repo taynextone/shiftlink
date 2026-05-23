@@ -35,7 +35,7 @@ Needed:
 
 Definition of done:
 - key non-end-user operational workflows are possible without DB/manual shell work
-- Current gap to done: dashboard is improved but not yet a full central superadmin control plane; processing visibility is started but not yet complete across all operational paths
+- Current gap to done: dashboard/control-plane is materially improved; remaining gap is broader superadmin-centralization and deeper end-to-end intervention handling across all async and exception paths
 
 ### 2. Verification / Documents / Dossier End-to-End
 Status: pending
@@ -199,6 +199,9 @@ Needed:
   - hospital billing operations page added
   - release / unrelease controls added for superadmin verification workflow
   - hospital dashboard upgraded into a real ops surface with backend-backed summaries
+  - webhook and async worker failure visibility added to the ops dashboard
+  - intervention hotspots are now prioritized on the dashboard as a control-plane view
+  - offer, shift import, and contract void intervention guidance was added to operational surfaces
   - contract lifecycle / execution / snapshot / PDF ops flows added and improved
   - offers / dossiers / contracts linked into a connected ops workflow
   - backend-backed operational summaries improved across offers and contracts

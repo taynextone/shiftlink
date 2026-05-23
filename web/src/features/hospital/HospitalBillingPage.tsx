@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
 import { ActionBar } from '../../components/ActionBar';
 import { AsyncState } from '../../components/AsyncState';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
@@ -17,6 +18,9 @@ export function HospitalBillingPage() {
   const [rows, setRows] = useState<Array<Awaited<ReturnType<typeof api.exportHospitalBilling>> extends infer T ? never : never>>([] as never[]);
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const pendingRows = useMemo(() => (rows as any[]).filter((row) => row.invoiceStatus === 'PENDING'), [rows]);
+  const paidRows = useMemo(() => (rows as any[]).filter((row) => row.invoiceStatus === 'PAID'), [rows]);
 
   async function handleLoadExport() {
     setSubmitting(true);
@@ -37,7 +41,7 @@ export function HospitalBillingPage() {
       <PageHeader
         eyebrow="Krankenhaus"
         title="Billing Operations"
-        description="Operativer Zugriff auf Gebührenübersicht und Rechnungsdaten für Hospital-Administratoren."
+        description="Operativer Zugriff auf Gebührenübersicht und Rechnungsdaten für Hospital-Administratoren. Fokus auf Zahlungsdruck, Nachverfolgung und Vertragsbezug."
       />
       <AsyncState loading={loading} error={error} isEmpty={!summary} emptyMessage="Noch keine Billing Summary verfügbar.">
         {summary ? (
@@ -51,6 +55,22 @@ export function HospitalBillingPage() {
           />
         ) : null}
       </AsyncState>
+
+      <SectionCard title="Billing Fokus" description="Zuerst operative Spannung, dann Detailarbeit im Export.">
+        <MetricList
+          items={[
+            { label: 'Pending Rows', value: pendingRows.length },
+            { label: 'Paid Rows', value: paidRows.length },
+            { label: 'Offene Gebühren', value: summary ? `${summary.pendingInvoiceAmount} €` : '—' },
+            { label: 'Bereits bezahlt', value: summary ? `${summary.paidInvoiceAmount} €` : '—' },
+          ]}
+        />
+        <ol className="ordered-list compact-ordered-list">
+          <li>Pending Invoices zuerst prüfen</li>
+          <li>Bei Unklarheit direkt in den verknüpften Contract springen</li>
+          <li>Nur danach bezahlte Historie kontrollieren</li>
+        </ol>
+      </SectionCard>
 
       <SectionCard title="Billing Export" description="Lädt die aktuellen Rechnungszeilen aus dem echten Export-Endpoint als Arbeitsansicht.">
         <div className="form-grid two">
@@ -76,6 +96,10 @@ export function HospitalBillingPage() {
               <p>{row.nurseDisplayName} · {row.nursePublicId}</p>
               <p>{row.locationCity || 'ohne Ort'} · {row.invoiceAmount} €</p>
               <p>Contract: {row.matchContractId}</p>
+              <p>{row.invoiceStatus === 'PENDING' ? 'Operativ offen — Contract-Kontext prüfen.' : 'Bezahlt — primär Historie / Nachweis.'}</p>
+              <ActionBar>
+                <Link to={`/hospital/contracts?contractId=${encodeURIComponent(row.matchContractId)}`}>Contract öffnen</Link>
+              </ActionBar>
             </div>
           ))}
           {rows.length === 0 ? <p className="hint">Noch kein Export geladen.</p> : null}
