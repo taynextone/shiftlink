@@ -129,6 +129,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
                 <strong>{failure.queueName} · {failure.jobName}</strong>
                 <p>{failure.errorMessage}</p>
                 <p>Attempts: {failure.attemptCount ?? 0}</p>
+                <p>Entity: {failure.relatedEntityId ?? '—'}</p>
                 <p>{new Date(failure.createdAt).toLocaleString('de-DE')}</p>
               </div>
             ))}
