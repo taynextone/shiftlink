@@ -64,3 +64,24 @@ export function interpretVoidIntervention(lifecycle: ContractLifecycle | null, v
   }
   return { label: 'Void möglich', blocker: 'Kein technischer Blocker sichtbar. Grund sauber dokumentieren.' };
 }
+
+
+export function interpretInvoiceException(lifecycle: ContractLifecycle | null) {
+  if (!lifecycle?.invoice) {
+    return { label: 'keine Rechnung sichtbar', nextAction: 'Execution- und Billing-Kontext weiter beobachten' };
+  }
+
+  if (lifecycle.invoice.status === 'PAID') {
+    return { label: 'Rechnung bezahlt', nextAction: 'Nur noch Nachweis, Historie und eventuelle Void-Blocker prüfen' };
+  }
+
+  if (lifecycle.voidSummary?.reason) {
+    return { label: 'Void mit Billing-Kontext', nextAction: 'Rechnung, Void-Grund und weitere Governance gemeinsam prüfen' };
+  }
+
+  if (lifecycle.fullyExecutedAt) {
+    return { label: 'vollständig ausgeführt, Rechnung offen', nextAction: 'Rechnungsstatus und PDF/Export-Artefakte nachhalten' };
+  }
+
+  return { label: `Rechnung ${lifecycle.invoice.status}`, nextAction: 'Billing-Seite und Contract-Artefakte gemeinsam prüfen' };
+}

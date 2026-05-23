@@ -12,7 +12,7 @@ import { useAsyncData } from '../../hooks/useAsyncData';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, type ContractExecutionOverview, type ContractLifecycle, type ContractPdfResponse, type ContractSnapshotResponse, type ContractVoidOverview, type HospitalOffer } from '../../lib/api';
 
-import { interpretContractState, interpretVoidIntervention } from './ops-helpers';
+import { interpretContractState, interpretInvoiceException, interpretVoidIntervention } from './ops-helpers';
 
 export function HospitalContractsPage() {
   const [searchParams] = useSearchParams();
@@ -45,6 +45,7 @@ export function HospitalContractsPage() {
 
   const contractState = useMemo(() => interpretContractState(lifecycle, execution), [execution, lifecycle]);
   const voidIntervention = useMemo(() => interpretVoidIntervention(lifecycle, voiding), [lifecycle, voiding]);
+  const invoiceException = useMemo(() => interpretInvoiceException(lifecycle), [lifecycle]);
 
   async function loadLifecycle(targetContractId: string) {
     const result = await api.getContractLifecycle(targetContractId);
@@ -371,6 +372,13 @@ export function HospitalContractsPage() {
                       { label: 'Invoice Amount', value: lifecycle.invoice?.amount ? `${lifecycle.invoice.amount} €` : '—' },
                       { label: 'Vollständig ausgeführt', value: lifecycle.fullyExecutedAt ? new Date(lifecycle.fullyExecutedAt).toLocaleString('de-DE') : '—' },
                       { label: 'Void-Grund', value: lifecycle.voidSummary?.reason ?? '—' },
+                    ]}
+                  />
+                  <InfoList
+                    items={[
+                      { label: 'Billing-Ausnahmezustand', value: invoiceException.label },
+                      { label: 'Billing-Nächster Schritt', value: invoiceException.nextAction },
+                      { label: 'Invoice PDF', value: lifecycle.invoice?.invoicePdfUrl ? <a href={lifecycle.invoice.invoicePdfUrl} target="_blank" rel="noreferrer">Invoice PDF öffnen</a> : '—' },
                     ]}
                   />
                 </>
