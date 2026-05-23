@@ -22,16 +22,30 @@ export function HospitalDashboardPage() {
   const totalSignedOffers = shifts.reduce((sum, shift) => sum + (shift.offerCounts?.signed ?? 0), 0);
   const totalPendingOffers = shifts.reduce((sum, shift) => sum + (shift.offerCounts?.pending ?? 0), 0);
   const totalInvoiced = shifts.reduce((sum, shift) => sum + (shift.offerCounts?.invoiced ?? 0), 0);
+  const importBlockedShifts = shifts.filter((shift) => shift.status !== 'OPEN' || (shift.offerCounts?.signed ?? 0) > 0 || (shift.offerCounts?.pending ?? 0) > 0);
 
   const failedWebhookEvents = webhookEvents.filter((event) => event.status === 'FAILED_OR_PENDING_RETRY');
+  const criticalAsyncFailures = asyncFailures.filter((failure) => failure.queueName === 'billing' || failure.queueName === 'webhook');
 
-  const nextOperationalFocus = [
-    totalPendingOffers > 0 ? 'Pending Offers nachfassen' : null,
-    openShifts.length > 0 ? 'offene Schichten in Kandidaten-/Offer-Flow ziehen' : null,
-    billing && billing.pendingInvoiceAmount > 0 ? 'offene Gebühren im Billing prüfen' : null,
-    failedWebhookEvents.length > 0 ? 'fehlgeschlagene oder hängende Webhooks prüfen' : null,
-    asyncFailures.length > 0 ? 'persistierte Worker-Fehler in Billing/WhatsApp/Webhook prüfen' : null,
-  ].filter(Boolean) as string[];
+  const interventionHotspots = [
+    failedWebhookEvents.length > 0
+      ? { label: 'Webhook Delivery', value: `${failedWebhookEvents.length} Probleme`, action: '/hospital', hint: 'fehlgeschlagene oder hängende Webhook-Zustellungen prüfen' }
+      : null,
+    criticalAsyncFailures.length > 0
+      ? { label: 'Async Worker Failures', value: `${criticalAsyncFailures.length} kritisch`, action: '/hospital', hint: 'persistierte Billing-/Webhook-Fehler priorisieren' }
+      : null,
+    totalPendingOffers > 0
+      ? { label: 'Pending Offers', value: `${totalPendingOffers} offen`, action: '/hospital/offers', hint: 'Antwortlage und Blocker im Offer-Flow prüfen' }
+      : null,
+    importBlockedShifts.length > 0
+      ? { label: 'Shift Import Blockers', value: `${importBlockedShifts.length} betroffen`, action: '/hospital/shifts', hint: 'offene/pending/signed Lagen blockieren Re-Imports' }
+      : null,
+    billing && billing.pendingInvoiceAmount > 0
+      ? { label: 'Pending Fees', value: `${billing.pendingInvoiceAmount} €`, action: '/hospital/billing', hint: 'offene Gebühren operativ nachhalten' }
+      : null,
+  ].filter(Boolean) as Array<{ label: string; value: string; action: string; hint: string }>;
+
+  const nextOperationalFocus = interventionHotspots.map((item) => item.hint);
 
   return (
     <section className="stack page-stack">
@@ -49,12 +63,34 @@ export function HospitalDashboardPage() {
         <KpiCard label="Async Failures" value={String(asyncFailures.length)} helper="Persistierte Worker-Fehler aus Billing-, WhatsApp- und Webhook-Verarbeitung." />
       </div>
       <div className="content-grid two-thirds">
+        <SectionCard title="Intervention Hotspots" description="Die wichtigsten operativen Spannungen, priorisiert für direkte Bearbeitung.">
+          <MetricList
+            items={[
+              { label: 'Hotspots', value: interventionHotspots.length },
+              { label: 'Matched Shifts', value: matchedShifts.length },
+              { label: 'Invoiced Offers', value: totalInvoiced },
+              { label: 'Pending Gebühren', value: billing ? `${billing.pendingInvoiceAmount} €` : '—' },
+            ]}
+          />
+          <div className="record-list compact-list">
+            {interventionHotspots.map((item) => (
+              <Link className="selection-card" key={item.label} to={item.action}>
+                <div>
+                  <strong>{item.label}</strong>
+                  <p>{item.hint}</p>
+                </div>
+                <span>{item.value}</span>
+              </Link>
+            ))}
+            {interventionHotspots.length === 0 ? <p className="hint">Aktuell keine priorisierten Intervention-Hotspots aus den sichtbaren Betriebsdaten.</p> : null}
+          </div>
+        </SectionCard>
         <SectionCard title="Operative Lage" description="Zusammenführung der wichtigsten Arbeitslage aus Schicht-, Offer- und Billing-Kontext.">
           <MetricList
             items={[
               { label: 'Schichten gesamt', value: shifts.length },
               { label: 'Matched Shifts', value: matchedShifts.length },
-              { label: 'Invoiced Offers', value: totalInvoiced },
+              { label: 'Import-blockierte Schichten', value: importBlockedShifts.length },
               { label: 'Pending Gebühren', value: billing ? `${billing.pendingInvoiceAmount} €` : '—' },
             ]}
           />
