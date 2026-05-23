@@ -12,21 +12,7 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { api, type Candidate, type HospitalJobShift, type HospitalOffer } from '../../lib/api';
 
-function computeOfferHealth(offer: HospitalOffer) {
-  if (offer.status === 'SIGNED') {
-    return { label: 'vertraglich gebunden', nextAction: 'Vertrag / Dossier prüfen', exceptionNote: 'Offer ist bereits im Vertragskontext gebunden.' };
-  }
-  if (offer.status === 'DECLINED') {
-    return { label: 'durch Pflegekraft beendet', nextAction: 'neue Schicht oder Reopen-Entscheidung', exceptionNote: 'Backend-Regel: neue Schicht oder explizite spätere Wiederöffnung nötig.' };
-  }
-  if (offer.status === 'EXPIRED') {
-    return { label: 'abgelaufen', nextAction: 'neues Angebot vorbereiten', exceptionNote: 'Abgelaufene Offers bleiben historisch sichtbar, sind aber operativ abgeschlossen.' };
-  }
-  if (offer.status === 'PENDING') {
-    return { label: 'wartet auf Antwort', nextAction: 'Antwortstatus beobachten', exceptionNote: 'Noch kein technischer Blocker sichtbar.' };
-  }
-  return { label: 'operativ beobachten', nextAction: 'Kontext prüfen', exceptionNote: 'Sonderfall manuell prüfen.' };
-}
+import { computeOfferHealth } from './ops-helpers';
 
 export function HospitalOffersPage() {
   const [searchParams] = useSearchParams();
