@@ -9,25 +9,25 @@ import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
 import { StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
-import { api } from '../../lib/api';
+import { api, type HospitalBillingExportRow } from '../../lib/api';
 
 export function HospitalBillingPage() {
   const { data, loading, error } = useAsyncData(() => api.getHospitalBillingSummary(), []);
   const summary = data?.summary;
   const [statusFilter, setStatusFilter] = useState<'PENDING' | 'PAID' | ''>('');
-  const [rows, setRows] = useState<Array<Awaited<ReturnType<typeof api.exportHospitalBilling>> extends infer T ? never : never>>([] as never[]);
+  const [rows, setRows] = useState<HospitalBillingExportRow[]>([]);
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const pendingRows = useMemo(() => (rows as any[]).filter((row) => row.invoiceStatus === 'PENDING'), [rows]);
-  const paidRows = useMemo(() => (rows as any[]).filter((row) => row.invoiceStatus === 'PAID'), [rows]);
+  const pendingRows = useMemo(() => rows.filter((row) => row.invoiceStatus === 'PENDING'), [rows]);
+  const paidRows = useMemo(() => rows.filter((row) => row.invoiceStatus === 'PAID'), [rows]);
 
   async function handleLoadExport() {
     setSubmitting(true);
     setFeedback(null);
     try {
       const response = await api.exportHospitalBilling({ status: statusFilter || undefined, format: 'json', limit: 50 });
-      setRows(response.rows as never[]);
+      setRows(response.rows);
       setFeedback({ tone: 'success', message: 'Billing export geladen.' });
     } catch (error) {
       setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Billing export fehlgeschlagen' });
@@ -87,7 +87,7 @@ export function HospitalBillingPage() {
         </ActionBar>
         {feedback ? <FeedbackMessage tone={feedback.tone} message={feedback.message} /> : null}
         <div className="record-list compact-list">
-          {(rows as any[]).map((row) => (
+          {rows.map((row) => (
             <div className="panel subpanel" key={row.invoiceId}>
               <div className="section-heading-row">
                 <strong>{row.jobShiftTitle || 'Pflegeeinsatz'}</strong>
