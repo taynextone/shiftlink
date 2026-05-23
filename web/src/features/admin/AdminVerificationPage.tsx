@@ -61,6 +61,7 @@ export function AdminVerificationPage() {
         reason: releaseReason.trim() || undefined,
       });
       setOverview(response.releaseControl);
+      setResult(null);
       setFeedback({ tone: 'success', message: release ? 'Pflegekraft für Matching freigegeben.' : 'Pflegekraft für Matching zurückgezogen.' });
     } catch (error) {
       setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Release-Änderung fehlgeschlagen' });
@@ -120,6 +121,17 @@ export function AdminVerificationPage() {
                     { label: 'Dokumente', value: overview.documents.length },
                   ]}
                 />
+                <Field label="Release Reason" helpText="Wird für Freigabe oder Rücknahme mitgeführt, damit die Maßnahme operativ nachvollziehbar bleibt.">
+                  <input value={releaseReason} onChange={(event) => setReleaseReason(event.target.value)} placeholder="Freigabegrund" />
+                </Field>
+                <ActionBar>
+                  <button type="button" className="secondary" disabled={submitting} onClick={() => void handleReleaseChange(true)}>
+                    {submitting ? 'Bitte warten…' : 'Für Matching freigeben'}
+                  </button>
+                  <button type="button" className="secondary" disabled={submitting} onClick={() => void handleReleaseChange(false)}>
+                    {submitting ? 'Bitte warten…' : 'Freigabe zurückziehen'}
+                  </button>
+                </ActionBar>
                 <Field label="Dokument auswählen" helpText="Vorausgewählt ist das neueste Dokument.">
                   <select value={documentId} onChange={(event) => setDocumentId(event.target.value)}>
                     {overview.documents.map((document) => (

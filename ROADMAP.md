@@ -31,11 +31,11 @@ Needed:
 - [partial] linked contract / dossier / offer operational workflows
 - [partial] Superadmin / operations dashboard
 - [done] Release / unrelease controls
-- [todo] Queue / webhook / processing failure visibility
+- [partial] Queue / webhook / processing failure visibility
 
 Definition of done:
 - key non-end-user operational workflows are possible without DB/manual shell work
-- Current gap to done: dashboard is improved but not yet a full central superadmin control plane; no queue/webhook failure visibility yet
+- Current gap to done: dashboard is improved but not yet a full central superadmin control plane; processing visibility is started but not yet complete across all operational paths
 
 ### 2. Verification / Documents / Dossier End-to-End
 Status: pending
