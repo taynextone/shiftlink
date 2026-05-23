@@ -35,7 +35,7 @@ Needed:
 
 Definition of done:
 - key non-end-user operational workflows are possible without DB/manual shell work
-- Current gap to done: dashboard/control-plane and linked ops navigation are materially improved; remaining gap is broader superadmin-centralization, deeper queue/worker intervention depth, and fuller exception handling across contract/billing edge states
+- Current gap to done: dashboard/control-plane and linked ops navigation are materially improved; remaining gap is broader superadmin-centralization, deeper queue/worker intervention depth, and the final stretch of contract/billing exception handling across edge states
 
 ### 2. Verification / Documents / Dossier End-to-End
 Status: pending
@@ -205,6 +205,7 @@ Needed:
   - async failure visibility is now gated cleanly by role instead of leaking into hospital-admin error paths
   - offer, shift import, and contract void intervention guidance was added to operational surfaces
   - contract lifecycle / execution / snapshot / PDF ops flows added and improved
+  - contract summary now includes billing exception guidance and invoice PDF visibility when available
   - offers / dossiers / contracts linked into a connected ops workflow
   - backend-backed operational summaries improved across offers and contracts
 - Remaining focus inside this block:
