@@ -208,6 +208,7 @@ Needed:
   - contract lifecycle / execution / snapshot / PDF ops flows added and improved
   - contract summary now includes billing exception guidance and invoice PDF visibility when available
   - async worker failures now expose retry attempt counts in persisted telemetry and dashboard visibility (pending DB schema apply)
+  - frontend API error handling now normalizes backend JSON error messages for cleaner ops/admin feedback
   - offers / dossiers / contracts linked into a connected ops workflow
   - backend-backed operational summaries improved across offers and contracts
 - Remaining focus inside this block:
