@@ -328,7 +328,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    const message = await response.text();
+    const rawMessage = await response.text();
+    let message = rawMessage;
+
+    try {
+      const parsed = JSON.parse(rawMessage) as { message?: string; error?: string };
+      message = parsed.message ?? parsed.error ?? rawMessage;
+    } catch {
+      message = rawMessage;
+    }
+
     throw new Error(message || `Request failed with ${response.status}`);
   }
 
