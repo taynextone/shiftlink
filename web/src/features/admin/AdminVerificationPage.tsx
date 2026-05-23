@@ -21,6 +21,9 @@ export function AdminVerificationPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const rejectionRequired = status === 'REJECTED';
+  const nursePublicIdError = !nursePublicId.trim() && feedback?.tone === 'error' && feedback.message.includes('Nurse Public ID') ? 'Pflichtfeld' : null;
+  const documentIdError = !documentId.trim() && feedback?.tone === 'error' && feedback.message.includes('Dokument') ? 'Pflichtfeld' : null;
+  const rejectionReasonError = rejectionRequired && rejectionReason.trim().length > 0 && rejectionReason.trim().length < 3 ? 'Mindestens 3 Zeichen' : null;
   const canSubmit = documentId.trim().length > 0 && (!rejectionRequired || rejectionReason.trim().length >= 3);
 
   async function handleLookup() {
@@ -104,7 +107,7 @@ export function AdminVerificationPage() {
       <div className="content-grid two-columns-equal">
         <form className="panel form-panel stack" onSubmit={handleSubmit}>
           <FormSection title="Dokumentenreview" description="Greift auf den echten Superadmin-Review-Endpoint zurück und aktualisiert den Release-Zustand der Pflegekraft.">
-            <Field label="Nurse Public ID" helpText="Lädt die echte Verifikationslage einer Pflegekraft, damit Dokumente nicht blind per ID gesucht werden müssen.">
+            <Field label="Nurse Public ID" error={nursePublicIdError} helpText="Lädt die echte Verifikationslage einer Pflegekraft, damit Dokumente nicht blind per ID gesucht werden müssen.">
               <input value={nursePublicId} onChange={(event) => setNursePublicId(event.target.value)} placeholder="NUR-..." />
             </Field>
             <ActionBar>
@@ -143,18 +146,18 @@ export function AdminVerificationPage() {
                 </Field>
               </>
             ) : (
-              <Field label="Document ID" helpText="Fallback, falls du direkt mit einer Dokument-ID arbeitest.">
+              <Field label="Document ID" error={documentIdError} helpText="Fallback, falls du direkt mit einer Dokument-ID arbeitest.">
                 <input value={documentId} onChange={(event) => setDocumentId(event.target.value)} placeholder="documentId" />
               </Field>
             )}
-            <Field label="Entscheidung">
+            <Field label="Entscheidung" helpText="Ablehnung verlangt eine Begründung mit mindestens 3 Zeichen.">
               <select value={status} onChange={(event) => setStatus(event.target.value as 'VERIFIED' | 'REJECTED')}>
                 <option value="VERIFIED">VERIFIED</option>
                 <option value="REJECTED">REJECTED</option>
               </select>
             </Field>
             {rejectionRequired ? (
-              <Field label="Rejection Reason" helpText="Mindestens 3 Zeichen Begründung bei Ablehnung.">
+              <Field label="Rejection Reason" error={rejectionReasonError} helpText="Mindestens 3 Zeichen Begründung bei Ablehnung.">
                 <input value={rejectionReason} onChange={(event) => setRejectionReason(event.target.value)} placeholder="Begründung" />
               </Field>
             ) : null}
