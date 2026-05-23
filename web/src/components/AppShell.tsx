@@ -26,6 +26,14 @@ const navGroups = [
       { to: '/hospital/billing', label: 'Billing', caption: 'Gebühren & Exporte' },
     ],
   },
+  {
+    label: 'Superadmin',
+    roles: ['SUPER_ADMIN'],
+    items: [
+      { to: '/admin/verification', label: 'Verification Ops', caption: 'Review, Release, Intervention' },
+      { to: '/hospital', label: 'Ops Control Plane', caption: 'Hotspots, Failures, Prioritäten' },
+    ],
+  },
 ];
 
 export function AppShell({ children }: PropsWithChildren) {
