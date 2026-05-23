@@ -8,7 +8,7 @@ import { useAuth } from '../../state/AuthContext';
 import { api } from '../../lib/api';
 import { buildInterventionHotspots, getCriticalAsyncFailures, getFailedWebhookEvents, getImportBlockedShifts, rankAsyncFailures } from './dashboard-helpers';
 
-export function HospitalDashboardPage() {
+export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital' | 'superadmin' }) {
   const { session } = useAuth();
   const isSuperAdmin = session?.role === 'SUPER_ADMIN';
 
@@ -46,9 +46,9 @@ export function HospitalDashboardPage() {
   return (
     <section className="stack page-stack">
       <PageHeader
-        eyebrow="Krankenhaus"
-        title="Hospital Operations Dashboard"
-        description="Zentrale operative Startseite für Bedarfe, Offers, Verträge und Billing. Fokus auf echtem Backend-Status statt Platzhalter-Widgets."
+        eyebrow={mode === 'superadmin' ? 'Superadmin' : 'Krankenhaus'}
+        title={mode === 'superadmin' ? 'Superadmin Operations Control Plane' : 'Hospital Operations Dashboard'}
+        description={mode === 'superadmin' ? 'Zentrale Superadmin-Sicht auf operative Hotspots, Failures und Governance-nahe Interventionen.' : 'Zentrale operative Startseite für Bedarfe, Offers, Verträge und Billing. Fokus auf echtem Backend-Status statt Platzhalter-Widgets.'}
       />
       <div className="stats-grid">
         <KpiCard label="Offene Schichten" value={String(openShifts.length)} helper="Bedarfe, die aktiv in Kandidaten- und Offer-Arbeit gezogen werden können." />
