@@ -11,10 +11,24 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { api } from '../../lib/api';
 
+function computeShiftImportState(shift: { status: string; offerCounts?: { pending: number; signed: number; total: number } }) {
+  if (shift.status !== 'OPEN') {
+    return { label: 'Import-Update blockiert', reason: 'Nur offene Schichten dürfen per Import aktualisiert werden.' };
+  }
+  if ((shift.offerCounts?.signed ?? 0) > 0) {
+    return { label: 'Import-Update blockiert', reason: 'Signierte Matches sperren Änderungen an importierten Schichten.' };
+  }
+  if ((shift.offerCounts?.pending ?? 0) > 0) {
+    return { label: 'Import-Update blockiert', reason: 'Pending Offers müssen erst geklärt werden, bevor ein Re-Import aktualisieren darf.' };
+  }
+  return { label: 'Import-Update möglich', reason: 'Kein sichtbarer Backend-Blocker aus Status- oder Offer-Lage.' };
+}
+
 export function HospitalShiftsPage() {
   const { data, loading, error, reload } = useAsyncData(() => api.listHospitalJobShifts(), []);
   const jobShifts = data?.jobShifts ?? [];
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
+  const [lastImportFailure, setLastImportFailure] = useState<string | null>(null);
   const [externalJobShiftId, setExternalJobShiftId] = useState('ext-demo-1');
   const [title, setTitle] = useState('ITS Einsatz');
   const [submitting, setSubmitting] = useState(false);
@@ -35,6 +49,7 @@ export function HospitalShiftsPage() {
 
     setSubmitting(true);
     setStatus(null);
+    setLastImportFailure(null);
     try {
       const result = await api.importHospitalJobShift({
         externalJobShiftId: externalJobShiftId.trim(),
@@ -48,7 +63,9 @@ export function HospitalShiftsPage() {
       setStatus({ tone: 'success', message: `Import ${result.mode === 'created' ? 'angelegt' : 'aktualisiert'}.` });
       await reload();
     } catch (err) {
-      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Import fehlgeschlagen' });
+      const message = err instanceof Error ? err.message : 'Import fehlgeschlagen';
+      setLastImportFailure(message);
+      setStatus({ tone: 'error', message });
     } finally {
       setSubmitting(false);
     }
@@ -59,7 +76,7 @@ export function HospitalShiftsPage() {
       <PageHeader
         eyebrow="Krankenhaus"
         title="Schichten & Bedarfseingang"
-        description="Operative Bedarfe mit professioneller, zurückhaltender Oberfläche. Keine generische Demo-Tabelle, sondern ein klarer Arbeitskontext für Imports und Statussicht."
+        description="Operative Bedarfe mit professioneller, zurückhaltender Oberfläche. Keine generische Demo-Tabelle, sondern ein klarer Arbeitskontext für Imports, Statussicht und Interventionslogik."
       />
       <form className="panel form-panel stack" onSubmit={handleImport}>
         <FormSection title="Importquelle" description="Externe Schichten werden idempotent in die Plattform überführt.">
@@ -71,6 +88,11 @@ export function HospitalShiftsPage() {
               <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Titel" />
             </Field>
           </div>
+          <InfoList
+            items={[
+              { label: 'Letzter Import-Blocker', value: lastImportFailure ?? 'kein letzter Fehler gespeichert' },
+            ]}
+          />
         </FormSection>
         <ActionBar>
           <button type="submit" disabled={submitting || !canSubmit}>{submitting ? 'Import läuft…' : 'Shift importieren'}</button>
@@ -79,22 +101,28 @@ export function HospitalShiftsPage() {
       {status ? <FeedbackMessage tone={status.tone} message={status.message} /> : null}
       <AsyncState loading={loading} error={error} isEmpty={jobShifts.length === 0} emptyMessage="Noch keine Schichten vorhanden.">
         <div className="record-list">
-          {jobShifts.map((shift) => (
-            <SectionCard
-              key={shift.id}
-              title={shift.title ?? 'Pflegeeinsatz'}
-              description={shift.locationCity ?? 'ohne Ort'}
-              actions={<StatusBadge value={shift.status} />}
-            >
-              <InfoList
-                items={[
-                  { label: 'Start', value: new Date(shift.startTime).toLocaleString('de-DE') },
-                  { label: 'Ende', value: new Date(shift.endTime).toLocaleString('de-DE') },
-                  { label: 'Geplante Stunden', value: shift.totalPlannedHours },
-                ]}
-              />
-            </SectionCard>
-          ))}
+          {jobShifts.map((shift) => {
+            const importState = computeShiftImportState(shift);
+            return (
+              <SectionCard
+                key={shift.id}
+                title={shift.title ?? 'Pflegeeinsatz'}
+                description={shift.locationCity ?? 'ohne Ort'}
+                actions={<StatusBadge value={shift.status} />}
+              >
+                <InfoList
+                  items={[
+                    { label: 'Start', value: new Date(shift.startTime).toLocaleString('de-DE') },
+                    { label: 'Ende', value: new Date(shift.endTime).toLocaleString('de-DE') },
+                    { label: 'Geplante Stunden', value: shift.totalPlannedHours },
+                    { label: 'Offer-Lage', value: `${shift.offerCounts?.total ?? 0} total / ${shift.offerCounts?.pending ?? 0} pending / ${shift.offerCounts?.signed ?? 0} signed` },
+                    { label: 'Import-Interventionsstatus', value: importState.label },
+                    { label: 'Import-Hinweis', value: importState.reason },
+                  ]}
+                />
+              </SectionCard>
+            );
+          })}
         </div>
       </AsyncState>
     </section>
