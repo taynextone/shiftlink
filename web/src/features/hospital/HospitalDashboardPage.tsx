@@ -5,6 +5,7 @@ import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { api } from '../../lib/api';
+import { buildInterventionHotspots, getCriticalAsyncFailures, getFailedWebhookEvents, getImportBlockedShifts } from './dashboard-helpers';
 
 export function HospitalDashboardPage() {
   const { data: shiftData } = useAsyncData(() => api.listHospitalJobShifts(), []);
@@ -22,28 +23,17 @@ export function HospitalDashboardPage() {
   const totalSignedOffers = shifts.reduce((sum, shift) => sum + (shift.offerCounts?.signed ?? 0), 0);
   const totalPendingOffers = shifts.reduce((sum, shift) => sum + (shift.offerCounts?.pending ?? 0), 0);
   const totalInvoiced = shifts.reduce((sum, shift) => sum + (shift.offerCounts?.invoiced ?? 0), 0);
-  const importBlockedShifts = shifts.filter((shift) => shift.status !== 'OPEN' || (shift.offerCounts?.signed ?? 0) > 0 || (shift.offerCounts?.pending ?? 0) > 0);
+  const importBlockedShifts = getImportBlockedShifts(shifts);
+  const failedWebhookEvents = getFailedWebhookEvents(webhookEvents);
+  const criticalAsyncFailures = getCriticalAsyncFailures(asyncFailures);
 
-  const failedWebhookEvents = webhookEvents.filter((event) => event.status === 'FAILED_OR_PENDING_RETRY');
-  const criticalAsyncFailures = asyncFailures.filter((failure) => failure.queueName === 'billing' || failure.queueName === 'webhook');
-
-  const interventionHotspots = [
-    failedWebhookEvents.length > 0
-      ? { label: 'Webhook Delivery', value: `${failedWebhookEvents.length} Probleme`, action: '/hospital', hint: 'fehlgeschlagene oder hängende Webhook-Zustellungen prüfen' }
-      : null,
-    criticalAsyncFailures.length > 0
-      ? { label: 'Async Worker Failures', value: `${criticalAsyncFailures.length} kritisch`, action: '/hospital', hint: 'persistierte Billing-/Webhook-Fehler priorisieren' }
-      : null,
-    totalPendingOffers > 0
-      ? { label: 'Pending Offers', value: `${totalPendingOffers} offen`, action: '/hospital/offers', hint: 'Antwortlage und Blocker im Offer-Flow prüfen' }
-      : null,
-    importBlockedShifts.length > 0
-      ? { label: 'Shift Import Blockers', value: `${importBlockedShifts.length} betroffen`, action: '/hospital/shifts', hint: 'offene/pending/signed Lagen blockieren Re-Imports' }
-      : null,
-    billing && billing.pendingInvoiceAmount > 0
-      ? { label: 'Pending Fees', value: `${billing.pendingInvoiceAmount} €`, action: '/hospital/billing', hint: 'offene Gebühren operativ nachhalten' }
-      : null,
-  ].filter(Boolean) as Array<{ label: string; value: string; action: string; hint: string }>;
+  const interventionHotspots = buildInterventionHotspots({
+    failedWebhookEvents,
+    criticalAsyncFailures,
+    totalPendingOffers,
+    importBlockedShifts,
+    billing,
+  });
 
   const nextOperationalFocus = interventionHotspots.map((item) => item.hint);
 
