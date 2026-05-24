@@ -315,6 +315,8 @@ export function HospitalContractsPage() {
                     <div>
                       <strong>{offer.nurse.displayName}</strong>
                       <p>{offer.status} · {offer.id}</p>
+                      <p>Responded: {formatDateTime(offer.respondedAt)} · Signed: {formatDateTime(offer.signedAt)}</p>
+                      <p>{offer.invoiceId ? `Invoice: ${offer.invoiceId}` : 'Noch keine Rechnung verknüpft'}</p>
                     </div>
                     <StatusBadge value={offer.status} />
                   </button>
