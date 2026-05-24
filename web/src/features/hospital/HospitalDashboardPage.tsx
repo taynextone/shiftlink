@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
 import { KpiCard } from '../../components/KpiCard';
 import { MetricList } from '../../components/MetricList';
 import { PageHeader } from '../../components/PageHeader';
@@ -10,6 +11,7 @@ import { buildInterventionHotspots, describeAsyncFailure, describeWebhookStatus,
 
 export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital' | 'superadmin' }) {
   const { session } = useAuth();
+  const [failureQueueFilter, setFailureQueueFilter] = useState<'ALL' | 'billing' | 'webhook' | 'whatsapp'>('ALL');
   const isSuperAdmin = session?.role === 'SUPER_ADMIN';
 
   const { data: shiftData } = useAsyncData(() => api.listHospitalJobShifts(), []);
@@ -31,6 +33,10 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
   const failedWebhookEvents = getFailedWebhookEvents(webhookEvents);
   const criticalAsyncFailures = getCriticalAsyncFailures(asyncFailures);
   const rankedAsyncFailures = rankAsyncFailures(asyncFailures);
+  const visibleAsyncFailures = useMemo(
+    () => rankedAsyncFailures.filter((failure) => failureQueueFilter === 'ALL' || failure.queueName === failureQueueFilter),
+    [failureQueueFilter, rankedAsyncFailures],
+  );
 
   const interventionHotspots = buildInterventionHotspots({
     isSuperAdmin,
@@ -127,8 +133,19 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
               { label: 'Webhook', value: asyncFailures.filter((item) => item.queueName === 'webhook').length },
             ]}
           />
+          <div className="form-grid two">
+            <label>
+              <span>Queue-Filter</span>
+              <select value={failureQueueFilter} onChange={(event) => setFailureQueueFilter(event.target.value as 'ALL' | 'billing' | 'webhook' | 'whatsapp')}>
+                <option value="ALL">Alle</option>
+                <option value="billing">billing</option>
+                <option value="webhook">webhook</option>
+                <option value="whatsapp">whatsapp</option>
+              </select>
+            </label>
+          </div>
           <div className="record-list compact-list">
-            {rankedAsyncFailures.slice(0, 5).map((failure) => {
+            {visibleAsyncFailures.slice(0, 5).map((failure) => {
               const status = describeAsyncFailure(failure);
               return (
                 <div className="panel subpanel" key={failure.id}>
@@ -143,7 +160,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
                 </div>
               );
             })}
-            {asyncFailures.length === 0 ? <p className="hint">{isSuperAdmin ? 'Noch keine persistierten Worker-Fehler sichtbar.' : 'Für Hospital Admins ist diese Fehlerklasse nicht direkt sichtbar; bei Bedarf Superadmin einbeziehen.'}</p> : null}
+            {visibleAsyncFailures.length === 0 ? <p className="hint">{isSuperAdmin ? 'Für den aktuellen Queue-Filter sind keine persistierten Worker-Fehler sichtbar.' : 'Für Hospital Admins ist diese Fehlerklasse nicht direkt sichtbar; bei Bedarf Superadmin einbeziehen.'}</p> : null}
           </div>
         </SectionCard>
         <SectionCard title="Direkte Arbeitswege" description="Schneller Einstieg in die bereits ausgebauten Operations-Flows.">
