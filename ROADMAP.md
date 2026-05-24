@@ -23,31 +23,41 @@ Principles:
 Status: in_progress
 Priority: critical
 
-Needed:
-- [done] Nurse verification review workflow
-- [done] Hospital dossier access workflows in UI
-- [done] Billing operations surface
-- [partial] Contract exception / dispute / intervention tooling
-- [done] linked contract / dossier / offer operational workflows
-- [partial] Superadmin / operations dashboard
-- [done] Release / unrelease controls
-- [partial] Queue / webhook / processing failure visibility
+Checklist:
+- [done] Superadmin verification review workflow
+- [done] Release / unrelease controls in verification ops
+- [done] Hospital dossier access workflow in UI
+- [done] Billing operations surface for hospital admins
+- [done] Linked ops navigation between shifts / offers / contracts / dossiers / billing
+- [done] Hospital offers page can directly accept / decline pending offers
+- [done] Contract lifecycle / execution / void / snapshot / PDF operational views
+- [done] Contract and billing exception context is surfaced in UI
+- [done] Superadmin ops dashboard / control plane route exists
+- [done] Dashboard hotspots are prioritized and route more precisely
+- [done] Webhook and async worker failure visibility exists in dashboard
+- [done] Retry-attempt and deeper processing telemetry are visible in ops surfaces
+- [partial] Contract exception / dispute / intervention tooling is operationally complete
+- [partial] Superadmin / ops dashboard is centralized enough for most intervention work
+- [partial] Queue / webhook / worker failure handling goes beyond visibility into real intervention depth
+- [todo] Add stronger operator actions for failed async/webhook processes (retry / requeue / resolve-style handling where product-appropriate)
+- [todo] Close remaining offer / notification lifecycle intervention gaps
+- [todo] Close the last contract / billing edge-state intervention gaps that still need manual judgment
 
 Definition of done:
 - key non-end-user operational workflows are possible without DB/manual shell work
-- Current gap to done: dashboard/control-plane, linked ops navigation, and superadmin entry structure are materially improved; remaining gap is deeper queue/worker intervention depth (including DB-applied failure telemetry), plus the final stretch of contract/billing exception handling and remaining offer/notification lifecycle intervention states
+- operators can not only see failures and edge states, but also drive the normal intervention path from the product UI
 
 ### 2. Verification / Documents / Dossier End-to-End
 Status: pending
 Priority: critical
 
-Needed:
-- document upload UX
-- review / approve / reject UI
-- verification state transitions visible in UI
-- nurse dossier review UX for hospital side where allowed
-- artifact download/access UX
-- document/audit history visibility
+Checklist:
+- [todo] Document upload UX
+- [done] Review / approve / reject UI
+- [partial] Verification state transitions visible in UI
+- [done] Nurse dossier review UX for hospital side where allowed
+- [partial] Artifact download / access UX
+- [partial] Document / audit history visibility
 
 Definition of done:
 - verification and dossier flows work end-to-end in product UI with correct permissions
@@ -56,14 +66,17 @@ Definition of done:
 Status: in_progress
 Priority: critical
 
-Needed:
-- [partial] invoice detail UX
-- [partial] invoice export UX
-- [partial] contract snapshot detail UX refinement
-- [partial] signature event detail UX refinement
+Checklist:
+- [partial] Invoice detail UX
+- [partial] Invoice export UX
+- [partial] Contract snapshot detail UX refinement
+- [partial] Signature event detail UX refinement
 - [partial] PDF artifact handling UX
-- [partial] clearer contract state machine views
-- [partial] exception states for void / paid / fully executed contracts
+- [partial] Clearer contract state machine views
+- [partial] Exception states for void / paid / fully executed contracts
+- [done] Billing-conflict severity / intervention context is surfaced in contract ops
+- [done] Invoice PDF visibility is surfaced where available
+- [todo] Finish the remaining operator path for edge states without relying on implicit knowledge
 
 Definition of done:
 - contract governance and billing are operable through the app, not just inspectable by developers
@@ -76,22 +89,22 @@ Definition of done:
 Status: pending
 Priority: high
 
-Needed:
-- visible notification state in UI
-- offer communication lifecycle visibility
-- delivery failure handling where applicable
-- more complete event/status feedback around async processes
+Checklist:
+- [todo] Visible notification state in UI
+- [partial] Offer communication lifecycle visibility
+- [partial] Delivery failure handling where applicable
+- [partial] More complete event / status feedback around async processes
 
 ### 5. Form / Validation / Error Hardening
 Status: in_progress
 Priority: high
 
-Needed:
-- finish consistent Field/Feedback usage everywhere
-- better mutation-state handling
-- stronger inline validation
-- better destructive-action confirmation patterns
-- tighter empty/error/success state consistency
+Checklist:
+- [partial] Finish consistent Field / Feedback usage everywhere
+- [partial] Better mutation-state handling
+- [partial] Stronger inline validation
+- [todo] Better destructive-action confirmation patterns
+- [partial] Tighter empty / error / success state consistency
 
 Definition of done:
 - app-wide form behavior is consistent, defensive, and professional
@@ -100,11 +113,13 @@ Definition of done:
 Status: in_progress
 Priority: high
 
-Needed:
-- [partial] reduce remaining raw/manual ID-driven interactions
-- [partial] improve context handoff across views
-- [partial] deepen master-detail patterns where backend supports it
-- [partial] refine action emphasis and information hierarchy
+Checklist:
+- [partial] Reduce remaining raw / manual ID-driven interactions
+- [partial] Improve context handoff across views
+- [partial] Deepen master-detail patterns where backend supports it
+- [partial] Refine action emphasis and information hierarchy
+- [done] Shifts can hand off directly into offer operations context
+- [done] Ops dashboard and billing/contract/dossier surfaces cross-link more coherently
 
 Definition of done:
 - operational flows feel connected and product-like instead of tool-like
@@ -192,31 +207,11 @@ Needed:
 
 ## Current Active Block
 - Operations / Admin Surface
-- Progress in this block:
-  - superadmin verification review UI added
-  - admin verification lookup improved via nurse public ID context
-  - hospital dossier access UI added
-  - hospital billing operations page added
-  - release / unrelease controls added for superadmin verification workflow
-  - hospital dashboard upgraded into a real ops surface with backend-backed summaries
-  - webhook and async worker failure visibility added to the ops dashboard
-  - intervention hotspots are now prioritized on the dashboard as a control-plane view
-  - dashboard hotspot routing is now more role-aware and operationally precise
-  - async failure visibility is now gated cleanly by role instead of leaking into hospital-admin error paths
-  - superadmin ops now has a dedicated route and control-plane-specific presentation
-  - offer, shift import, and contract void intervention guidance was added to operational surfaces
-  - contract lifecycle / execution / snapshot / PDF ops flows added and improved
-  - contract summary now includes billing exception guidance, explicit billing-conflict severity, invoice PDF visibility, and richer snapshot/signature history context
-  - async worker failures now expose retry attempt counts in persisted telemetry and dashboard visibility (pending DB schema apply)
-  - frontend API error handling now normalizes backend JSON error messages for cleaner ops/admin feedback
-  - offers / dossiers / contracts linked into a connected ops workflow
-  - backend-backed operational summaries improved across offers and contracts
-  - ops dashboard now includes clearer triage guidance for webhook and async worker failures
-  - billing export view now exposes more contract-linked ops context
-  - hospital offers page now supports direct accept/decline intervention for pending offers
-  - admin verification page now gives stronger document selection/release context during review
-- Remaining focus inside this block:
-  - central superadmin/ops dashboard
-  - release / unrelease controls
-  - queue / webhook / processing failure visibility
-  - stronger exception / intervention tooling
+- Immediate remaining checklist in this block:
+  - [partial] central superadmin / ops dashboard depth
+  - [done] release / unrelease controls
+  - [partial] queue / webhook / processing failure visibility
+  - [partial] stronger exception / intervention tooling
+  - [todo] real operator actions for async / webhook failure handling
+  - [todo] final contract / billing edge-state intervention coverage
+  - [todo] final offer / notification lifecycle intervention coverage
