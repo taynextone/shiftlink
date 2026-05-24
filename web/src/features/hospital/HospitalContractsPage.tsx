@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ActionBar } from '../../components/ActionBar';
 import { AsyncState } from '../../components/AsyncState';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
@@ -13,6 +13,14 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { api, type ContractExecutionOverview, type ContractLifecycle, type ContractPdfResponse, type ContractSnapshotResponse, type ContractVoidOverview, type HospitalOffer } from '../../lib/api';
 
 import { interpretContractState, interpretInvoiceException, interpretVoidIntervention } from './ops-helpers';
+
+function formatDateTime(value?: string | null) {
+  return value ? new Date(value).toLocaleString('de-DE') : '—';
+}
+
+function renderListValue(value: ReactNode) {
+  return typeof value === 'string' || typeof value === 'number' ? value : value;
+}
 
 export function HospitalContractsPage() {
   const [searchParams] = useSearchParams();
@@ -46,6 +54,8 @@ export function HospitalContractsPage() {
   const contractState = useMemo(() => interpretContractState(lifecycle, execution), [execution, lifecycle]);
   const voidIntervention = useMemo(() => interpretVoidIntervention(lifecycle, voiding), [lifecycle, voiding]);
   const invoiceException = useMemo(() => interpretInvoiceException(lifecycle), [lifecycle]);
+  const canSignExecution = Boolean(contractId) && lifecycle?.status === 'SIGNED' && lifecycle.executionStatus !== 'FULLY_EXECUTED' && lifecycle.executionStatus !== 'VOIDED';
+  const canVoidContract = Boolean(contractId) && voidIntervention?.label === 'Void möglich' && voidReason.trim().length > 0;
 
   async function loadLifecycle(targetContractId: string) {
     const result = await api.getContractLifecycle(targetContractId);
@@ -309,7 +319,7 @@ export function HospitalContractsPage() {
             <SectionCard title="Aktionen" description="Nur echte Lifecycle-Transitions, keine Frontend-Simulationen.">
               <FormSection title="Execution" description="Signiert die Execution-Stufe auf dem echten Backend-Lifecycle.">
                 <ActionBar>
-                  <button type="button" disabled={submitting || !contractId} onClick={() => void handleExecutionSign()}>
+                  <button type="button" disabled={submitting || !canSignExecution} onClick={() => void handleExecutionSign()}>
                     {submitting ? 'Bitte warten…' : 'Execution signieren'}
                   </button>
                 </ActionBar>
@@ -328,7 +338,7 @@ export function HospitalContractsPage() {
                   />
                 ) : null}
                 <ActionBar>
-                  <button type="button" className="secondary" disabled={submitting || !contractId || !voidReason.trim()} onClick={() => void handleVoid()}>
+                  <button type="button" className="secondary" disabled={submitting || !canVoidContract} onClick={() => void handleVoid()}>
                     {submitting ? 'Bitte warten…' : 'Contract voiden'}
                   </button>
                 </ActionBar>
@@ -364,13 +374,18 @@ export function HospitalContractsPage() {
                       { label: 'Contract ID', value: lifecycle.matchContractId },
                       { label: 'Klinik', value: lifecycle.hospital?.clinicName ?? '—' },
                       { label: 'Pflegekraft', value: lifecycle.nurse?.displayName ?? '—' },
+                      { label: 'Erstellt am', value: formatDateTime(lifecycle.createdAt) },
+                      { label: 'Aktualisiert am', value: formatDateTime(lifecycle.updatedAt) },
+                      { label: 'Antwort erhalten', value: formatDateTime(lifecycle.respondedAt) },
+                      { label: 'Offer läuft ab', value: formatDateTime(lifecycle.expiresAt) },
+                      { label: 'Signiert am', value: formatDateTime(lifecycle.signedAt) },
                       { label: 'Snapshots', value: lifecycle.snapshotSummary.totalSnapshots },
                       { label: 'Aktuelle Snapshot-Version', value: lifecycle.snapshotSummary.currentSnapshotVersion ?? '—' },
                       { label: 'Signaturen', value: lifecycle.signatureSummary.totalSignatures },
                       { label: 'PDF vorhanden', value: lifecycle.contractPdf.available ? 'Ja' : 'Nein' },
                       { label: 'Invoice Status', value: lifecycle.invoice?.status ?? '—' },
                       { label: 'Invoice Amount', value: lifecycle.invoice?.amount ? `${lifecycle.invoice.amount} €` : '—' },
-                      { label: 'Vollständig ausgeführt', value: lifecycle.fullyExecutedAt ? new Date(lifecycle.fullyExecutedAt).toLocaleString('de-DE') : '—' },
+                      { label: 'Vollständig ausgeführt', value: formatDateTime(lifecycle.fullyExecutedAt) },
                       { label: 'Void-Grund', value: lifecycle.voidSummary?.reason ?? '—' },
                     ]}
                   />
@@ -379,8 +394,34 @@ export function HospitalContractsPage() {
                       { label: 'Billing-Ausnahmezustand', value: invoiceException.label },
                       { label: 'Billing-Nächster Schritt', value: invoiceException.nextAction },
                       { label: 'Invoice PDF', value: lifecycle.invoice?.invoicePdfUrl ? <a href={lifecycle.invoice.invoicePdfUrl} target="_blank" rel="noreferrer">Invoice PDF öffnen</a> : '—' },
-                    ]}
+                    ].map((item) => ({ ...item, value: renderListValue(item.value) }))}
                   />
+                  {lifecycle.snapshotSummary.versions && lifecycle.snapshotSummary.versions.length > 0 ? (
+                    <SectionCard title="Snapshot-Historie" description="Versionen und Summaries des aktuellen Vertragsverlaufs.">
+                      <div className="record-list compact-list">
+                        {lifecycle.snapshotSummary.versions.map((version) => (
+                          <div className="panel subpanel" key={version.id}>
+                            <strong>Version {version.version}</strong>
+                            <p>{formatDateTime(version.createdAt)}</p>
+                            <p>{version.summaryText}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </SectionCard>
+                  ) : null}
+                  {lifecycle.signatureSummary.events && lifecycle.signatureSummary.events.length > 0 ? (
+                    <SectionCard title="Signatur-Historie" description="Wer wann auf welchen Snapshot signiert hat.">
+                      <div className="record-list compact-list">
+                        {lifecycle.signatureSummary.events.map((event) => (
+                          <div className="panel subpanel" key={event.id}>
+                            <strong>{event.signerRole}</strong>
+                            <p>{event.signatureIntent} · Snapshot {event.snapshotId}</p>
+                            <p>{formatDateTime(event.createdAt)}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </SectionCard>
+                  ) : null}
                 </>
               ) : (
                 <p className="hint">Noch kein Lifecycle geladen.</p>
@@ -394,7 +435,7 @@ export function HospitalContractsPage() {
                 items={[
                   { label: 'Execution Status', value: execution.executionStatus },
                   { label: 'Signature Events', value: execution.signatureEvents.length },
-                  { label: 'Fully Executed At', value: execution.fullyExecutedAt ? new Date(execution.fullyExecutedAt).toLocaleString('de-DE') : '—' },
+                  { label: 'Fully Executed At', value: formatDateTime(execution.fullyExecutedAt) },
                 ]}
               />
               <div className="record-list compact-list">
@@ -402,7 +443,7 @@ export function HospitalContractsPage() {
                   <div className="panel subpanel" key={event.id}>
                     <strong>{event.signerRole}</strong>
                     <p>{event.signatureIntent}</p>
-                    <p>{new Date(event.createdAt).toLocaleString('de-DE')}</p>
+                    <p>{formatDateTime(event.createdAt)}</p>
                   </div>
                 ))}
               </div>
@@ -417,7 +458,7 @@ export function HospitalContractsPage() {
                   { label: 'Execution Status', value: voiding.executionStatus },
                   { label: 'Void vorhanden', value: voiding.voidEvent ? 'Ja' : 'Nein' },
                   { label: 'Void Actor', value: voiding.voidEvent?.actorRole ?? '—' },
-                  { label: 'Void At', value: voiding.voidEvent?.createdAt ? new Date(voiding.voidEvent.createdAt).toLocaleString('de-DE') : '—' },
+                  { label: 'Void At', value: formatDateTime(voiding.voidEvent?.createdAt) },
                   { label: 'Void Reason', value: voiding.voidEvent?.reason ?? '—' },
                 ]}
               />
