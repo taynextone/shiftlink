@@ -6,7 +6,7 @@ import { SectionCard } from '../../components/SectionCard';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { useAuth } from '../../state/AuthContext';
 import { api } from '../../lib/api';
-import { buildInterventionHotspots, getCriticalAsyncFailures, getFailedWebhookEvents, getImportBlockedShifts, rankAsyncFailures } from './dashboard-helpers';
+import { buildInterventionHotspots, describeAsyncFailure, describeWebhookStatus, getCriticalAsyncFailures, getFailedWebhookEvents, getImportBlockedShifts, rankAsyncFailures } from './dashboard-helpers';
 
 export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital' | 'superadmin' }) {
   const { session } = useAuth();
@@ -103,14 +103,17 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
             ]}
           />
           <div className="record-list compact-list">
-            {webhookEvents.slice(0, 5).map((event) => (
-              <div className="panel subpanel" key={event.id}>
-                <strong>{event.eventType}</strong>
-                <p>{event.clinicName}</p>
-                <p>{event.status} · Attempts: {event.deliveryAttempts}</p>
-                <p>{event.lastError ?? 'keine Fehlermeldung'}</p>
-              </div>
-            ))}
+            {webhookEvents.slice(0, 5).map((event) => {
+              const status = describeWebhookStatus(event);
+              return (
+                <div className="panel subpanel" key={event.id}>
+                  <strong>{event.eventType}</strong>
+                  <p>{event.clinicName}</p>
+                  <p>{status.label} · Attempts: {event.deliveryAttempts}</p>
+                  <p>{status.detail}</p>
+                </div>
+              );
+            })}
             {webhookEvents.length === 0 ? <p className="hint">Noch keine Webhook-Events sichtbar.</p> : null}
           </div>
         </SectionCard>
@@ -124,15 +127,19 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
             ]}
           />
           <div className="record-list compact-list">
-            {rankedAsyncFailures.slice(0, 5).map((failure) => (
-              <div className="panel subpanel" key={failure.id}>
-                <strong>{failure.queueName} · {failure.jobName}</strong>
-                <p>{failure.errorMessage}</p>
-                <p>Attempts: {failure.attemptCount ?? 0}</p>
-                <p>Entity: {failure.relatedEntityId ?? '—'}</p>
-                <p>{new Date(failure.createdAt).toLocaleString('de-DE')}</p>
-              </div>
-            ))}
+            {rankedAsyncFailures.slice(0, 5).map((failure) => {
+              const status = describeAsyncFailure(failure);
+              return (
+                <div className="panel subpanel" key={failure.id}>
+                  <strong>{failure.queueName} · {failure.jobName}</strong>
+                  <p>{status.label}</p>
+                  <p>{failure.errorMessage}</p>
+                  <p>{status.detail}</p>
+                  <p>Entity: {failure.relatedEntityId ?? '—'}</p>
+                  <p>{new Date(failure.createdAt).toLocaleString('de-DE')}</p>
+                </div>
+              );
+            })}
             {asyncFailures.length === 0 ? <p className="hint">{isSuperAdmin ? 'Noch keine persistierten Worker-Fehler sichtbar.' : 'Für Hospital Admins ist diese Fehlerklasse nicht direkt sichtbar; bei Bedarf Superadmin einbeziehen.'}</p> : null}
           </div>
         </SectionCard>

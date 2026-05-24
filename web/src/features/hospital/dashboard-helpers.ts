@@ -1,5 +1,57 @@
 import type { AsyncProcessFailureRow, HospitalBillingSummary, HospitalJobShift, HospitalWebhookEventRow } from '../../lib/api';
 
+export function describeWebhookStatus(event: HospitalWebhookEventRow) {
+  if (event.status === 'FAILED_OR_PENDING_RETRY') {
+    return {
+      label: 'Retry oder manueller Eingriff nötig',
+      detail: event.lastError ?? 'Webhook-Zustellung konnte bisher nicht sauber abgeschlossen werden.',
+    };
+  }
+
+  if (event.status === 'DELIVERED') {
+    return {
+      label: 'zugestellt',
+      detail: event.deliveredAt ? `Erfolgreich zugestellt am ${new Date(event.deliveredAt).toLocaleString('de-DE')}.` : 'Erfolgreich zugestellt.',
+    };
+  }
+
+  return {
+    label: event.status,
+    detail: event.lastError ?? 'Status ohne zusätzliche Fehlerdetails.',
+  };
+}
+
+export function describeAsyncFailure(failure: AsyncProcessFailureRow) {
+  const attempts = failure.attemptCount ?? 0;
+  const attemptText = attempts > 0 ? `${attempts} Versuch${attempts === 1 ? '' : 'e'}` : 'noch kein Retry-Zähler';
+
+  if (failure.queueName === 'billing') {
+    return {
+      label: 'Billing-Fehler priorisieren',
+      detail: `${attemptText}; Gebühren- oder Rechnungsprozess prüfen, bevor weitere Contract-Governance-Aktionen laufen.`,
+    };
+  }
+
+  if (failure.queueName === 'webhook') {
+    return {
+      label: 'Webhook-Failure beobachten',
+      detail: `${attemptText}; Delivery-Kontext, Zielsystem und letzte Fehlermeldung gemeinsam prüfen.`,
+    };
+  }
+
+  if (failure.queueName === 'whatsapp') {
+    return {
+      label: 'Kommunikationsfehler nachhalten',
+      detail: `${attemptText}; Zustellung, Nummernkontext und eventuelle Folgeauswirkungen für Offer-/Contract-Kommunikation prüfen.`,
+    };
+  }
+
+  return {
+    label: `${failure.queueName}-Fehler`,
+    detail: `${attemptText}; Queue-Kontext und Folgeprozess manuell prüfen.`,
+  };
+}
+
 export function getImportBlockedShifts(shifts: HospitalJobShift[]) {
   return shifts.filter((shift) => shift.status !== 'OPEN' || (shift.offerCounts?.signed ?? 0) > 0 || (shift.offerCounts?.pending ?? 0) > 0);
 }
