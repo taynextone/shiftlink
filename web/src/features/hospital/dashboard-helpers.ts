@@ -85,10 +85,10 @@ export function buildInterventionHotspots(input: {
 
   const hotspots = [
     failedWebhookEvents.length > 0
-      ? { label: 'Webhook Delivery', value: `${failedWebhookEvents.length} Probleme`, action: '/hospital', hint: 'fehlgeschlagene oder hängende Webhook-Zustellungen im Processing-Bereich prüfen', priority: 2 }
+      ? { label: 'Webhook Delivery', value: `${failedWebhookEvents.length} Probleme`, action: isSuperAdmin ? '/admin/ops' : '/hospital', hint: 'fehlgeschlagene oder hängende Webhook-Zustellungen im Processing-Bereich prüfen', priority: 2 }
       : null,
     criticalAsyncFailures.length > 0
-      ? { label: 'Async Worker Failures', value: `${criticalAsyncFailures.length} kritisch`, action: isSuperAdmin ? '/admin/verification' : '/hospital', hint: isSuperAdmin ? 'kritische Worker-Fehler aus der Superadmin-Sicht priorisieren' : 'kritische Worker-Fehler erfordern Superadmin-Einbezug', priority: 1 }
+      ? { label: 'Async Worker Failures', value: `${criticalAsyncFailures.length} kritisch`, action: isSuperAdmin ? '/admin/ops' : '/hospital', hint: isSuperAdmin ? 'kritische Worker-Fehler aus der Superadmin-Control-Plane priorisieren' : 'kritische Worker-Fehler erfordern Superadmin-Einbezug', priority: 1 }
       : null,
     totalPendingOffers > 0
       ? { label: 'Pending Offers', value: `${totalPendingOffers} offen`, action: '/hospital/offers', hint: 'Antwortlage und Blocker im Offer-Flow prüfen', priority: 3 }
