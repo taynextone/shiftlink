@@ -197,9 +197,16 @@ export function HospitalOffersPage() {
                       { label: 'Offers gesamt', value: offerSummary.total },
                       { label: 'Pending', value: offerSummary.PENDING ?? 0 },
                       { label: 'Signed', value: offerSummary.SIGNED ?? 0 },
+                      { label: 'Declined', value: offerSummary.DECLINED ?? 0 },
+                      { label: 'Expired', value: offerSummary.EXPIRED ?? 0 },
                       { label: 'Invoiced', value: offerSummary.invoiced },
                     ]}
                   />
+                  <ol className="ordered-list compact-ordered-list">
+                    <li>Pending Offers zuerst beantworten oder sauber nachhalten</li>
+                    <li>Signed Offers direkt in Contract- und Dossier-Kontext weiterführen</li>
+                    <li>Declined / Expired Offers nur noch für Reopen- oder Historienentscheidungen prüfen</li>
+                  </ol>
                 </>
               ) : null}
             </FormSection>

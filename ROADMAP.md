@@ -35,7 +35,7 @@ Needed:
 
 Definition of done:
 - key non-end-user operational workflows are possible without DB/manual shell work
-- Current gap to done: dashboard/control-plane, linked ops navigation, and superadmin entry structure are materially improved; remaining gap is deeper queue/worker intervention depth (including DB-applied failure telemetry) and the final stretch of contract/billing exception handling across edge states
+- Current gap to done: dashboard/control-plane, linked ops navigation, and superadmin entry structure are materially improved; remaining gap is deeper queue/worker intervention depth (including DB-applied failure telemetry), plus the final stretch of contract/billing exception handling and remaining offer/notification lifecycle intervention states
 
 ### 2. Verification / Documents / Dossier End-to-End
 Status: pending
@@ -63,7 +63,7 @@ Needed:
 - [partial] signature event detail UX refinement
 - [partial] PDF artifact handling UX
 - [partial] clearer contract state machine views
-- [todo] exception states for void / paid / fully executed contracts
+- [partial] exception states for void / paid / fully executed contracts
 
 Definition of done:
 - contract governance and billing are operable through the app, not just inspectable by developers
@@ -206,11 +206,15 @@ Needed:
   - superadmin ops now has a dedicated route and control-plane-specific presentation
   - offer, shift import, and contract void intervention guidance was added to operational surfaces
   - contract lifecycle / execution / snapshot / PDF ops flows added and improved
-  - contract summary now includes billing exception guidance and invoice PDF visibility when available
+  - contract summary now includes billing exception guidance, explicit billing-conflict severity, invoice PDF visibility, and richer snapshot/signature history context
   - async worker failures now expose retry attempt counts in persisted telemetry and dashboard visibility (pending DB schema apply)
   - frontend API error handling now normalizes backend JSON error messages for cleaner ops/admin feedback
   - offers / dossiers / contracts linked into a connected ops workflow
   - backend-backed operational summaries improved across offers and contracts
+  - ops dashboard now includes clearer triage guidance for webhook and async worker failures
+  - billing export view now exposes more contract-linked ops context
+  - hospital offers page now supports direct accept/decline intervention for pending offers
+  - admin verification page now gives stronger document selection/release context during review
 - Remaining focus inside this block:
   - central superadmin/ops dashboard
   - release / unrelease controls
