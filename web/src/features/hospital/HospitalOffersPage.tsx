@@ -101,7 +101,10 @@ export function HospitalOffersPage() {
   }
 
   async function handleRespondToOffer(matchContractId: string, action: 'ACCEPT' | 'DECLINE') {
-    if (action === 'DECLINE' && !window.confirm(`Offer wirklich ablehnen?\n\nContract: ${matchContractId}`)) {
+    const confirmationMessage = action === 'ACCEPT'
+      ? `Offer wirklich annehmen?\n\nContract: ${matchContractId}`
+      : `Offer wirklich ablehnen?\n\nContract: ${matchContractId}`;
+    if (!window.confirm(confirmationMessage)) {
       return;
     }
 

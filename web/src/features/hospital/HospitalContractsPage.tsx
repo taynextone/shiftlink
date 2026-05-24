@@ -179,6 +179,9 @@ export function HospitalContractsPage() {
       setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
       return;
     }
+    if (!window.confirm(`Execution wirklich signieren?\n\nContract: ${contractId}`)) {
+      return;
+    }
 
     setSubmitting(true);
     setStatus(null);
