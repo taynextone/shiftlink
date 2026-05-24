@@ -105,7 +105,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
             items={[
               { label: 'Webhook Events', value: webhookEvents.length },
               { label: 'Probleme', value: failedWebhookEvents.length },
-              { label: 'Zuletzt zugestellt', value: webhookEvents.find((event) => event.deliveredAt)?.eventType ?? '—' },
+              { label: 'Zuletzt zugestellt', value: webhookEvents.find((event) => event.deliveredAt)?.deliveredAt ? new Date(webhookEvents.find((event) => event.deliveredAt)!.deliveredAt!).toLocaleString('de-DE') : '—' },
             ]}
           />
           <div className="record-list compact-list">
