@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { ActionBar } from '../../components/ActionBar';
 import { AsyncState } from '../../components/AsyncState';
@@ -120,6 +121,9 @@ export function HospitalShiftsPage() {
                     { label: 'Import-Hinweis', value: importState.reason },
                   ]}
                 />
+                <ActionBar>
+                  <Link to={`/hospital/offers?jobShiftId=${encodeURIComponent(shift.id)}`}>Offers zur Schicht öffnen</Link>
+                </ActionBar>
               </SectionCard>
             );
           })}

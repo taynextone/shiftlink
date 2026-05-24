@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ActionBar } from '../../components/ActionBar';
 import { AsyncState } from '../../components/AsyncState';
@@ -17,9 +17,10 @@ import { computeOfferHealth } from './ops-helpers';
 export function HospitalOffersPage() {
   const [searchParams] = useSearchParams();
   const focusNurseProfileId = searchParams.get('focusNurseProfileId') ?? '';
+  const initialJobShiftId = searchParams.get('jobShiftId') ?? '';
   const { data: shiftData, loading: shiftsLoading, error: shiftsError } = useAsyncData(() => api.listHospitalJobShifts(), []);
   const availableShifts = shiftData?.jobShifts ?? [];
-  const [jobShiftId, setJobShiftId] = useState('');
+  const [jobShiftId, setJobShiftId] = useState(initialJobShiftId);
   const [offers, setOffers] = useState<HospitalOffer[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [activeShift, setActiveShift] = useState<HospitalJobShift | null>(null);
@@ -119,6 +120,13 @@ export function HospitalOffersPage() {
       setSubmitting(false);
     }
   }
+
+  useEffect(() => {
+    if (!initialJobShiftId) {
+      return;
+    }
+    setJobShiftId(initialJobShiftId);
+  }, [initialJobShiftId]);
 
   async function handleCreateOffer(nurseProfileId: string) {
     if (!jobShiftId) {
