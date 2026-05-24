@@ -202,6 +202,9 @@ export function HospitalContractsPage() {
       setStatus({ tone: 'error', message: 'Bitte einen Void-Grund angeben.' });
       return;
     }
+    if (!window.confirm(`Contract wirklich voiden?\n\nContract: ${contractId}\nGrund: ${voidReason.trim()}`)) {
+      return;
+    }
 
     setSubmitting(true);
     setStatus(null);

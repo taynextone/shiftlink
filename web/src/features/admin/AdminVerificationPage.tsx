@@ -54,6 +54,9 @@ export function AdminVerificationPage() {
       setFeedback({ tone: 'error', message: 'Bitte zuerst Verifikationskontext laden.' });
       return;
     }
+    if (!release && !window.confirm(`Freigabe wirklich zurückziehen?\n\nPflegekraft: ${overview.nurseProfile.displayName} (${overview.nurseProfile.publicId})`)) {
+      return;
+    }
 
     setSubmitting(true);
     setFeedback(null);
