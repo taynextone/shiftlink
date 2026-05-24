@@ -162,7 +162,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
             <Link className="selection-card" to="/hospital/offers">
               <div>
                 <strong>Offers öffnen</strong>
-                <p>Kandidaten suchen und Antwortlage verfolgen</p>
+                <p>Kandidaten suchen, Offer-Antworten steuern und Antwortlage verfolgen</p>
               </div>
             </Link>
             <Link className="selection-card" to="/hospital/contracts">
@@ -177,6 +177,14 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
                 <p>Gebühren, Rechnungen und Exportdaten prüfen</p>
               </div>
             </Link>
+            {mode === 'superadmin' ? (
+              <Link className="selection-card" to="/admin/verification">
+                <div>
+                  <strong>Verification Ops öffnen</strong>
+                  <p>Dokumentenprüfung, Release-Entscheidungen und Rücknahmen zentral bearbeiten</p>
+                </div>
+              </Link>
+            ) : null}
           </div>
         </SectionCard>
       </div>
