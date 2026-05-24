@@ -12,7 +12,7 @@ import { useAsyncData } from '../../hooks/useAsyncData';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, type ContractExecutionOverview, type ContractLifecycle, type ContractPdfResponse, type ContractSnapshotResponse, type ContractVoidOverview, type HospitalOffer } from '../../lib/api';
 
-import { interpretBillingConflict, interpretContractState, interpretInvoiceException, interpretVoidIntervention } from './ops-helpers';
+import { interpretBillingConflict, interpretContractState, interpretInvoiceException, interpretVoidIntervention, type InterventionTone } from './ops-helpers';
 
 function formatDateTime(value?: string | null) {
   return value ? new Date(value).toLocaleString('de-DE') : '—';
@@ -20,6 +20,13 @@ function formatDateTime(value?: string | null) {
 
 function renderListValue(value: ReactNode) {
   return typeof value === 'string' || typeof value === 'number' ? value : value;
+}
+
+function toFeedbackTone(tone: 'success' | 'warning' | 'error' | 'info') {
+  if (tone === 'warning' || tone === 'info') {
+    return 'neutral' as const;
+  }
+  return tone;
 }
 
 export function HospitalContractsPage() {
@@ -331,14 +338,17 @@ export function HospitalContractsPage() {
                   <input value={voidReason} onChange={(event) => setVoidReason(event.target.value)} placeholder="Void reason" />
                 </label>
                 {voidIntervention ? (
-                  <InfoList
-                    items={[
-                      { label: 'Interventionsstatus', value: voidIntervention.label },
-                      { label: 'Blocker / Hinweis', value: voidIntervention.blocker },
-                    ]}
-                  />
+                  <>
+                    <FeedbackMessage tone={toFeedbackTone(voidIntervention.tone)} message={`${voidIntervention.label}: ${voidIntervention.blocker}`} />
+                    <InfoList
+                      items={[
+                        { label: 'Interventionsstatus', value: voidIntervention.label },
+                        { label: 'Blocker / Hinweis', value: voidIntervention.blocker },
+                      ]}
+                    />
+                  </>
                 ) : null}
-                {billingConflict ? <FeedbackMessage tone={billingConflict.tone} message={`${billingConflict.label}: ${billingConflict.detail}`} /> : null}
+                {billingConflict ? <FeedbackMessage tone={toFeedbackTone(billingConflict.tone)} message={`${billingConflict.label}: ${billingConflict.detail}`} /> : null}
                 <ActionBar>
                   <button type="button" className="secondary" disabled={submitting || !canVoidContract} onClick={() => void handleVoid()}>
                     {submitting ? 'Bitte warten…' : 'Contract voiden'}
@@ -371,7 +381,7 @@ export function HospitalContractsPage() {
                       ]}
                     />
                   ) : null}
-                  {billingConflict ? <FeedbackMessage tone={billingConflict.tone} message={`${billingConflict.label}: ${billingConflict.detail}`} /> : null}
+                  {billingConflict ? <FeedbackMessage tone={toFeedbackTone(billingConflict.tone)} message={`${billingConflict.label}: ${billingConflict.detail}`} /> : null}
                   <InfoList
                     items={[
                       { label: 'Contract ID', value: lifecycle.matchContractId },

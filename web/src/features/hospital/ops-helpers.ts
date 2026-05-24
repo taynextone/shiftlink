@@ -46,23 +46,31 @@ export function interpretContractState(lifecycle: ContractLifecycle | null, exec
   return { label: execution ? execution.executionStatus : lifecycle.executionStatus, nextAction: 'Lifecycle-Details prüfen' };
 }
 
-export function interpretVoidIntervention(lifecycle: ContractLifecycle | null, voiding: ContractVoidOverview | null) {
+export type InterventionTone = 'success' | 'warning' | 'error' | 'info';
+
+export type VoidInterventionResult = {
+  label: string;
+  blocker: string;
+  tone: InterventionTone;
+};
+
+export function interpretVoidIntervention(lifecycle: ContractLifecycle | null, voiding: ContractVoidOverview | null): VoidInterventionResult | null {
   if (!lifecycle) {
     return null;
   }
   if (voiding?.voidEvent) {
-    return { label: 'bereits voided', blocker: 'Der Vertrag wurde bereits beendet und dokumentiert.' };
+    return { label: 'bereits voided', blocker: 'Der Vertrag wurde bereits beendet und dokumentiert.', tone: 'info' as const };
   }
   if (lifecycle.executionStatus === 'FULLY_EXECUTED') {
-    return { label: 'Void blockiert', blocker: 'Vollständig ausgeführte Verträge können über diesen Flow nicht voided werden.' };
+    return { label: 'Void blockiert', blocker: 'Vollständig ausgeführte Verträge können über diesen Flow nicht voided werden.', tone: 'error' as const };
   }
   if (lifecycle.invoice?.status === 'PAID') {
-    return { label: 'Void blockiert', blocker: 'Bereits bezahlte Plattformrechnungen blockieren diesen Void-Flow.' };
+    return { label: 'Void blockiert', blocker: 'Bereits bezahlte Plattformrechnungen blockieren diesen Void-Flow.', tone: 'error' as const };
   }
   if (lifecycle.status === 'CANCELED') {
-    return { label: 'bereits storniert', blocker: 'Dieser Vertrag ist bereits storniert.' };
+    return { label: 'bereits storniert', blocker: 'Dieser Vertrag ist bereits storniert.', tone: 'warning' as const };
   }
-  return { label: 'Void möglich', blocker: 'Kein technischer Blocker sichtbar. Grund sauber dokumentieren.' };
+  return { label: 'Void möglich', blocker: 'Kein technischer Blocker sichtbar. Grund sauber dokumentieren.', tone: 'success' as const };
 }
 
 
@@ -86,7 +94,7 @@ export function interpretInvoiceException(lifecycle: ContractLifecycle | null) {
   return { label: `Rechnung ${lifecycle.invoice.status}`, nextAction: 'Billing-Seite und Contract-Artefakte gemeinsam prüfen' };
 }
 
-export function interpretBillingConflict(lifecycle: ContractLifecycle | null) {
+export function interpretBillingConflict(lifecycle: ContractLifecycle | null): BillingConflictResult | null {
   if (!lifecycle?.invoice) {
     return null;
   }
@@ -115,5 +123,35 @@ export function interpretBillingConflict(lifecycle: ContractLifecycle | null) {
     };
   }
 
+  if (lifecycle.invoice.status === 'OVERDUE') {
+    return {
+      tone: 'error' as const,
+      label: 'Überfällige Rechnung erfordert sofortige Behandlung',
+      detail: 'Die Rechnung ist überfähig. Billing-Kontext, Offene Beträge und mögliche Zinsen oder Inkasso-Folgen prüfen, bevor weitere Governance-Aktionen erfolgen.',
+    };
+  }
+
+  if (lifecycle.invoice.status === 'CANCELED') {
+    return {
+      tone: 'warning' as const,
+      label: 'Rechnung storniert – Billing-Governance prüfen',
+      detail: 'Die Rechnung wurde storniert. Sicherstellen, dass keine offenen Abrechnungsartefakte bestehen, bevor der Vertrag weiter verarbeitet wird.',
+    };
+  }
+
+  if (lifecycle.invoice.status === 'DRAFT') {
+    return {
+      tone: 'info' as const,
+      label: 'Rechnung in Entwurfsphase',
+      detail: 'Die Rechnung befindet sich noch im Entwurfsstadium. Billing absehn, sobald sie final freigegeben ist, um Governance-Lücken zu vermeiden.',
+    };
+  }
+
   return null;
 }
+
+export type BillingConflictResult = {
+  tone: InterventionTone;
+  label: string;
+  detail: string;
+};
