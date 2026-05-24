@@ -22,6 +22,17 @@ export function HospitalBillingPage() {
   const pendingRows = useMemo(() => rows.filter((row) => row.invoiceStatus === 'PENDING'), [rows]);
   const paidRows = useMemo(() => rows.filter((row) => row.invoiceStatus === 'PAID'), [rows]);
   const rowsWithArtifacts = useMemo(() => rows.filter((row) => row.signedAt), [rows]);
+  const prioritizedRows = useMemo(
+    () => [...rows].sort((left, right) => {
+      const leftPending = left.invoiceStatus === 'PENDING' ? 0 : 1;
+      const rightPending = right.invoiceStatus === 'PENDING' ? 0 : 1;
+      if (leftPending !== rightPending) {
+        return leftPending - rightPending;
+      }
+      return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+    }),
+    [rows],
+  );
 
   async function handleLoadExport() {
     setSubmitting(true);
@@ -97,7 +108,7 @@ export function HospitalBillingPage() {
         </ActionBar>
         {feedback ? <FeedbackMessage tone={feedback.tone} message={feedback.message} /> : null}
         <div className="record-list compact-list">
-          {rows.map((row) => (
+          {prioritizedRows.map((row) => (
             <div className="panel subpanel" key={row.invoiceId}>
               <div className="section-heading-row">
                 <strong>{row.jobShiftTitle || 'Pflegeeinsatz'}</strong>
@@ -105,6 +116,7 @@ export function HospitalBillingPage() {
               </div>
               <p>{row.nurseDisplayName} · {row.nursePublicId}</p>
               <p>{row.locationCity || 'ohne Ort'} · {row.invoiceAmount} €</p>
+              <p>Invoice erstellt: {new Date(row.createdAt).toLocaleString('de-DE')}</p>
               <p>Contract: {row.matchContractId}</p>
               <p>Signed At: {row.signedAt ? new Date(row.signedAt).toLocaleString('de-DE') : '—'}</p>
               <p>Shift Status: {row.matchStatus}</p>
