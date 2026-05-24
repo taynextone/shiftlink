@@ -167,6 +167,7 @@ export function AdminVerificationPage() {
                       <div>
                         <strong>{document.documentType}</strong>
                         <p>{new Date(document.createdAt).toLocaleDateString('de-DE')} · {document.id}</p>
+                        <p>Reviewed: {document.reviewedAt ? new Date(document.reviewedAt).toLocaleString('de-DE') : 'noch nicht geprüft'}</p>
                         <p>{document.rejectionReason ?? 'Keine dokumentierte Ablehnungsbegründung.'}</p>
                       </div>
                       <StatusBadge value={document.status} />
