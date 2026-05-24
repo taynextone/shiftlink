@@ -148,8 +148,19 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
           <div className="record-list compact-list">
             {visibleAsyncFailures.slice(0, 5).map((failure) => {
               const status = describeAsyncFailure(failure);
+              const destination = failure.queueName === 'billing'
+                ? '/hospital/billing'
+                : failure.queueName === 'webhook'
+                  ? mode === 'superadmin'
+                    ? '/admin/ops'
+                    : '/hospital'
+                  : failure.queueName === 'whatsapp'
+                    ? '/hospital/offers'
+                    : mode === 'superadmin'
+                      ? '/admin/ops'
+                      : '/hospital';
               return (
-                <div className="panel subpanel" key={failure.id}>
+                <Link className="panel subpanel" key={failure.id} to={destination}>
                   <strong>{failure.queueName} · {failure.jobName}</strong>
                   <p>{status.label}</p>
                   <p>{failure.errorMessage}</p>
@@ -158,7 +169,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
                   <p>Entity: {failure.relatedEntityId ?? '—'}</p>
                   <p>Attempts: {failure.attemptCount ?? 0}</p>
                   <p>{new Date(failure.createdAt).toLocaleString('de-DE')}</p>
-                </div>
+                </Link>
               );
             })}
             {visibleAsyncFailures.length === 0 ? <p className="hint">{isSuperAdmin ? 'Für den aktuellen Queue-Filter sind keine persistierten Worker-Fehler sichtbar.' : 'Für Hospital Admins ist diese Fehlerklasse nicht direkt sichtbar; bei Bedarf Superadmin einbeziehen.'}</p> : null}
