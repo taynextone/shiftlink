@@ -88,6 +88,10 @@ export function AppShell({ children }: PropsWithChildren) {
             <section className="nav-group">
               <span className="section-label">Zugang</span>
               <div className="nav-list">
+                <Link className={location.pathname === '/' ? 'nav-link active' : 'nav-link'} to="/">
+                  <span className="nav-link-title">Landing Page</span>
+                  <span className="nav-link-caption">Produktüberblick für Pflegekräfte und Kliniken</span>
+                </Link>
                 <Link className={location.pathname === '/login' ? 'nav-link active' : 'nav-link'} to="/login">
                   <span className="nav-link-title">Login</span>
                   <span className="nav-link-caption">Bestehenden Zugang verwenden</span>

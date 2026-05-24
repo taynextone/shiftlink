@@ -177,6 +177,13 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
                     : mode === 'superadmin'
                       ? '/admin/ops'
                       : '/hospital';
+              const nextActionLabel = failure.queueName === 'billing'
+                ? 'Zu Billing-Intervention'
+                : failure.queueName === 'webhook'
+                  ? 'Zu Webhook-Ops'
+                  : failure.queueName === 'whatsapp'
+                    ? 'Zu Offer-Kommunikation'
+                    : 'Zu Ops-Übersicht';
               return (
                 <Link className="panel subpanel" key={failure.id} to={destination}>
                   <strong>{failure.queueName} · {failure.jobName}</strong>
@@ -186,6 +193,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
                   <p>Job ID: {failure.jobId ?? '—'}</p>
                   <p>Entity: {failure.relatedEntityId ?? '—'}</p>
                   <p>Attempts: {failure.attemptCount ?? 0}</p>
+                  <p>Nächster Pfad: {nextActionLabel}</p>
                   <p>{new Date(failure.createdAt).toLocaleString('de-DE')}</p>
                 </Link>
               );
