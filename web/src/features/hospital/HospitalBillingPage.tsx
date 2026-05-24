@@ -21,6 +21,7 @@ export function HospitalBillingPage() {
 
   const pendingRows = useMemo(() => rows.filter((row) => row.invoiceStatus === 'PENDING'), [rows]);
   const paidRows = useMemo(() => rows.filter((row) => row.invoiceStatus === 'PAID'), [rows]);
+  const rowsWithArtifacts = useMemo(() => rows.filter((row) => row.signedAt), [rows]);
 
   async function handleLoadExport() {
     setSubmitting(true);
@@ -61,6 +62,7 @@ export function HospitalBillingPage() {
           items={[
             { label: 'Pending Rows', value: pendingRows.length },
             { label: 'Paid Rows', value: paidRows.length },
+            { label: 'Rows mit Signaturdatum', value: rowsWithArtifacts.length },
             { label: 'Offene Gebühren', value: summary ? `${summary.pendingInvoiceAmount} €` : '—' },
             { label: 'Bereits bezahlt', value: summary ? `${summary.paidInvoiceAmount} €` : '—' },
           ]}
@@ -104,6 +106,8 @@ export function HospitalBillingPage() {
               <p>{row.nurseDisplayName} · {row.nursePublicId}</p>
               <p>{row.locationCity || 'ohne Ort'} · {row.invoiceAmount} €</p>
               <p>Contract: {row.matchContractId}</p>
+              <p>Signed At: {row.signedAt ? new Date(row.signedAt).toLocaleString('de-DE') : '—'}</p>
+              <p>Shift Status: {row.matchStatus}</p>
               <p>{row.invoiceStatus === 'PENDING' ? 'Operativ offen — Contract-Kontext prüfen.' : 'Bezahlt — primär Historie / Nachweis.'}</p>
               <ActionBar>
                 <Link to={`/hospital/contracts?contractId=${encodeURIComponent(row.matchContractId)}`}>Contract öffnen</Link>
