@@ -116,6 +116,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
             items={[
               { label: 'Webhook Events', value: webhookEvents.length },
               { label: 'Probleme', value: failedWebhookEvents.length },
+              { label: 'Angezeigte Einträge', value: rankedWebhookEvents.slice(0, 5).length },
               { label: 'Zuletzt zugestellt', value: webhookEvents.find((event) => event.deliveredAt)?.deliveredAt ? new Date(webhookEvents.find((event) => event.deliveredAt)!.deliveredAt!).toLocaleString('de-DE') : '—' },
             ]}
           />
