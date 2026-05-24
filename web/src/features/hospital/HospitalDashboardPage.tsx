@@ -31,6 +31,17 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
   const totalInvoiced = shifts.reduce((sum, shift) => sum + (shift.offerCounts?.invoiced ?? 0), 0);
   const importBlockedShifts = getImportBlockedShifts(shifts);
   const failedWebhookEvents = getFailedWebhookEvents(webhookEvents);
+  const rankedWebhookEvents = useMemo(
+    () => [...webhookEvents].sort((left, right) => {
+      const leftFailed = left.status === 'FAILED_OR_PENDING_RETRY' ? 0 : 1;
+      const rightFailed = right.status === 'FAILED_OR_PENDING_RETRY' ? 0 : 1;
+      if (leftFailed !== rightFailed) {
+        return leftFailed - rightFailed;
+      }
+      return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+    }),
+    [webhookEvents],
+  );
   const criticalAsyncFailures = getCriticalAsyncFailures(asyncFailures);
   const rankedAsyncFailures = rankAsyncFailures(asyncFailures);
   const visibleAsyncFailures = useMemo(
@@ -109,7 +120,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
             ]}
           />
           <div className="record-list compact-list">
-            {webhookEvents.slice(0, 5).map((event) => {
+            {rankedWebhookEvents.slice(0, 5).map((event) => {
               const status = describeWebhookStatus(event);
               return (
                 <Link className="panel subpanel" key={event.id} to={mode === 'superadmin' ? '/admin/ops' : '/hospital'}>
