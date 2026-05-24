@@ -98,6 +98,8 @@ export function HospitalDossierPage() {
                 { label: 'Phone', value: dossier.phoneNumber ?? '—' },
                 { label: 'Hourly Rate', value: `${dossier.minHourlyRate} €` },
                 { label: 'Released At', value: dossier.releasedAt ? new Date(dossier.releasedAt).toLocaleString('de-DE') : '—' },
+                { label: 'Verified Documents', value: dossier.verifiedDocuments.length },
+                { label: 'Signed Assignments', value: dossier.signedAssignments.length },
                 { label: 'Specializations', value: dossier.specializations.join(', ') || '—' },
               ]}
             />
@@ -109,7 +111,9 @@ export function HospitalDossierPage() {
                 <div className="panel subpanel" key={document.id}>
                   <strong>{document.documentType}</strong>
                   <p>{document.objectKey}</p>
+                  <p>Status: {document.status}</p>
                   <p>Reviewed: {document.reviewedAt ? new Date(document.reviewedAt).toLocaleString('de-DE') : '—'}</p>
+                  <p>Download läuft in {document.expiresIn} s ab</p>
                   <a href={document.signedUrl} target="_blank" rel="noreferrer">Download öffnen</a>
                 </div>
               ))}
