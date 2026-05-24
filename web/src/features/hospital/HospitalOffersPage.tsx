@@ -99,6 +99,27 @@ export function HospitalOffersPage() {
     }
   }
 
+  async function handleRespondToOffer(matchContractId: string, action: 'ACCEPT' | 'DECLINE') {
+    setSubmitting(true);
+    setStatus(null);
+    try {
+      const result = await api.respondToMatchOffer({ matchContractId, action });
+      const actionLabel = action === 'ACCEPT' ? 'angenommen' : 'abgelehnt';
+      const nextStep = action === 'ACCEPT'
+        ? 'Vertragskontext prüfen.'
+        : 'Nurse-Offer beendet. Ggf. neue Schicht oder Reopen prüfen.';
+      setStatus({ tone: 'success', message: `Offer ${actionLabel}. ${nextStep}` });
+      if (jobShiftId) {
+        await loadOffers(jobShiftId);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Offer-Antwort fehlgeschlagen';
+      setStatus({ tone: 'error', message });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   async function handleCreateOffer(nurseProfileId: string) {
     if (!jobShiftId) {
       setStatus({ tone: 'error', message: 'Bitte zuerst eine Schicht auswählen.' });
@@ -257,6 +278,16 @@ export function HospitalOffersPage() {
                     <ActionBar>
                       {offer.nurseProfileId ? <Link to={`/hospital/dossier?nurseProfileId=${encodeURIComponent(offer.nurseProfileId)}&contractId=${encodeURIComponent(offer.id)}`}>Dossier öffnen</Link> : null}
                       <Link to={`/hospital/contracts?contractId=${encodeURIComponent(offer.id)}`}>Contract öffnen</Link>
+                      {offer.status === 'PENDING' ? (
+                        <>
+                          <button disabled={submitting} onClick={() => void handleRespondToOffer(offer.id, 'ACCEPT')}>
+                            {submitting ? '…' : 'Offer annehmen'}
+                          </button>
+                          <button className="secondary" disabled={submitting} onClick={() => void handleRespondToOffer(offer.id, 'DECLINE')}>
+                            {submitting ? '…' : 'Offer ablehnen'}
+                          </button>
+                        </>
+                      ) : null}
                     </ActionBar>
                   </SectionCard>
                 );
