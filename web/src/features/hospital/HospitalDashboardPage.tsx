@@ -112,13 +112,13 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
             {webhookEvents.slice(0, 5).map((event) => {
               const status = describeWebhookStatus(event);
               return (
-                <div className="panel subpanel" key={event.id}>
+                <Link className="panel subpanel" key={event.id} to={mode === 'superadmin' ? '/admin/ops' : '/hospital'}>
                   <strong>{event.eventType}</strong>
                   <p>{event.clinicName}</p>
                   <p>{status.label} · Attempts: {event.deliveryAttempts}</p>
                   <p>Letzter Versuch: {event.lastAttemptAt ? new Date(event.lastAttemptAt).toLocaleString('de-DE') : '—'}</p>
                   <p>{status.detail}</p>
-                </div>
+                </Link>
               );
             })}
             {webhookEvents.length === 0 ? <p className="hint">Noch keine Webhook-Events sichtbar.</p> : null}
