@@ -117,6 +117,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
               { label: 'Webhook Events', value: webhookEvents.length },
               { label: 'Probleme', value: failedWebhookEvents.length },
               { label: 'Angezeigte Einträge', value: rankedWebhookEvents.slice(0, 5).length },
+              { label: 'Davon fehlgeschlagen', value: rankedWebhookEvents.slice(0, 5).filter((event) => event.status === 'FAILED_OR_PENDING_RETRY').length },
               { label: 'Zuletzt zugestellt', value: webhookEvents.find((event) => event.deliveredAt)?.deliveredAt ? new Date(webhookEvents.find((event) => event.deliveredAt)!.deliveredAt!).toLocaleString('de-DE') : '—' },
             ]}
           />
