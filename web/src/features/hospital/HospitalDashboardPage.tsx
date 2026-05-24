@@ -147,18 +147,22 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
               { label: 'Im aktuellen Filter', value: visibleAsyncFailures.length },
             ]}
           />
-          <div className="form-grid two">
-            <label>
-              <span>Queue-Filter</span>
-              <select value={failureQueueFilter} onChange={(event) => setFailureQueueFilter(event.target.value as 'ALL' | 'billing' | 'webhook' | 'whatsapp')}>
-                <option value="ALL">Alle</option>
-                <option value="billing">billing</option>
-                <option value="webhook">webhook</option>
-                <option value="whatsapp">whatsapp</option>
-              </select>
-            </label>
-          </div>
-          <p className="hint">Filter nur die sichtbare Fehlerliste; die KPI-Zahlen oben bleiben global.</p>
+          {isSuperAdmin ? (
+            <>
+              <div className="form-grid two">
+                <label>
+                  <span>Queue-Filter</span>
+                  <select value={failureQueueFilter} onChange={(event) => setFailureQueueFilter(event.target.value as 'ALL' | 'billing' | 'webhook' | 'whatsapp')}>
+                    <option value="ALL">Alle</option>
+                    <option value="billing">billing</option>
+                    <option value="webhook">webhook</option>
+                    <option value="whatsapp">whatsapp</option>
+                  </select>
+                </label>
+              </div>
+              <p className="hint">Filter nur die sichtbare Fehlerliste; die KPI-Zahlen oben bleiben global.</p>
+            </>
+          ) : null}
           <div className="record-list compact-list">
             {visibleAsyncFailures.slice(0, 5).map((failure) => {
               const status = describeAsyncFailure(failure);
