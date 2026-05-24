@@ -85,3 +85,35 @@ export function interpretInvoiceException(lifecycle: ContractLifecycle | null) {
 
   return { label: `Rechnung ${lifecycle.invoice.status}`, nextAction: 'Billing-Seite und Contract-Artefakte gemeinsam prüfen' };
 }
+
+export function interpretBillingConflict(lifecycle: ContractLifecycle | null) {
+  if (!lifecycle?.invoice) {
+    return null;
+  }
+
+  if (lifecycle.invoice.status === 'PAID') {
+    return {
+      tone: 'error' as const,
+      label: 'Bezahlte Rechnung blockiert Governance-Eingriffe',
+      detail: 'Die Rechnung ist bereits bezahlt. Void oder nachträgliche Korrekturen brauchen einen expliziten Billing-/Support-Follow-up.',
+    };
+  }
+
+  if (lifecycle.voidSummary?.reason) {
+    return {
+      tone: 'error' as const,
+      label: 'Offene Rechnung trotz Void-Kontext',
+      detail: 'Der Vertrag wurde bereits beendet, aber eine Rechnung ist weiterhin sichtbar. Billing-Status und Artefakte jetzt gemeinsam prüfen.',
+    };
+  }
+
+  if (lifecycle.invoice.status === 'PENDING' && lifecycle.executionStatus !== 'FULLY_EXECUTED') {
+    return {
+      tone: 'success' as const,
+      label: 'Rechnung sichtbar vor vollständiger Ausführung',
+      detail: 'Execution, Rechnung und PDF-Artefakte gemeinsam beobachten, damit keine Governance-Lücke zwischen Vertrag und Billing entsteht.',
+    };
+  }
+
+  return null;
+}

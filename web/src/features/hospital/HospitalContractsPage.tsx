@@ -12,7 +12,7 @@ import { useAsyncData } from '../../hooks/useAsyncData';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, type ContractExecutionOverview, type ContractLifecycle, type ContractPdfResponse, type ContractSnapshotResponse, type ContractVoidOverview, type HospitalOffer } from '../../lib/api';
 
-import { interpretContractState, interpretInvoiceException, interpretVoidIntervention } from './ops-helpers';
+import { interpretBillingConflict, interpretContractState, interpretInvoiceException, interpretVoidIntervention } from './ops-helpers';
 
 function formatDateTime(value?: string | null) {
   return value ? new Date(value).toLocaleString('de-DE') : '—';
@@ -54,8 +54,9 @@ export function HospitalContractsPage() {
   const contractState = useMemo(() => interpretContractState(lifecycle, execution), [execution, lifecycle]);
   const voidIntervention = useMemo(() => interpretVoidIntervention(lifecycle, voiding), [lifecycle, voiding]);
   const invoiceException = useMemo(() => interpretInvoiceException(lifecycle), [lifecycle]);
+  const billingConflict = useMemo(() => interpretBillingConflict(lifecycle), [lifecycle]);
   const canSignExecution = Boolean(contractId) && lifecycle?.status === 'SIGNED' && lifecycle.executionStatus !== 'FULLY_EXECUTED' && lifecycle.executionStatus !== 'VOIDED';
-  const canVoidContract = Boolean(contractId) && voidIntervention?.label === 'Void möglich' && voidReason.trim().length > 0;
+  const canVoidContract = Boolean(contractId) && voidIntervention?.label === 'Void möglich' && billingConflict?.tone !== 'error' && voidReason.trim().length > 0;
 
   async function loadLifecycle(targetContractId: string) {
     const result = await api.getContractLifecycle(targetContractId);
@@ -337,6 +338,7 @@ export function HospitalContractsPage() {
                     ]}
                   />
                 ) : null}
+                {billingConflict ? <FeedbackMessage tone={billingConflict.tone} message={`${billingConflict.label}: ${billingConflict.detail}`} /> : null}
                 <ActionBar>
                   <button type="button" className="secondary" disabled={submitting || !canVoidContract} onClick={() => void handleVoid()}>
                     {submitting ? 'Bitte warten…' : 'Contract voiden'}
@@ -369,6 +371,7 @@ export function HospitalContractsPage() {
                       ]}
                     />
                   ) : null}
+                  {billingConflict ? <FeedbackMessage tone={billingConflict.tone} message={`${billingConflict.label}: ${billingConflict.detail}`} /> : null}
                   <InfoList
                     items={[
                       { label: 'Contract ID', value: lifecycle.matchContractId },
