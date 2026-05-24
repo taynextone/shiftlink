@@ -142,6 +142,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
               { label: 'Billing', value: asyncFailures.filter((item) => item.queueName === 'billing').length },
               { label: 'WhatsApp', value: asyncFailures.filter((item) => item.queueName === 'whatsapp').length },
               { label: 'Webhook', value: asyncFailures.filter((item) => item.queueName === 'webhook').length },
+              { label: 'Im aktuellen Filter', value: visibleAsyncFailures.length },
             ]}
           />
           <div className="form-grid two">
