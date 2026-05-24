@@ -25,6 +25,10 @@ export function AdminVerificationPage() {
   const documentIdError = !documentId.trim() && feedback?.tone === 'error' && feedback.message.includes('Dokument') ? 'Pflichtfeld' : null;
   const rejectionReasonError = rejectionRequired && rejectionReason.trim().length > 0 && rejectionReason.trim().length < 3 ? 'Mindestens 3 Zeichen' : null;
   const canSubmit = documentId.trim().length > 0 && (!rejectionRequired || rejectionReason.trim().length >= 3);
+  const releaseStatusHint = overview?.nurseProfile.isReleasedForMatching
+    ? `Freigegeben${overview.nurseProfile.releasedAt ? ` seit ${new Date(overview.nurseProfile.releasedAt).toLocaleString('de-DE')}` : ''}`
+    : 'Noch nicht für Matching freigegeben';
+  const reviewedDocuments = overview?.documents.filter((document) => document.reviewedAt).length ?? 0;
 
   async function handleLookup() {
     if (!nursePublicId.trim()) {
@@ -127,7 +131,9 @@ export function AdminVerificationPage() {
                   items={[
                     { label: 'Pflegekraft', value: `${overview.nurseProfile.displayName} (${overview.nurseProfile.publicId})` },
                     { label: 'Release', value: overview.nurseProfile.isReleasedForMatching ? 'released' : 'pending' },
+                    { label: 'Release-Hinweis', value: releaseStatusHint },
                     { label: 'Dokumente', value: overview.documents.length },
+                    { label: 'Bereits geprüft', value: reviewedDocuments },
                   ]}
                 />
                 <Field label="Release Reason" helpText="Wird für Freigabe oder Rücknahme mitgeführt, damit die Maßnahme operativ nachvollziehbar bleibt.">
@@ -150,6 +156,23 @@ export function AdminVerificationPage() {
                     ))}
                   </select>
                 </Field>
+                <div className="record-list compact-list">
+                  {overview.documents.map((document) => (
+                    <button
+                      key={document.id}
+                      type="button"
+                      className={documentId === document.id ? 'selection-card active' : 'selection-card'}
+                      onClick={() => setDocumentId(document.id)}
+                    >
+                      <div>
+                        <strong>{document.documentType}</strong>
+                        <p>{new Date(document.createdAt).toLocaleDateString('de-DE')} · {document.id}</p>
+                        <p>{document.rejectionReason ?? 'Keine dokumentierte Ablehnungsbegründung.'}</p>
+                      </div>
+                      <StatusBadge value={document.status} />
+                    </button>
+                  ))}
+                </div>
               </>
             ) : (
               <Field label="Document ID" error={documentIdError} helpText="Fallback, falls du direkt mit einer Dokument-ID arbeitest.">
