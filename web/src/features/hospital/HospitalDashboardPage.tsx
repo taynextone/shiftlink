@@ -110,6 +110,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
                   <strong>{event.eventType}</strong>
                   <p>{event.clinicName}</p>
                   <p>{status.label} · Attempts: {event.deliveryAttempts}</p>
+                  <p>Letzter Versuch: {event.lastAttemptAt ? new Date(event.lastAttemptAt).toLocaleString('de-DE') : '—'}</p>
                   <p>{status.detail}</p>
                 </div>
               );
@@ -135,7 +136,9 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
                   <p>{status.label}</p>
                   <p>{failure.errorMessage}</p>
                   <p>{status.detail}</p>
+                  <p>Job ID: {failure.jobId ?? '—'}</p>
                   <p>Entity: {failure.relatedEntityId ?? '—'}</p>
+                  <p>Attempts: {failure.attemptCount ?? 0}</p>
                   <p>{new Date(failure.createdAt).toLocaleString('de-DE')}</p>
                 </div>
               );
