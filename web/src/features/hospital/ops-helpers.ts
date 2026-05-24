@@ -11,7 +11,7 @@ export function computeOfferHealth(offer: HospitalOffer) {
     return { label: 'abgelaufen', nextAction: 'neues Angebot vorbereiten', exceptionNote: 'Abgelaufene Offers bleiben historisch sichtbar, sind aber operativ abgeschlossen.' };
   }
   if (offer.status === 'PENDING') {
-    return { label: 'wartet auf Antwort', nextAction: 'Antwortstatus beobachten', exceptionNote: 'Noch kein technischer Blocker sichtbar.' };
+    return { label: 'wartet auf Antwort', nextAction: 'direkt annehmen, ablehnen oder Antwortstatus eng verfolgen', exceptionNote: 'Offer kann jetzt direkt aus der Hospital-Oberfläche beantwortet werden.' };
   }
   return { label: 'operativ beobachten', nextAction: 'Kontext prüfen', exceptionNote: 'Sonderfall manuell prüfen.' };
 }
@@ -31,7 +31,7 @@ export function interpretContractState(lifecycle: ContractLifecycle | null, exec
     return { label: 'wartet auf Hospital-Signatur', nextAction: 'Execution signieren' };
   }
   if (lifecycle.status === 'PENDING') {
-    return { label: 'Offer noch offen', nextAction: 'Antwortstatus im Offer-Kontext prüfen' };
+    return { label: 'Offer noch offen', nextAction: 'Offer im Hospital-Kontext direkt beantworten oder Antwortstatus prüfen' };
   }
   if (lifecycle.status === 'DECLINED') {
     return { label: 'durch Pflegekraft beendet', nextAction: 'Schicht-/Reopen-Entscheidung treffen' };
@@ -127,7 +127,7 @@ export function interpretBillingConflict(lifecycle: ContractLifecycle | null): B
     return {
       tone: 'error' as const,
       label: 'Überfällige Rechnung erfordert sofortige Behandlung',
-      detail: 'Die Rechnung ist überfähig. Billing-Kontext, Offene Beträge und mögliche Zinsen oder Inkasso-Folgen prüfen, bevor weitere Governance-Aktionen erfolgen.',
+      detail: 'Die Rechnung ist überfällig. Billing-Kontext, offene Beträge und mögliche Zinsen oder Inkasso-Folgen prüfen, bevor weitere Governance-Aktionen erfolgen.',
     };
   }
 
@@ -143,7 +143,7 @@ export function interpretBillingConflict(lifecycle: ContractLifecycle | null): B
     return {
       tone: 'info' as const,
       label: 'Rechnung in Entwurfsphase',
-      detail: 'Die Rechnung befindet sich noch im Entwurfsstadium. Billing absehn, sobald sie final freigegeben ist, um Governance-Lücken zu vermeiden.',
+      detail: 'Die Rechnung befindet sich noch im Entwurfsstadium. Billing eng beobachten, sobald sie final freigegeben ist, um Governance-Lücken zu vermeiden.',
     };
   }
 
