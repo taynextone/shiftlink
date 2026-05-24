@@ -144,6 +144,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
               </select>
             </label>
           </div>
+          <p className="hint">Filter nur die sichtbare Fehlerliste; die KPI-Zahlen oben bleiben global.</p>
           <div className="record-list compact-list">
             {visibleAsyncFailures.slice(0, 5).map((failure) => {
               const status = describeAsyncFailure(failure);
