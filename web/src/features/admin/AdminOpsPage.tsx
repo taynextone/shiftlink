@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ActionBar } from '../../components/ActionBar';
 import { PageHeader } from '../../components/PageHeader';
+import { SectionCard } from '../../components/SectionCard';
 import { HospitalDashboardPage } from '../hospital/HospitalDashboardPage';
 
 export function AdminOpsPage() {
@@ -51,6 +52,33 @@ export function AdminOpsPage() {
           <strong>Superadmin zentral, Produktflächen weiterhin direkt aus dem Ops-Kontext erreichbar</strong>
         </div>
       </div>
+
+      <SectionCard title="Direkte Interventionspfade" description="Die wichtigsten Operator-Aktionen sind jetzt direkt in den Produktflächen verankert und von hier aus gezielt erreichbar.">
+        <div className="record-list compact-list">
+          <div className="panel subpanel">
+            <strong>Webhook / Async</strong>
+            <p>Webhook erneut senden, Async-Failure als behandelt markieren, Failure-Karten direkt in passende Ops-Pfade lenken.</p>
+            <ActionBar>
+              <Link to="/admin/ops"><button type="button" className="secondary">Failure-Board öffnen</button></Link>
+            </ActionBar>
+          </div>
+          <div className="panel subpanel">
+            <strong>Billing</strong>
+            <p>Invoice-Detail laden, Rechnungen als bezahlt markieren und vom Contract direkt in den Billing-Kontext springen.</p>
+            <ActionBar>
+              <Link to="/hospital/billing"><button type="button" className="secondary">Billing-Interventionen</button></Link>
+            </ActionBar>
+          </div>
+          <div className="panel subpanel">
+            <strong>Offers / Kommunikation</strong>
+            <p>Declined oder expired Offers erneut öffnen; bei Opt-in wird WhatsApp-Kommunikation erneut angestoßen.</p>
+            <ActionBar>
+              <Link to="/hospital/offers"><button type="button" className="secondary">Offer-Interventionen</button></Link>
+            </ActionBar>
+          </div>
+        </div>
+      </SectionCard>
+
       <HospitalDashboardPage mode="superadmin" />
     </section>
   );
