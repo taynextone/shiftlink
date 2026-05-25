@@ -93,6 +93,21 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
     }
   }, [reloadAsyncFailureData]);
 
+  const handleRetryWebhookFromFailure = useCallback(async (failureId: string, webhookEventId: string) => {
+    setInterveningId(failureId);
+    setInterventionFeedback(null);
+    try {
+      await api.retryWebhookEvent(webhookEventId);
+      await reloadWebhookData();
+      await reloadAsyncFailureData();
+      setInterventionFeedback('Webhook-Retry wurde direkt aus dem Worker-Fehler ausgelöst.');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Webhook-Retry aus Fehlerkarte fehlgeschlagen');
+    } finally {
+      setInterveningId(null);
+    }
+  }, [reloadAsyncFailureData, reloadWebhookData]);
+
   return (
     <section className="stack page-stack">
       <PageHeader
@@ -237,6 +252,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
                     ? 'Zu Offer-Kommunikation'
                     : 'Zu Ops-Übersicht';
               const canResolve = mode === 'superadmin';
+              const canRetryWebhookFailure = mode === 'superadmin' && failure.queueName === 'webhook' && Boolean(failure.relatedEntityId);
               return (
                 <div className="panel subpanel" key={failure.id}>
                   <div style={{ flex: 1 }}>
@@ -251,6 +267,16 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
                     <p>{new Date(failure.createdAt).toLocaleString('de-DE')}</p>
                   </div>
                   <div className="actions compact">
+                    {canRetryWebhookFailure ? (
+                      <button
+                        type="button"
+                        className="secondary"
+                        disabled={interveningId === failure.id}
+                        onClick={() => void handleRetryWebhookFromFailure(failure.id, failure.relatedEntityId!)}
+                      >
+                        {interveningId === failure.id ? 'Retry…' : 'Webhook erneut senden'}
+                      </button>
+                    ) : null}
                     {canResolve ? (
                       <button
                         type="button"
