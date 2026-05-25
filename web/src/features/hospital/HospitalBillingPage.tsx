@@ -11,6 +11,16 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { api, type HospitalBillingExportRow } from '../../lib/api';
 
+function getBillingRowIntervention(row: HospitalBillingExportRow) {
+  if (row.invoiceStatus === 'PENDING' && row.matchStatus === 'SIGNED') {
+    return { label: 'offene Rechnung bei aktivem Vertrag', detail: 'Invoice-Detail laden und Zahlungsnachverfolgung priorisieren.', tone: 'error' as const };
+  }
+  if (row.invoiceStatus === 'PENDING') {
+    return { label: 'offene Rechnung beobachten', detail: 'Contract-Kontext und nächste Billing-Aktion gemeinsam prüfen.', tone: 'warning' as const };
+  }
+  return { label: 'historischer Nachweis', detail: 'Nur noch Nachweis, PDF und Vertragshistorie kontrollieren.', tone: 'success' as const };
+}
+
 export function HospitalBillingPage() {
   const { data, loading, error } = useAsyncData(() => api.getHospitalBillingSummary(), []);
   const summary = data?.summary;
@@ -149,7 +159,9 @@ export function HospitalBillingPage() {
         </ActionBar>
         {feedback ? <FeedbackMessage tone={feedback.tone} message={feedback.message} /> : null}
         <div className="record-list compact-list">
-          {prioritizedRows.map((row) => (
+          {prioritizedRows.map((row) => {
+            const intervention = getBillingRowIntervention(row);
+            return (
             <div className="panel subpanel" key={row.invoiceId}>
               <div className="section-heading-row">
                 <strong>{row.jobShiftTitle || 'Pflegeeinsatz'}</strong>
@@ -161,13 +173,14 @@ export function HospitalBillingPage() {
               <p>Contract: {row.matchContractId}</p>
               <p>Signed At: {row.signedAt ? new Date(row.signedAt).toLocaleString('de-DE') : '—'}</p>
               <p>Shift Status: {row.matchStatus}</p>
-              <p>{row.invoiceStatus === 'PENDING' ? 'Operativ offen — Contract-Kontext prüfen.' : 'Bezahlt — primär Historie / Nachweis.'}</p>
+              <p><strong>{intervention.label}</strong></p>
+              <p>{intervention.detail}</p>
               <ActionBar>
                 <button type="button" className="secondary" onClick={() => void handleSelectInvoice(row.invoiceId)}>{selectedInvoiceId === row.invoiceId ? 'Detail sichtbar' : 'Invoice-Detail'}</button>
                 <Link to={`/hospital/contracts?contractId=${encodeURIComponent(row.matchContractId)}`}>Contract öffnen</Link>
               </ActionBar>
             </div>
-          ))}
+          );})}
           {rows.length === 0 ? <p className="hint">{statusFilter ? `Kein Billing-Export für Filter ${statusFilter} geladen oder gefunden.` : 'Noch kein Export geladen.'}</p> : null}
         </div>
       </SectionCard>
