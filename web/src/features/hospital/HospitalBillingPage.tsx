@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ActionBar } from '../../components/ActionBar';
 import { AsyncState } from '../../components/AsyncState';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
@@ -18,6 +18,11 @@ export function HospitalBillingPage() {
   const [rows, setRows] = useState<HospitalBillingExportRow[]>([]);
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+  type InvoiceDetail = { id: string; status: string; amount: string; invoicePdfUrl: string | null; createdAt: string; updatedAt: string; contractId: string; contractStatus: string; jobShiftTitle: string | null; jobShiftLocation: string | null; nurseDisplayName: string; nursePublicId: string };
+  const [invoiceDetail, setInvoiceDetail] = useState<InvoiceDetail | null>(null);
+  const [invoiceFeedback, setInvoiceFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
+  const [markingPaid, setMarkingPaid] = useState(false);
 
   const pendingRows = useMemo(() => rows.filter((row) => row.invoiceStatus === 'PENDING'), [rows]);
   const paidRows = useMemo(() => rows.filter((row) => row.invoiceStatus === 'PAID'), [rows]);
@@ -47,6 +52,33 @@ export function HospitalBillingPage() {
       setSubmitting(false);
     }
   }
+
+  const handleSelectInvoice = useCallback(async (invoiceId: string) => {
+    setSelectedInvoiceId(invoiceId);
+    setInvoiceFeedback(null);
+    try {
+      const detail = await api.getInvoiceDetail(invoiceId);
+      setInvoiceDetail(detail);
+    } catch (error) {
+      setInvoiceFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Invoice-Detail konnte nicht geladen werden.' });
+    }
+  }, []);
+
+  const handleMarkPaid = useCallback(async () => {
+    if (!invoiceDetail || invoiceDetail.status === 'PAID') return;
+    if (!window.confirm(`Rechnung ${invoiceDetail.id} als bezahlt markieren? Betrag: ${invoiceDetail.amount} €`)) return;
+    setMarkingPaid(true);
+    setInvoiceFeedback(null);
+    try {
+      await api.markInvoicePaid(invoiceDetail.id);
+      setInvoiceFeedback({ tone: 'success', message: 'Rechnung wurde als bezahlt markiert.' });
+      setInvoiceDetail((prev) => prev ? { ...prev, status: 'PAID' } : prev);
+    } catch (error) {
+      setInvoiceFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Mark-Paid fehlgeschlagen' });
+    } finally {
+      setMarkingPaid(false);
+    }
+  }, [invoiceDetail]);
 
   return (
     <section className="stack page-stack">
@@ -122,6 +154,7 @@ export function HospitalBillingPage() {
               <p>Shift Status: {row.matchStatus}</p>
               <p>{row.invoiceStatus === 'PENDING' ? 'Operativ offen — Contract-Kontext prüfen.' : 'Bezahlt — primär Historie / Nachweis.'}</p>
               <ActionBar>
+                <button type="button" className="secondary" onClick={() => void handleSelectInvoice(row.invoiceId)}>{selectedInvoiceId === row.invoiceId ? 'Detail sichtbar' : 'Invoice-Detail'}</button>
                 <Link to={`/hospital/contracts?contractId=${encodeURIComponent(row.matchContractId)}`}>Contract öffnen</Link>
               </ActionBar>
             </div>
@@ -129,6 +162,38 @@ export function HospitalBillingPage() {
           {rows.length === 0 ? <p className="hint">{statusFilter ? `Kein Billing-Export für Filter ${statusFilter} geladen oder gefunden.` : 'Noch kein Export geladen.'}</p> : null}
         </div>
       </SectionCard>
+
+      {invoiceDetail ? (
+        <SectionCard
+          title={`Invoice Detail — ${invoiceDetail.id}`}
+          description={`Rechnung für ${invoiceDetail.nurseDisplayName} · ${invoiceDetail.jobShiftTitle || 'Pflegeeinsatz'}`}
+        >
+          <MetricList
+            items={[
+              { label: 'Status', value: invoiceDetail.status },
+              { label: 'Betrag', value: `${invoiceDetail.amount} €` },
+              { label: 'Contract', value: invoiceDetail.contractStatus },
+              { label: 'Erstellt', value: new Date(invoiceDetail.createdAt).toLocaleString('de-DE') },
+              { label: 'Pflegekraft', value: `${invoiceDetail.nurseDisplayName} (${invoiceDetail.nursePublicId})` },
+              { label: 'Ort', value: invoiceDetail.jobShiftLocation || '—' },
+            ]}
+          />
+          {invoiceFeedback ? <FeedbackMessage tone={invoiceFeedback.tone} message={invoiceFeedback.message} /> : null}
+          <ActionBar>
+            {invoiceDetail.status !== 'PAID' ? (
+              <button type="button" disabled={markingPaid} onClick={() => void handleMarkPaid()}>
+                {markingPaid ? '…' : 'Als bezahlt markieren'}
+              </button>
+            ) : (
+              <span className="hint">Diese Rechnung ist bereits bezahlt.</span>
+            )}
+            <Link to={`/hospital/contracts?contractId=${encodeURIComponent(invoiceDetail.contractId)}`}>
+              <button type="button" className="secondary">Contract öffnen</button>
+            </Link>
+            <button type="button" className="secondary" onClick={() => { setSelectedInvoiceId(null); setInvoiceDetail(null); setInvoiceFeedback(null); }}>Schließen</button>
+          </ActionBar>
+        </SectionCard>
+      ) : null}
     </section>
   );
 }

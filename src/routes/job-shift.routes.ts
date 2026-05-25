@@ -4,10 +4,12 @@ import {
   createJobShiftController,
   exportHospitalBillingController,
   getHospitalBillingSummaryController,
+  getInvoiceDetailController,
   importHospitalJobShiftController,
   listHospitalJobShiftsController,
   listHospitalWebhookEventsController,
   listAsyncProcessFailuresController,
+  markInvoicePaidController,
   retryWebhookEventController,
   resolveAsyncFailureController,
 } from '../controllers/job-shift.controller';
@@ -37,6 +39,20 @@ router.get(
   requireAuth,
   requireRole(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
   asyncHandler(exportHospitalBillingController),
+);
+
+router.get(
+  '/billing/invoices/:id',
+  requireAuth,
+  requireRole(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
+  asyncHandler(getInvoiceDetailController),
+);
+
+router.post(
+  '/billing/invoices/:id/mark-paid',
+  requireAuth,
+  requireRole(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
+  asyncHandler(markInvoicePaidController),
 );
 
 

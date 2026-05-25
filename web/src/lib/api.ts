@@ -401,6 +401,13 @@ export const api = {
     }),
   listHospitalJobShifts: () => request<{ jobShifts: HospitalJobShift[] }>('/job-shifts'),
   getHospitalBillingSummary: () => request<{ summary: HospitalBillingSummary }>('/job-shifts/billing/summary'),
+  getInvoiceDetail: (id: string) => request<{
+    id: string; status: string; amount: string; invoicePdfUrl: string | null;
+    createdAt: string; updatedAt: string; contractId: string; contractStatus: string;
+    jobShiftTitle: string | null; jobShiftLocation: string | null;
+    nurseDisplayName: string; nursePublicId: string;
+  }>(`/job-shifts/billing/invoices/${encodeURIComponent(id)}`),
+  markInvoicePaid: (id: string) => request<{ id: string; status: string }>(`/job-shifts/billing/invoices/${encodeURIComponent(id)}/mark-paid`, { method: 'POST' }),
   listHospitalWebhookEvents: (limit = 25) => request<{ events: HospitalWebhookEventRow[] }>(`/job-shifts/webhooks?limit=${encodeURIComponent(String(limit))}`),
   listAsyncProcessFailures: (limit = 25) => request<{ failures: AsyncProcessFailureRow[] }>(`/job-shifts/async-failures?limit=${encodeURIComponent(String(limit))}`),
   retryWebhookEvent: (id: string) => request<{ id: string; status: string }>(`/job-shifts/webhooks/${encodeURIComponent(id)}/retry`, { method: 'POST' }),

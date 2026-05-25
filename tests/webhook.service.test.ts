@@ -19,6 +19,8 @@ jest.mock('../src/config/prisma', () => ({
   prisma: {
     webhookEvent: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
     asyncProcessFailure: { findUnique: jest.fn(), delete: jest.fn() },
+    invoice: { findUnique: jest.fn(), update: jest.fn() },
+    matchContract: { findUnique: jest.fn() },
   },
 }));
 
@@ -30,6 +32,7 @@ const { prisma } = require('../src/config/prisma');
 const { webhookQueue } = require('../src/config/queues');
 const { buildWebhookSignature, createHospitalWebhookEvent, deliverHospitalWebhookEvent, retryWebhookEvent } = require('../src/services/webhook.service');
 const { resolveAsyncFailure } = require('../src/services/async-process.service');
+const { getInvoiceDetail, markInvoicePaid } = require('../src/services/billing.service');
 
 describe('webhook delivery flow', () => {
   beforeEach(() => {
@@ -157,5 +160,63 @@ describe('async failure resolve intervention', () => {
     (prisma.asyncProcessFailure.findUnique as jest.Mock).mockResolvedValue(null);
 
     await expect(resolveAsyncFailure('unknown')).rejects.toThrow('not found');
+  });
+});
+
+describe('billing invoice intervention', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (prisma.invoice.findUnique as jest.Mock).mockReset();
+    (prisma.invoice.update as jest.Mock).mockReset();
+  });
+
+  it('returns invoice detail with contract context', async () => {
+    (prisma.invoice.findUnique as jest.Mock).mockResolvedValue({
+      id: 'inv_1',
+      status: 'PENDING',
+      amount: { toString: () => '126.00' },
+      invoicePdfUrl: null,
+      createdAt: new Date('2026-05-01'),
+      updatedAt: new Date('2026-05-01'),
+      matchContractId: 'contract_1',
+      matchContract: {
+        status: 'SIGNED',
+        jobShift: { title: 'Nachtdienst', locationCity: 'Berlin' },
+        nurseProfile: { displayName: 'NurseNova', publicId: 'NUR-001' },
+      },
+    });
+
+    const result = await getInvoiceDetail('inv_1');
+
+    expect(result.id).toBe('inv_1');
+    expect(result.status).toBe('PENDING');
+    expect(result.amount).toBe('126.00');
+    expect(result.contractStatus).toBe('SIGNED');
+    expect(result.nurseDisplayName).toBe('NurseNova');
+    expect(result.jobShiftTitle).toBe('Nachtdienst');
+  });
+
+  it('throws when invoice is not found', async () => {
+    (prisma.invoice.findUnique as jest.Mock).mockResolvedValue(null);
+
+    await expect(getInvoiceDetail('unknown')).rejects.toThrow('not found');
+  });
+
+  it('marks a pending invoice as paid', async () => {
+    (prisma.invoice.findUnique as jest.Mock).mockResolvedValue({ id: 'inv_1', status: 'PENDING' });
+    (prisma.invoice.update as jest.Mock).mockResolvedValue({ id: 'inv_1', status: 'PAID' });
+
+    const result = await markInvoicePaid('inv_1');
+
+    expect(prisma.invoice.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'inv_1' }, data: { status: 'PAID' } }),
+    );
+    expect(result.status).toBe('PAID');
+  });
+
+  it('throws when trying to mark an already paid invoice', async () => {
+    (prisma.invoice.findUnique as jest.Mock).mockResolvedValue({ id: 'inv_1', status: 'PAID' });
+
+    await expect(markInvoicePaid('inv_1')).rejects.toThrow('already paid');
   });
 });

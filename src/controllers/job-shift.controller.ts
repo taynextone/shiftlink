@@ -7,6 +7,7 @@ import {
   importHospitalJobShift,
   listHospitalJobShifts,
 } from '../services/job-shift.service';
+import { getInvoiceDetail, markInvoicePaid } from '../services/billing.service';
 import { listHospitalWebhookEvents, retryWebhookEvent } from '../services/webhook.service';
 import { listAsyncProcessFailures, resolveAsyncFailure } from '../services/async-process.service';
 
@@ -134,5 +135,25 @@ export async function resolveAsyncFailureController(req: Request, res: Response)
 
   const result = await resolveAsyncFailure(id);
   res.status(200).json(result);
+}
+
+export async function getInvoiceDetailController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+  const id = typeof req.params.id === 'string' ? req.params.id : '';
+  if (!id) throw createHttpError(400, 'Invoice ID is required');
+  const result = await getInvoiceDetail(id);
+  res.status(200).json(result);
+}
+
+export async function markInvoicePaidController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+  const id = typeof req.params.id === 'string' ? req.params.id : '';
+  if (!id) throw createHttpError(400, 'Invoice ID is required');
+  const result = await markInvoicePaid(id);
+  res.status(200).json({ id: result.id, status: result.status });
 }
 
