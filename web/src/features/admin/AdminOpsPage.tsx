@@ -18,6 +18,9 @@ export function AdminOpsPage() {
             <Link to="/hospital/dossier">
               <button type="button" className="secondary">Dossier-Ops</button>
             </Link>
+            <Link to="/hospital/offers">
+              <button type="button" className="secondary">Offer-Ops</button>
+            </Link>
             <Link to="/hospital/contracts">
               <button type="button" className="secondary">Vertrags-Ops</button>
             </Link>
