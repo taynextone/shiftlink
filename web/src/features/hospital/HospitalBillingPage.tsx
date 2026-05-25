@@ -73,6 +73,8 @@ export function HospitalBillingPage() {
       await api.markInvoicePaid(invoiceDetail.id);
       setInvoiceFeedback({ tone: 'success', message: 'Rechnung wurde als bezahlt markiert.' });
       setInvoiceDetail((prev) => prev ? { ...prev, status: 'PAID' } : prev);
+      setRows((prev) => prev.map((row) => row.invoiceId === invoiceDetail.id ? { ...row, invoiceStatus: 'PAID' } : row));
+      setFeedback({ tone: 'success', message: `Invoice ${invoiceDetail.id} wurde in der Export-Ansicht auf PAID aktualisiert.` });
     } catch (error) {
       setInvoiceFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Mark-Paid fehlgeschlagen' });
     } finally {
