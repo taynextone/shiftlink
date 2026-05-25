@@ -24,6 +24,24 @@ export function AdminOpsPage() {
           </ActionBar>
         }
       />
+      <div className="metric-list">
+        <div className="metric-item">
+          <span>Priorität 1</span>
+          <strong>Verification und Release-Lagen ohne Produktstillstand halten</strong>
+        </div>
+        <div className="metric-item">
+          <span>Priorität 2</span>
+          <strong>Webhook-, Queue- und Async-Failures früh in den passenden Interventionspfad lenken</strong>
+        </div>
+        <div className="metric-item">
+          <span>Priorität 3</span>
+          <strong>Vertrags- und Billing-Ausnahmen in steuerbare Operator-Schritte überführen</strong>
+        </div>
+        <div className="metric-item">
+          <span>Arbeitsmodus</span>
+          <strong>Superadmin zentral, Produktflächen weiterhin direkt aus dem Ops-Kontext erreichbar</strong>
+        </div>
+      </div>
       <HospitalDashboardPage mode="superadmin" />
     </section>
   );
