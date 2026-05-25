@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import { useCallback, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActionBar } from '../../components/ActionBar';
 import { AsyncState } from '../../components/AsyncState';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
@@ -14,6 +14,8 @@ import { api, type HospitalBillingExportRow } from '../../lib/api';
 export function HospitalBillingPage() {
   const { data, loading, error } = useAsyncData(() => api.getHospitalBillingSummary(), []);
   const summary = data?.summary;
+  const [searchParams] = useSearchParams();
+  const focusInvoiceId = searchParams.get('invoiceId') ?? '';
   const [statusFilter, setStatusFilter] = useState<'PENDING' | 'PAID' | ''>('');
   const [rows, setRows] = useState<HospitalBillingExportRow[]>([]);
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
@@ -81,6 +83,11 @@ export function HospitalBillingPage() {
       setMarkingPaid(false);
     }
   }, [invoiceDetail]);
+
+  useEffect(() => {
+    if (!focusInvoiceId) return;
+    void handleSelectInvoice(focusInvoiceId);
+  }, [focusInvoiceId, handleSelectInvoice]);
 
   return (
     <section className="stack page-stack">
