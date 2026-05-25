@@ -395,7 +395,7 @@ export const api = {
       body: JSON.stringify(input),
     }),
   respondToMatchOffer: (input: { matchContractId: string; action: 'ACCEPT' | 'DECLINE' }) =>
-    request('/matches/respond', {
+    request<{ status: 'ACCEPTED' | 'DECLINED'; matchContract: HospitalOffer }>('/matches/respond', {
       method: 'POST',
       body: JSON.stringify(input),
     }),

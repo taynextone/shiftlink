@@ -50,15 +50,17 @@ export function HospitalOffersPage() {
     );
   }, [focusedOffers]);
 
+  function normalizeOffers(inputOffers: HospitalOffer[], shift: HospitalJobShift) {
+    return (inputOffers ?? []).map((offer) => ({
+      ...offer,
+      nurseProfileId: offer.nurseProfileId ?? offer.nurse.id,
+      jobShiftId: shift.id,
+    }));
+  }
+
   async function loadOffers(targetShiftId: string) {
     const result = await api.listHospitalOffers(targetShiftId);
-    setOffers(
-      (result.offers ?? []).map((offer) => ({
-        ...offer,
-        nurseProfileId: offer.nurseProfileId ?? offer.nurse.id,
-        jobShiftId: result.jobShift.id,
-      })),
-    );
+    setOffers(normalizeOffers(result.offers ?? [], result.jobShift));
     setActiveShift(result.jobShift);
     setStatus({ tone: 'success', message: `Offers für ${result.jobShift.title ?? result.jobShift.id} geladen.` });
   }
@@ -116,10 +118,8 @@ export function HospitalOffersPage() {
       const nextStep = action === 'ACCEPT'
         ? 'Vertragskontext prüfen.'
         : 'Nurse-Offer beendet. Ggf. neue Schicht oder Reopen prüfen.';
+      setOffers((prev) => prev.map((offer) => offer.id === matchContractId ? { ...offer, ...result.matchContract } : offer));
       setStatus({ tone: 'success', message: `Offer ${actionLabel}. ${nextStep}` });
-      if (jobShiftId) {
-        await loadOffers(jobShiftId);
-      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Offer-Antwort fehlgeschlagen';
       setStatus({ tone: 'error', message });
@@ -137,10 +137,8 @@ export function HospitalOffersPage() {
     setStatus(null);
     try {
       const result = await api.reopenOffer({ matchContractId });
+      setOffers((prev) => prev.map((offer) => offer.id === matchContractId ? { ...offer, ...result.matchContract } : offer));
       setStatus({ tone: 'success', message: `Offer erneut geöffnet: ${result.matchContract.id}. Kommunikation wurde ggf. neu angestoßen.` });
-      if (jobShiftId) {
-        await loadOffers(jobShiftId);
-      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Offer-Reopen fehlgeschlagen';
       setStatus({ tone: 'error', message });
@@ -167,7 +165,11 @@ export function HospitalOffersPage() {
     setLastOfferFailure(null);
     try {
       const result = await api.createOffer({ jobShiftId, nurseProfileId });
-      await loadOffers(jobShiftId);
+      if (activeShift) {
+        setOffers((prev) => normalizeOffers([...prev, result.matchContract as HospitalOffer], activeShift));
+      } else {
+        await loadOffers(jobShiftId);
+      }
       setStatus({ tone: 'success', message: `Offer erstellt: ${result.matchContract.id}` });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Offer konnte nicht erstellt werden';
