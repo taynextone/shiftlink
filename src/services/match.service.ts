@@ -14,6 +14,26 @@ function normalizeDate(value: Date) {
   return new Date(value);
 }
 
+function buildWhatsappOfferPayload(contract: {
+  id: string;
+  nurseProfile: { phoneNumber: string; publicId: string; displayName: string; whatsappOptIn: boolean };
+  jobShift: { id: string; locationCity: string | null; startTime: Date; endTime: Date; hospitalProfile: { clinicName: string } };
+}) {
+  return {
+    type: 'new-match-offer' as const,
+    matchContractId: contract.id,
+    phoneNumber: contract.nurseProfile.phoneNumber,
+    publicId: contract.nurseProfile.publicId,
+    displayName: contract.nurseProfile.displayName,
+    jobShiftId: contract.jobShift.id,
+    clinicName: contract.jobShift.hospitalProfile.clinicName,
+    locationCity: contract.jobShift.locationCity,
+    startTime: contract.jobShift.startTime,
+    endTime: contract.jobShift.endTime,
+    loginUrl: env.NURSE_LOGIN_URL,
+  };
+}
+
 function isTerminalStatus(status: MatchContractStatus): boolean {
   return (
     status === MatchContractStatus.SIGNED ||
@@ -464,19 +484,7 @@ export async function createMatchOffer(
   if (created.nurseProfile.whatsappOptIn) {
     await whatsappQueue.add(
       'new-match-offer-notification',
-      {
-        type: 'new-match-offer',
-        matchContractId: created.id,
-        phoneNumber: created.nurseProfile.phoneNumber,
-        publicId: created.nurseProfile.publicId,
-        displayName: created.nurseProfile.displayName,
-        jobShiftId: created.jobShift.id,
-        clinicName: created.jobShift.hospitalProfile.clinicName,
-        locationCity: created.jobShift.locationCity,
-        startTime: created.jobShift.startTime,
-        endTime: created.jobShift.endTime,
-        loginUrl: env.NURSE_LOGIN_URL,
-      },
+      buildWhatsappOfferPayload(created),
       {
         jobId: `new-match-offer:${created.id}`,
       },
@@ -623,19 +631,7 @@ export async function reopenMatchOffer(
   if (reopenedContract.nurseProfile.whatsappOptIn) {
     await whatsappQueue.add(
       'reopened-match-offer-notification',
-      {
-        type: 'new-match-offer',
-        matchContractId: reopenedContract.id,
-        phoneNumber: reopenedContract.nurseProfile.phoneNumber,
-        publicId: reopenedContract.nurseProfile.publicId,
-        displayName: reopenedContract.nurseProfile.displayName,
-        jobShiftId: reopenedContract.jobShift.id,
-        clinicName: reopenedContract.jobShift.hospitalProfile.clinicName,
-        locationCity: reopenedContract.jobShift.locationCity,
-        startTime: reopenedContract.jobShift.startTime,
-        endTime: reopenedContract.jobShift.endTime,
-        loginUrl: env.NURSE_LOGIN_URL,
-      },
+      buildWhatsappOfferPayload(reopenedContract),
       {
         removeOnComplete: 100,
         removeOnFail: 200,
@@ -644,6 +640,51 @@ export async function reopenMatchOffer(
   }
 
   return reopenedContract;
+}
+
+export async function retryMatchOfferWhatsappNotification(
+  actor: { userId: string; role: UserRole },
+  input: { matchContractId: string },
+) {
+  const contract = await prisma.matchContract.findUnique({
+    where: { id: input.matchContractId },
+    include: {
+      nurseProfile: true,
+      jobShift: {
+        include: {
+          hospitalProfile: true,
+          requirements: true,
+        },
+      },
+      invoice: true,
+    },
+  });
+
+  if (!contract) {
+    throw createHttpError(404, 'Match contract not found');
+  }
+
+  const isSuperAdmin = actor.role === UserRole.SUPER_ADMIN;
+  const isHospitalOwner = actor.role === UserRole.HOSPITAL_ADMIN && contract.jobShift.hospitalProfile.userId === actor.userId;
+  if (!isSuperAdmin && !isHospitalOwner) {
+    throw createHttpError(403, 'You are not allowed to retry this WhatsApp notification');
+  }
+
+  if (!contract.nurseProfile.whatsappOptIn) {
+    throw createHttpError(409, 'Nurse has not opted in to WhatsApp notifications');
+  }
+
+  await whatsappQueue.add(
+    'retry-match-offer-notification',
+    buildWhatsappOfferPayload(contract),
+    {
+      removeOnComplete: 100,
+      removeOnFail: 200,
+      jobId: `retry-match-offer:${contract.id}:${Date.now()}`,
+    },
+  );
+
+  return { matchContractId: contract.id, queued: true };
 }
 
 export async function signMatchContract(matchContractId: string, actor: { userId: string; role: UserRole }) {

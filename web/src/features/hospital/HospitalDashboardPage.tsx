@@ -109,6 +109,20 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
     }
   }, [reloadAsyncFailureData, reloadWebhookData]);
 
+  const handleRetryWhatsappFromFailure = useCallback(async (failureId: string, matchContractId: string) => {
+    setInterveningId(failureId);
+    setInterventionFeedback(null);
+    try {
+      await api.retryOfferWhatsapp({ matchContractId });
+      await reloadAsyncFailureData();
+      setInterventionFeedback('WhatsApp-Kommunikation wurde erneut in die Queue gestellt.');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'WhatsApp-Retry aus Fehlerkarte fehlgeschlagen');
+    } finally {
+      setInterveningId(null);
+    }
+  }, [reloadAsyncFailureData]);
+
   return (
     <section className="stack page-stack">
       <PageHeader
@@ -258,6 +272,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
                     : 'Zu Ops-Übersicht';
               const canResolve = mode === 'superadmin';
               const canRetryWebhookFailure = mode === 'superadmin' && failure.queueName === 'webhook' && Boolean(failure.relatedEntityId);
+              const canRetryWhatsappFailure = mode === 'superadmin' && failure.queueName === 'whatsapp' && Boolean(failure.relatedEntityId);
               return (
                 <div className="panel subpanel" key={failure.id}>
                   <div style={{ flex: 1 }}>
@@ -280,6 +295,16 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
                         onClick={() => void handleRetryWebhookFromFailure(failure.id, failure.relatedEntityId!)}
                       >
                         {interveningId === failure.id ? 'Retry…' : 'Webhook erneut senden'}
+                      </button>
+                    ) : null}
+                    {canRetryWhatsappFailure ? (
+                      <button
+                        type="button"
+                        className="secondary"
+                        disabled={interveningId === failure.id}
+                        onClick={() => void handleRetryWhatsappFromFailure(failure.id, failure.relatedEntityId!)}
+                      >
+                        {interveningId === failure.id ? 'Retry…' : 'WhatsApp erneut senden'}
                       </button>
                     ) : null}
                     {canResolve ? (

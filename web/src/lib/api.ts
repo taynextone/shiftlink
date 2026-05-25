@@ -444,6 +444,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+  retryOfferWhatsapp: (input: { matchContractId: string }) =>
+    request<{ matchContractId: string; queued: boolean }>('/matches/retry-whatsapp', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
   getWhatsAppEvents: (contractId: string) =>
     request<{ events: Array<{ id: string; eventType: string; phoneNumber: string; messageText: string; status: string; attemptCount: number; lastError: string | null; deliveredAt: string | null; createdAt: string; updatedAt: string }> }>(`/job-shifts/whatsapp/${encodeURIComponent(contractId)}/events`),
   signContractExecution: (contractId: string) =>

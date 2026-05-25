@@ -15,6 +15,7 @@ import {
   listVisibleJobShiftsController,
   reopenMatchOfferController,
   respondToMatchOfferController,
+  retryMatchOfferWhatsappController,
   signMatchContractController,
 } from '../controllers/match.controller';
 import { validateBody } from '../middlewares/validate';
@@ -123,6 +124,14 @@ router.post(
   requireRole(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
   validateBody(reopenMatchOfferSchema),
   asyncHandler(reopenMatchOfferController),
+);
+
+router.post(
+  '/retry-whatsapp',
+  requireAuth,
+  requireRole(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
+  validateBody(reopenMatchOfferSchema),
+  asyncHandler(retryMatchOfferWhatsappController),
 );
 
 router.post(

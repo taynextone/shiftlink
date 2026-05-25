@@ -5,7 +5,11 @@ import { sendNewMatchOfferWhatsapp } from '../services/whatsapp.service';
 export const whatsappWorker = new Worker(
   'whatsapp',
   async (job) => {
-    if (job.name === 'new-match-offer-notification') {
+    if (
+      job.name === 'new-match-offer-notification'
+      || job.name === 'reopened-match-offer-notification'
+      || job.name === 'retry-match-offer-notification'
+    ) {
       await sendNewMatchOfferWhatsapp(job.data);
     }
   },

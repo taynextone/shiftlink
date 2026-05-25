@@ -7,6 +7,7 @@ import {
   listVisibleJobShiftsForNurse,
   reopenMatchOffer,
   respondToMatchOffer,
+  retryMatchOfferWhatsappNotification,
   signMatchContract,
 } from '../services/match.service';
 import { getContractSnapshot } from '../services/contract.service';
@@ -102,6 +103,16 @@ export async function reopenMatchOfferController(req: Request, res: Response): P
   const matchContract = await reopenMatchOffer(req.auth, req.body);
 
   res.status(200).json({ matchContract });
+}
+
+export async function retryMatchOfferWhatsappController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const result = await retryMatchOfferWhatsappNotification(req.auth, req.body);
+
+  res.status(200).json(result);
 }
 
 export async function getContractSnapshotController(req: Request, res: Response): Promise<void> {
