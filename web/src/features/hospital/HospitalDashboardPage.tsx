@@ -236,12 +236,20 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
               </div>
             </Link>
             {mode === 'superadmin' ? (
-              <Link className="selection-card" to="/admin/verification">
-                <div>
-                  <strong>Verification Ops öffnen</strong>
-                  <p>Dokumentenprüfung, Release-Entscheidungen und Rücknahmen zentral bearbeiten</p>
-                </div>
-              </Link>
+              <>
+                <Link className="selection-card" to="/admin/ops">
+                  <div>
+                    <strong>Ops Control Plane öffnen</strong>
+                    <p>Webhook-, Queue- und Billing-Hotspots als zentrale Superadmin-Steuerfläche öffnen</p>
+                  </div>
+                </Link>
+                <Link className="selection-card" to="/admin/verification">
+                  <div>
+                    <strong>Verification Ops öffnen</strong>
+                    <p>Dokumentenprüfung, Release-Entscheidungen und Rücknahmen zentral bearbeiten</p>
+                  </div>
+                </Link>
+              </>
             ) : null}
           </div>
         </SectionCard>
