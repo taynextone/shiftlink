@@ -38,7 +38,7 @@ Checklist:
 - [done] Retry-attempt and deeper processing telemetry are visible in ops surfaces
 - [partial] Contract exception / dispute / intervention tooling is operationally complete
 - [partial] Superadmin / ops dashboard is centralized enough for most intervention work
-  - recent progress: explicit superadmin control-plane framing, direct dashboard entry into `/admin/ops`, and direct handoff actions from admin ops into verification / contracts / billing
+  - recent progress: explicit superadmin control-plane framing, direct dashboard entry into `/admin/ops`, and direct handoff actions from admin ops into verification / dossier / contracts / billing
 - [partial] Queue / webhook / worker failure handling goes beyond visibility into real intervention depth
 - [todo] Add stronger operator actions for failed async/webhook processes (retry / requeue / resolve-style handling where product-appropriate)
 - [todo] Close remaining offer / notification lifecycle intervention gaps
