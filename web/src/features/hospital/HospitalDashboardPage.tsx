@@ -16,8 +16,8 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
 
   const { data: shiftData } = useAsyncData(() => api.listHospitalJobShifts(), []);
   const { data: billingData } = useAsyncData(() => api.getHospitalBillingSummary(), []);
-  const { data: webhookData } = useAsyncData(() => api.listHospitalWebhookEvents(10), []);
-  const { data: asyncFailureData } = useAsyncData(() => (isSuperAdmin ? api.listAsyncProcessFailures(10) : Promise.resolve({ failures: [] })), [isSuperAdmin]);
+  const { data: webhookData, reload: reloadWebhookData } = useAsyncData(() => api.listHospitalWebhookEvents(10), []);
+  const { data: asyncFailureData, reload: reloadAsyncFailureData } = useAsyncData(() => (isSuperAdmin ? api.listAsyncProcessFailures(10) : Promise.resolve({ failures: [] })), [isSuperAdmin]);
 
   const shifts = shiftData?.jobShifts ?? [];
   const billing = billingData?.summary;
@@ -61,31 +61,37 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
   const nextOperationalFocus = interventionHotspots.map((item) => item.hint);
 
   const [interveningId, setInterveningId] = useState<string | null>(null);
+  const [interventionFeedback, setInterventionFeedback] = useState<string | null>(null);
 
   const handleRetryWebhook = useCallback(async (eventId: string) => {
     setInterveningId(eventId);
+    setInterventionFeedback(null);
     try {
       await api.retryWebhookEvent(eventId);
-      window.location.reload();
+      await reloadWebhookData();
+      await reloadAsyncFailureData();
+      setInterventionFeedback('Webhook-Retry wurde ausgelöst und die sichtbaren Daten wurden aktualisiert.');
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Retry fehlgeschlagen');
     } finally {
       setInterveningId(null);
     }
-  }, []);
+  }, [reloadAsyncFailureData, reloadWebhookData]);
 
   const handleResolveFailure = useCallback(async (failureId: string) => {
     if (!window.confirm('Diesen Fehler als behandelt markieren und aus der Liste entfernen?')) return;
     setInterveningId(failureId);
+    setInterventionFeedback(null);
     try {
       await api.resolveAsyncFailure(failureId);
-      window.location.reload();
+      await reloadAsyncFailureData();
+      setInterventionFeedback('Der Worker-Fehler wurde als behandelt markiert und aus der Liste entfernt.');
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Resolve fehlgeschlagen');
     } finally {
       setInterveningId(null);
     }
-  }, []);
+  }, [reloadAsyncFailureData]);
 
   return (
     <section className="stack page-stack">
@@ -94,6 +100,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
         title={mode === 'superadmin' ? 'Superadmin Operations Control Plane' : 'Hospital Operations Dashboard'}
         description={mode === 'superadmin' ? 'Zentrale Superadmin-Sicht auf operative Hotspots, Failures und Governance-nahe Interventionen.' : 'Zentrale operative Startseite für Bedarfe, Offers, Verträge und Billing. Fokus auf echtem Backend-Status statt Platzhalter-Widgets.'}
       />
+      {interventionFeedback ? <p className="hint">{interventionFeedback}</p> : null}
       <div className="stats-grid">
         <KpiCard label="Offene Schichten" value={String(openShifts.length)} helper="Bedarfe, die aktiv in Kandidaten- und Offer-Arbeit gezogen werden können." />
         <KpiCard label="Pending Offers" value={String(totalPendingOffers)} helper="Angebote, bei denen operatives Follow-up oder Beobachtung nötig ist." />
