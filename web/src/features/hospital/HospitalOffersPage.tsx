@@ -17,6 +17,7 @@ import { computeOfferHealth } from './ops-helpers';
 export function HospitalOffersPage() {
   const [searchParams] = useSearchParams();
   const focusNurseProfileId = searchParams.get('focusNurseProfileId') ?? '';
+  const focusContractId = searchParams.get('focusContractId') ?? '';
   const initialJobShiftId = searchParams.get('jobShiftId') ?? '';
   const { data: shiftData, loading: shiftsLoading, error: shiftsError } = useAsyncData(() => api.listHospitalJobShifts(), []);
   const availableShifts = shiftData?.jobShifts ?? [];
@@ -174,6 +175,13 @@ export function HospitalOffersPage() {
     }
     setJobShiftId(initialJobShiftId);
   }, [initialJobShiftId]);
+
+  useEffect(() => {
+    if (!focusContractId) {
+      return;
+    }
+    void handleToggleComm(focusContractId);
+  }, [focusContractId]);
 
   async function handleCreateOffer(nurseProfileId: string) {
     if (!jobShiftId) {

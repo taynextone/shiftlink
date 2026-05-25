@@ -416,6 +416,7 @@ export function HospitalContractsPage() {
                       { label: 'Billing-Nächster Schritt', value: invoiceException.nextAction },
                       { label: 'Invoice PDF', value: lifecycle.invoice?.invoicePdfUrl ? <a href={lifecycle.invoice.invoicePdfUrl} target="_blank" rel="noreferrer">Invoice PDF öffnen</a> : '—' },
                       { label: 'Billing-Intervention', value: lifecycle.invoice?.id ? <Link to={`/hospital/billing?invoiceId=${encodeURIComponent(lifecycle.invoice.id)}`}>Invoice in Billing öffnen</Link> : '—' },
+                      { label: 'Kommunikationsverlauf', value: <Link to="/hospital/offers">Offer-Kommunikation öffnen</Link> },
                     ].map((item) => ({ ...item, value: renderListValue(item.value) }))}
                   />
                   {lifecycle.snapshotSummary.versions && lifecycle.snapshotSummary.versions.length > 0 ? (
