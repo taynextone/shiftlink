@@ -45,6 +45,7 @@ export async function getContractLifecycleOverview(
 
   return {
     matchContractId: contract.id,
+    jobShiftId: contract.jobShiftId,
     status: contract.status,
     executionStatus: contract.executionStatus,
     createdAt: contract.createdAt,

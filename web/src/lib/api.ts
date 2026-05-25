@@ -239,6 +239,7 @@ export type ContractPdfResponse = {
 
 export type ContractLifecycle = {
   matchContractId: string;
+  jobShiftId: string;
   createdAt?: string;
   updatedAt?: string;
   expiresAt?: string | null;
