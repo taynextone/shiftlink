@@ -403,6 +403,8 @@ export const api = {
   getHospitalBillingSummary: () => request<{ summary: HospitalBillingSummary }>('/job-shifts/billing/summary'),
   listHospitalWebhookEvents: (limit = 25) => request<{ events: HospitalWebhookEventRow[] }>(`/job-shifts/webhooks?limit=${encodeURIComponent(String(limit))}`),
   listAsyncProcessFailures: (limit = 25) => request<{ failures: AsyncProcessFailureRow[] }>(`/job-shifts/async-failures?limit=${encodeURIComponent(String(limit))}`),
+  retryWebhookEvent: (id: string) => request<{ id: string; status: string }>(`/job-shifts/webhooks/${encodeURIComponent(id)}/retry`, { method: 'POST' }),
+  resolveAsyncFailure: (id: string) => request<{ id: string; resolved: boolean }>(`/job-shifts/async-failures/${encodeURIComponent(id)}/resolve`, { method: 'POST' }),
   exportHospitalBilling: (query?: { status?: 'PENDING' | 'PAID'; format?: 'json' | 'csv'; limit?: number }) => {
     const params = new URLSearchParams();
     if (query?.status) params.set('status', query.status);

@@ -8,6 +8,8 @@ import {
   listHospitalJobShiftsController,
   listHospitalWebhookEventsController,
   listAsyncProcessFailuresController,
+  retryWebhookEventController,
+  resolveAsyncFailureController,
 } from '../controllers/job-shift.controller';
 import { requireAuth, requireRole } from '../middlewares/auth';
 import { validateBody } from '../middlewares/validate';
@@ -44,6 +46,20 @@ router.get(
   requireAuth,
   requireRole(UserRole.SUPER_ADMIN),
   asyncHandler(listAsyncProcessFailuresController),
+);
+
+router.post(
+  '/webhooks/:id/retry',
+  requireAuth,
+  requireRole(UserRole.SUPER_ADMIN, UserRole.HOSPITAL_ADMIN),
+  asyncHandler(retryWebhookEventController),
+);
+
+router.post(
+  '/async-failures/:id/resolve',
+  requireAuth,
+  requireRole(UserRole.SUPER_ADMIN),
+  asyncHandler(resolveAsyncFailureController),
 );
 
 router.get(

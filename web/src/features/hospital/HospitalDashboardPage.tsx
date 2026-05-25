@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { KpiCard } from '../../components/KpiCard';
 import { MetricList } from '../../components/MetricList';
 import { PageHeader } from '../../components/PageHeader';
@@ -59,6 +59,33 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
   });
 
   const nextOperationalFocus = interventionHotspots.map((item) => item.hint);
+
+  const [interveningId, setInterveningId] = useState<string | null>(null);
+
+  const handleRetryWebhook = useCallback(async (eventId: string) => {
+    setInterveningId(eventId);
+    try {
+      await api.retryWebhookEvent(eventId);
+      window.location.reload();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Retry fehlgeschlagen');
+    } finally {
+      setInterveningId(null);
+    }
+  }, []);
+
+  const handleResolveFailure = useCallback(async (failureId: string) => {
+    if (!window.confirm('Diesen Fehler als behandelt markieren und aus der Liste entfernen?')) return;
+    setInterveningId(failureId);
+    try {
+      await api.resolveAsyncFailure(failureId);
+      window.location.reload();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Resolve fehlgeschlagen');
+    } finally {
+      setInterveningId(null);
+    }
+  }, []);
 
   return (
     <section className="stack page-stack">
@@ -124,14 +151,32 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
           <div className="record-list compact-list">
             {rankedWebhookEvents.slice(0, 5).map((event) => {
               const status = describeWebhookStatus(event);
+              const canRetry = event.status === 'FAILED_OR_PENDING_RETRY' && (mode === 'superadmin' || session?.role === 'HOSPITAL_ADMIN');
               return (
-                <Link className="panel subpanel" key={event.id} to={mode === 'superadmin' ? '/admin/ops' : '/hospital'}>
-                  <strong>{event.eventType}</strong>
-                  <p>{event.clinicName}</p>
-                  <p>{status.label} · Attempts: {event.deliveryAttempts}</p>
-                  <p>Letzter Versuch: {event.lastAttemptAt ? new Date(event.lastAttemptAt).toLocaleString('de-DE') : '—'}</p>
-                  <p>{status.detail}</p>
-                </Link>
+                <div className="panel subpanel" key={event.id}>
+                  <div style={{ flex: 1 }}>
+                    <strong>{event.eventType}</strong>
+                    <p>{event.clinicName}</p>
+                    <p>{status.label} · Attempts: {event.deliveryAttempts}</p>
+                    <p>Letzter Versuch: {event.lastAttemptAt ? new Date(event.lastAttemptAt).toLocaleString('de-DE') : '—'}</p>
+                    <p>{status.detail}</p>
+                  </div>
+                  <div className="actions compact">
+                    {canRetry ? (
+                      <button
+                        type="button"
+                        className="secondary"
+                        disabled={interveningId === event.id}
+                        onClick={() => void handleRetryWebhook(event.id)}
+                      >
+                        {interveningId === event.id ? 'Retry…' : 'Retry'}
+                      </button>
+                    ) : null}
+                    <Link to={mode === 'superadmin' ? '/admin/ops' : '/hospital'}>
+                      <button type="button" className="secondary">Details</button>
+                    </Link>
+                  </div>
+                </div>
               );
             })}
             {webhookEvents.length === 0 ? <p className="hint">Noch keine Webhook-Events sichtbar.</p> : null}
@@ -184,18 +229,36 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
                   : failure.queueName === 'whatsapp'
                     ? 'Zu Offer-Kommunikation'
                     : 'Zu Ops-Übersicht';
+              const canResolve = mode === 'superadmin';
               return (
-                <Link className="panel subpanel" key={failure.id} to={destination}>
-                  <strong>{failure.queueName} · {failure.jobName}</strong>
-                  <p>{status.label}</p>
-                  <p>{failure.errorMessage}</p>
-                  <p>{status.detail}</p>
-                  <p>Job ID: {failure.jobId ?? '—'}</p>
-                  <p>Entity: {failure.relatedEntityId ?? '—'}</p>
-                  <p>Attempts: {failure.attemptCount ?? 0}</p>
-                  <p>Nächster Pfad: {nextActionLabel}</p>
-                  <p>{new Date(failure.createdAt).toLocaleString('de-DE')}</p>
-                </Link>
+                <div className="panel subpanel" key={failure.id}>
+                  <div style={{ flex: 1 }}>
+                    <strong>{failure.queueName} · {failure.jobName}</strong>
+                    <p>{status.label}</p>
+                    <p>{failure.errorMessage}</p>
+                    <p>{status.detail}</p>
+                    <p>Job ID: {failure.jobId ?? '—'}</p>
+                    <p>Entity: {failure.relatedEntityId ?? '—'}</p>
+                    <p>Attempts: {failure.attemptCount ?? 0}</p>
+                    <p>Nächster Pfad: {nextActionLabel}</p>
+                    <p>{new Date(failure.createdAt).toLocaleString('de-DE')}</p>
+                  </div>
+                  <div className="actions compact">
+                    {canResolve ? (
+                      <button
+                        type="button"
+                        className="secondary"
+                        disabled={interveningId === failure.id}
+                        onClick={() => void handleResolveFailure(failure.id)}
+                      >
+                        {interveningId === failure.id ? '…' : 'Als behandelt markieren'}
+                      </button>
+                    ) : null}
+                    <Link to={destination}>
+                      <button type="button" className="secondary">Details</button>
+                    </Link>
+                  </div>
+                </div>
               );
             })}
             {visibleAsyncFailures.length === 0 ? <p className="hint">{isSuperAdmin ? 'Für den aktuellen Queue-Filter sind keine persistierten Worker-Fehler sichtbar.' : 'Für Hospital Admins ist diese Fehlerklasse nicht direkt sichtbar; bei Bedarf Superadmin einbeziehen.'}</p> : null}

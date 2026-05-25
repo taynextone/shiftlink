@@ -32,3 +32,14 @@ export async function listAsyncProcessFailures(limit = 25) {
     failures,
   };
 }
+
+export async function resolveAsyncFailure(id: string): Promise<{ id: string; resolved: boolean }> {
+  const existing = await prisma.asyncProcessFailure.findUnique({ where: { id } });
+  if (!existing) {
+    throw new Error(`Async process failure ${id} not found`);
+  }
+
+  await prisma.asyncProcessFailure.delete({ where: { id } });
+
+  return { id, resolved: true };
+}
