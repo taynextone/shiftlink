@@ -5,6 +5,7 @@ import {
   listHospitalMatchOffers,
   listOwnMatchContracts,
   listVisibleJobShiftsForNurse,
+  reopenMatchOffer,
   respondToMatchOffer,
   signMatchContract,
 } from '../services/match.service';
@@ -91,6 +92,16 @@ export async function respondToMatchOfferController(req: Request, res: Response)
   const result = await respondToMatchOffer(req.auth, req.body);
 
   res.status(200).json(result);
+}
+
+export async function reopenMatchOfferController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const matchContract = await reopenMatchOffer(req.auth, req.body);
+
+  res.status(200).json({ matchContract });
 }
 
 export async function getContractSnapshotController(req: Request, res: Response): Promise<void> {

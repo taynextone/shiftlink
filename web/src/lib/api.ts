@@ -438,6 +438,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+  reopenOffer: (input: { matchContractId: string }) =>
+    request<{ matchContract: { id: string; status: string } }>('/matches/reopen', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
   signContractExecution: (contractId: string) =>
     request<{ execution: { executionStatus: string; signatureCount: number } }>(`/matches/contract/${contractId}/execution/sign`, {
       method: 'POST',

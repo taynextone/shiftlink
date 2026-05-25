@@ -13,6 +13,7 @@ import {
   listHospitalMatchOffersController,
   listOwnMatchContractsController,
   listVisibleJobShiftsController,
+  reopenMatchOfferController,
   respondToMatchOfferController,
   signMatchContractController,
 } from '../controllers/match.controller';
@@ -20,6 +21,7 @@ import { validateBody } from '../middlewares/validate';
 import {
   createMatchOfferSchema,
   findCandidatesSchema,
+  reopenMatchOfferSchema,
   respondToMatchOfferSchema,
   signMatchContractSchema,
 } from '../schemas/match.schema';
@@ -113,6 +115,14 @@ router.post(
   requireRole(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
   validateBody(signMatchContractSchema),
   asyncHandler(signMatchContractController),
+);
+
+router.post(
+  '/reopen',
+  requireAuth,
+  requireRole(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
+  validateBody(reopenMatchOfferSchema),
+  asyncHandler(reopenMatchOfferController),
 );
 
 router.post(

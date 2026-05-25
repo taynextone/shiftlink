@@ -566,6 +566,86 @@ export async function respondToMatchOffer(
   };
 }
 
+export async function reopenMatchOffer(
+  actor: { userId: string; role: UserRole },
+  input: { matchContractId: string },
+) {
+  const existingContract = await prisma.matchContract.findUnique({
+    where: { id: input.matchContractId },
+    include: {
+      nurseProfile: true,
+      jobShift: {
+        include: {
+          hospitalProfile: true,
+          requirements: true,
+        },
+      },
+      invoice: true,
+    },
+  });
+
+  if (!existingContract) {
+    throw createHttpError(404, 'Match contract not found');
+  }
+
+  const isSuperAdmin = actor.role === UserRole.SUPER_ADMIN;
+  const isHospitalOwner = actor.role === UserRole.HOSPITAL_ADMIN && existingContract.jobShift.hospitalProfile.userId === actor.userId;
+  if (!isSuperAdmin && !isHospitalOwner) {
+    throw createHttpError(403, 'You are not allowed to reopen this match offer');
+  }
+
+  const normalizedContract = await markOfferExpiredIfNeeded(existingContract);
+
+  if (normalizedContract.status !== MatchContractStatus.DECLINED && normalizedContract.status !== MatchContractStatus.EXPIRED) {
+    throw createHttpError(409, 'Only declined or expired offers can be reopened');
+  }
+
+  const reopenedContract = await prisma.matchContract.update({
+    where: { id: normalizedContract.id },
+    data: {
+      status: MatchContractStatus.PENDING,
+      respondedAt: null,
+      signedAt: null,
+      expiresAt: computeOfferExpiry(new Date()),
+    },
+    include: {
+      invoice: true,
+      nurseProfile: true,
+      jobShift: {
+        include: {
+          hospitalProfile: true,
+          requirements: true,
+        },
+      },
+    },
+  });
+
+  if (reopenedContract.nurseProfile.whatsappOptIn) {
+    await whatsappQueue.add(
+      'reopened-match-offer-notification',
+      {
+        type: 'new-match-offer',
+        matchContractId: reopenedContract.id,
+        phoneNumber: reopenedContract.nurseProfile.phoneNumber,
+        publicId: reopenedContract.nurseProfile.publicId,
+        displayName: reopenedContract.nurseProfile.displayName,
+        jobShiftId: reopenedContract.jobShift.id,
+        clinicName: reopenedContract.jobShift.hospitalProfile.clinicName,
+        locationCity: reopenedContract.jobShift.locationCity,
+        startTime: reopenedContract.jobShift.startTime,
+        endTime: reopenedContract.jobShift.endTime,
+        loginUrl: env.NURSE_LOGIN_URL,
+      },
+      {
+        removeOnComplete: 100,
+        removeOnFail: 200,
+      },
+    );
+  }
+
+  return reopenedContract;
+}
+
 export async function signMatchContract(matchContractId: string, actor: { userId: string; role: UserRole }) {
   const existingContract = await prisma.matchContract.findUnique({
     where: { id: matchContractId },

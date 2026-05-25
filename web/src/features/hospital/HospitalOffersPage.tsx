@@ -128,6 +128,27 @@ export function HospitalOffersPage() {
     }
   }
 
+  async function handleReopenOffer(matchContractId: string) {
+    if (!window.confirm(`Offer wirklich erneut öffnen?\n\nContract: ${matchContractId}`)) {
+      return;
+    }
+
+    setSubmitting(true);
+    setStatus(null);
+    try {
+      const result = await api.reopenOffer({ matchContractId });
+      setStatus({ tone: 'success', message: `Offer erneut geöffnet: ${result.matchContract.id}. Kommunikation wurde ggf. neu angestoßen.` });
+      if (jobShiftId) {
+        await loadOffers(jobShiftId);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Offer-Reopen fehlgeschlagen';
+      setStatus({ tone: 'error', message });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   useEffect(() => {
     if (!initialJobShiftId) {
       return;
@@ -309,6 +330,11 @@ export function HospitalOffersPage() {
                             {submitting ? '…' : 'Offer ablehnen'}
                           </button>
                         </>
+                      ) : null}
+                      {offer.status === 'DECLINED' || offer.status === 'EXPIRED' ? (
+                        <button className="secondary" disabled={submitting} onClick={() => void handleReopenOffer(offer.id)}>
+                          {submitting ? '…' : 'Offer erneut öffnen'}
+                        </button>
                       ) : null}
                     </ActionBar>
                   </SectionCard>
