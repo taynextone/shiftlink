@@ -27,6 +27,9 @@ export function HospitalOffersPage() {
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [lastOfferFailure, setLastOfferFailure] = useState<{ nurseProfileId: string; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [expandedCommId, setExpandedCommId] = useState<string | null>(null);
+  const [commEvents, setCommEvents] = useState<Record<string, Array<{ id: string; eventType: string; phoneNumber: string; messageText: string; status: string; attemptCount: number; lastError: string | null; deliveredAt: string | null; createdAt: string; updatedAt: string }>>>({});
+  const [commLoading, setCommLoading] = useState<Record<string, boolean>>({});
 
   const selectedShift = useMemo(
     () => availableShifts.find((shift) => shift.id === jobShiftId) ?? activeShift,
@@ -125,6 +128,24 @@ export function HospitalOffersPage() {
       setStatus({ tone: 'error', message });
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleToggleComm(offerId: string) {
+    if (expandedCommId === offerId) {
+      setExpandedCommId(null);
+      return;
+    }
+    setExpandedCommId(offerId);
+    if (commEvents[offerId]) return;
+    setCommLoading((prev) => ({ ...prev, [offerId]: true }));
+    try {
+      const result = await api.getWhatsAppEvents(offerId);
+      setCommEvents((prev) => ({ ...prev, [offerId]: result.events }));
+    } catch {
+      setCommEvents((prev) => ({ ...prev, [offerId]: [] }));
+    } finally {
+      setCommLoading((prev) => ({ ...prev, [offerId]: false }));
     }
   }
 
@@ -338,7 +359,41 @@ export function HospitalOffersPage() {
                           {submitting ? '…' : 'Offer erneut öffnen'}
                         </button>
                       ) : null}
+                      <button
+                        type="button"
+                        className="secondary"
+                        disabled={commLoading[offer.id]}
+                        onClick={() => void handleToggleComm(offer.id)}
+                      >
+                        {commLoading[offer.id] ? '…' : expandedCommId === offer.id ? 'Kommunikation ausblenden' : 'Kommunikation anzeigen'}
+                      </button>
                     </ActionBar>
+                    {expandedCommId === offer.id ? (
+                      <div style={{ marginTop: '0.75rem' }}>
+                        <strong>Kommunikationsverlauf</strong>
+                        {!commEvents[offer.id] ? (
+                          <p className="hint">Wird geladen…</p>
+                        ) : commEvents[offer.id].length === 0 ? (
+                          <p className="hint">Keine Kommunikationsereignisse gefunden.</p>
+                        ) : (
+                          <div className="record-list compact-list" style={{ marginTop: '0.5rem' }}>
+                            {commEvents[offer.id].map((evt) => (
+                              <div className="panel subpanel" key={evt.id}>
+                                <div className="section-heading-row">
+                                  <strong>{evt.eventType}</strong>
+                                  <StatusBadge value={evt.status} />
+                                </div>
+                                <p>Telefon: {evt.phoneNumber}</p>
+                                <p>Versuche: {evt.attemptCount}</p>
+                                {evt.deliveredAt ? <p>Zugestellt: {new Date(evt.deliveredAt).toLocaleString('de-DE')}</p> : null}
+                                {evt.lastError ? <p>Fehler: {evt.lastError}</p> : null}
+                                <p>Erstellt: {new Date(evt.createdAt).toLocaleString('de-DE')}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
                   </SectionCard>
                 );
               })}

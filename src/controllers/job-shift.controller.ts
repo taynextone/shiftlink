@@ -9,6 +9,7 @@ import {
 } from '../services/job-shift.service';
 import { getInvoiceDetail, markInvoicePaid } from '../services/billing.service';
 import { listHospitalWebhookEvents, retryWebhookEvent } from '../services/webhook.service';
+import { getWhatsAppEventsForContract } from '../services/whatsapp.service';
 import { listAsyncProcessFailures, resolveAsyncFailure } from '../services/async-process.service';
 
 export async function createJobShiftController(req: Request, res: Response): Promise<void> {
@@ -155,5 +156,15 @@ export async function markInvoicePaidController(req: Request, res: Response): Pr
   if (!id) throw createHttpError(400, 'Invoice ID is required');
   const result = await markInvoicePaid(id);
   res.status(200).json({ id: result.id, status: result.status });
+}
+
+export async function getWhatsAppEventsController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+  const contractId = typeof req.params.contractId === 'string' ? req.params.contractId : '';
+  if (!contractId) throw createHttpError(400, 'Contract ID is required');
+  const events = await getWhatsAppEventsForContract(contractId);
+  res.status(200).json({ events });
 }
 

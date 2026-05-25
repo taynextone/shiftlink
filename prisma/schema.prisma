@@ -235,6 +235,7 @@ model MatchContract {
   signatureEvents       ContractSignatureEvent[]
   voidEvent             ContractVoidEvent?
   invoice               Invoice?
+  whatsAppEvents        WhatsAppEvent[]
 
   @@unique([jobShiftId, nurseProfileId])
   @@index([status])
@@ -354,5 +355,23 @@ model AsyncProcessFailure {
   @@index([queueName, createdAt])
   @@index([relatedEntityId])
   @@index([createdAt])
+}
+
+model WhatsAppEvent {
+  id              String        @id @default(cuid())
+  matchContractId String
+  eventType       String
+  phoneNumber     String
+  messageText     String
+  status          String
+  attemptCount    Int           @default(0)
+  lastError       String?
+  deliveredAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  matchContract   MatchContract @relation(fields: [matchContractId], references: [id], onDelete: Cascade)
+
+  @@index([matchContractId, createdAt])
+  @@index([eventType])
 }
 
