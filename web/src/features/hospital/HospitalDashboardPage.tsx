@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { KpiCard } from '../../components/KpiCard';
 import { MetricList } from '../../components/MetricList';
 import { PageHeader } from '../../components/PageHeader';
+import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { SectionCard } from '../../components/SectionCard';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { useAuth } from '../../state/AuthContext';
@@ -115,7 +116,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
         title={mode === 'superadmin' ? 'Superadmin Operations Control Plane' : 'Hospital Operations Dashboard'}
         description={mode === 'superadmin' ? 'Zentrale Superadmin-Sicht auf operative Hotspots, Failures und Governance-nahe Interventionen.' : 'Zentrale operative Startseite für Bedarfe, Offers, Verträge und Billing. Fokus auf echtem Backend-Status statt Platzhalter-Widgets.'}
       />
-      {interventionFeedback ? <p className="hint">{interventionFeedback}</p> : null}
+      {interventionFeedback ? <FeedbackMessage tone="success" message={interventionFeedback} /> : null}
       <div className="stats-grid">
         <KpiCard label="Offene Schichten" value={String(openShifts.length)} helper="Bedarfe, die aktiv in Kandidaten- und Offer-Arbeit gezogen werden können." />
         <KpiCard label="Pending Offers" value={String(totalPendingOffers)} helper="Angebote, bei denen operatives Follow-up oder Beobachtung nötig ist." />
