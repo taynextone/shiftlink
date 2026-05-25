@@ -241,7 +241,9 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
                     ? '/admin/ops'
                     : '/hospital'
                   : failure.queueName === 'whatsapp'
-                    ? '/hospital/offers'
+                    ? failure.relatedEntityId
+                      ? `/hospital/contracts?contractId=${encodeURIComponent(failure.relatedEntityId)}`
+                      : '/hospital/contracts'
                     : mode === 'superadmin'
                       ? '/admin/ops'
                       : '/hospital';
@@ -250,7 +252,9 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
                 : failure.queueName === 'webhook'
                   ? 'Zu Webhook-Ops'
                   : failure.queueName === 'whatsapp'
-                    ? 'Zu Offer-Kommunikation'
+                    ? failure.relatedEntityId
+                      ? 'Zum betroffenen Contract'
+                      : 'Zu Contract-Kommunikation'
                     : 'Zu Ops-Übersicht';
               const canResolve = mode === 'superadmin';
               const canRetryWebhookFailure = mode === 'superadmin' && failure.queueName === 'webhook' && Boolean(failure.relatedEntityId);
