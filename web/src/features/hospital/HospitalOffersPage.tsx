@@ -343,6 +343,7 @@ export function HospitalOffersPage() {
                         { label: 'Min. Rate', value: `${offer.nurse.minHourlyRate} €` },
                         { label: 'Nächster Schritt', value: health.nextAction },
                         { label: 'Exception-Hinweis', value: health.exceptionNote },
+                        { label: 'Kommunikation', value: offer.nurse.whatsappOptIn ? 'WhatsApp Opt-in aktiv' : 'kein WhatsApp Opt-in' },
                         { label: 'Expires At', value: offer.expiresAt ? new Date(offer.expiresAt).toLocaleString('de-DE') : '—' },
                         { label: 'Responded At', value: offer.respondedAt ? new Date(offer.respondedAt).toLocaleString('de-DE') : '—' },
                         { label: 'Signed At', value: offer.signedAt ? new Date(offer.signedAt).toLocaleString('de-DE') : '—' },
@@ -370,10 +371,10 @@ export function HospitalOffersPage() {
                       <button
                         type="button"
                         className="secondary"
-                        disabled={commLoading[offer.id]}
+                        disabled={commLoading[offer.id] || !offer.nurse.whatsappOptIn}
                         onClick={() => void handleToggleComm(offer.id)}
                       >
-                        {commLoading[offer.id] ? '…' : expandedCommId === offer.id ? 'Kommunikation ausblenden' : 'Kommunikation anzeigen'}
+                        {!offer.nurse.whatsappOptIn ? 'Kein WhatsApp Opt-in' : commLoading[offer.id] ? '…' : expandedCommId === offer.id ? 'Kommunikation ausblenden' : 'Kommunikation anzeigen'}
                       </button>
                     </ActionBar>
                     {expandedCommId === offer.id ? (

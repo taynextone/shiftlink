@@ -149,6 +149,7 @@ export type HospitalOffer = {
     publicId: string;
     displayName: string;
     minHourlyRate: string;
+    whatsappOptIn: boolean;
   };
 };
 

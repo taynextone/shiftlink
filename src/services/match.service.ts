@@ -326,6 +326,7 @@ export async function listHospitalMatchOffers(actor: { userId: string; role: Use
         publicId: contract.nurseProfile.publicId,
         displayName: contract.nurseProfile.displayName,
         minHourlyRate: contract.nurseProfile.minHourlyRate,
+        whatsappOptIn: contract.nurseProfile.whatsappOptIn,
       },
     })),
   };
