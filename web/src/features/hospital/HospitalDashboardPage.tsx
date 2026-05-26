@@ -11,6 +11,7 @@ import { useAuth } from '../../state/AuthContext';
 import { api } from '../../lib/api';
 import { buildInterventionHotspots, describeAsyncFailure, describeWebhookStatus, getCriticalAsyncFailures, getFailedWebhookEvents, getImportBlockedShifts, rankAsyncFailures } from './dashboard-helpers';
 import { NotificationCenter } from './NotificationCenter';
+import { WebhookAdminPanel } from './WebhookAdminPanel';
 
 export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital' | 'superadmin' }) {
   const { session } = useAuth();
@@ -339,6 +340,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
           </div>
         </SectionCard>
         <NotificationCenter />
+        <WebhookAdminPanel />
         <SectionCard title="Direkte Arbeitswege" description="Schneller Einstieg in die bereits ausgebauten Operations-Flows.">
           <MetricList
             items={[

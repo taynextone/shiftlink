@@ -502,7 +502,6 @@ export const api = {
     invoices: { total: number; paid: number; pending: number; paymentRate: number };
     notifications: { total: number; delivered: number; failed: number; deliveryRate: number };
   }>('/admin/metrics'),
-};
   getPayrollExport: () => request<{
     rows: Array<{
       nurseDisplayName: string;
@@ -518,3 +517,9 @@ export const api = {
       invoiceId: string;
     }>;
   }>('/admin/payroll-export'),
+  updateWebhookConfig: (input: { webhookUrl?: string; webhookSecret?: string }) =>
+    request<{ webhookUrl: string | null; webhookSecretConfigured: boolean }>('/job-shifts/webhook-config', {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    }),
+};

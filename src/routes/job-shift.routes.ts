@@ -14,10 +14,11 @@ import {
   resolveAsyncFailureController,
   getHospitalWhatsAppEventsController,
   getWhatsAppEventsController,
+  updateWebhookConfigController,
 } from '../controllers/job-shift.controller';
 import { requireAuth, requireRole } from '../middlewares/auth';
 import { validateBody } from '../middlewares/validate';
-import { createJobShiftSchema, importJobShiftSchema } from '../schemas/job-shift.schema';
+import { createJobShiftSchema, importJobShiftSchema, updateWebhookConfigSchema } from '../schemas/job-shift.schema';
 import { asyncHandler } from '../utils/async-handler';
 
 const router = Router();
@@ -62,6 +63,14 @@ router.get(
   requireAuth,
   requireRole(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
   asyncHandler(getHospitalWhatsAppEventsController),
+);
+
+router.patch(
+  '/webhook-config',
+  requireAuth,
+  requireRole(UserRole.HOSPITAL_ADMIN),
+  validateBody(updateWebhookConfigSchema),
+  asyncHandler(updateWebhookConfigController),
 );
 
 router.get(

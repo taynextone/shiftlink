@@ -88,5 +88,12 @@ export const billingExportQuerySchema = z.object({
 
 export type CreateJobShiftInput = z.infer<typeof createJobShiftSchema>;
 export type ImportJobShiftInput = z.infer<typeof importJobShiftSchema>;
+
+export const updateWebhookConfigSchema = z.object({
+  webhookUrl: z.string().url().optional(),
+  webhookSecret: z.string().min(16).max(255).optional(),
+});
+
+export type UpdateWebhookConfigInput = z.infer<typeof updateWebhookConfigSchema>;
 export type ListJobShiftsQueryInput = z.infer<typeof listJobShiftsQuerySchema>;
 export type BillingExportQueryInput = z.infer<typeof billingExportQuerySchema>;

@@ -1,6 +1,8 @@
 import crypto from 'node:crypto';
 import { prisma } from '../config/prisma';
+import createHttpError from 'http-errors';
 import { webhookQueue } from '../config/queues';
+import { UpdateWebhookConfigInput } from '../schemas/job-shift.schema';
 import { recordAsyncProcessFailure } from './async-process.service';
 
 export async function createHospitalWebhookEvent(input: {
@@ -184,3 +186,29 @@ export async function listHospitalWebhookEvents(actor: { userId: string; role: s
   };
 }
 
+
+export async function updateHospitalWebhookConfig(
+  actor: { userId: string; role: string },
+  input: UpdateWebhookConfigInput,
+) {
+  const hospitalProfile = await prisma.hospitalProfile.findUnique({
+    where: { userId: actor.userId },
+  });
+
+  if (!hospitalProfile) {
+    throw createHttpError(404, 'Hospital profile not found');
+  }
+
+  const updated = await prisma.hospitalProfile.update({
+    where: { id: hospitalProfile.id },
+    data: {
+      ...(input.webhookUrl !== undefined ? { webhookUrl: input.webhookUrl } : {}),
+      ...(input.webhookSecret !== undefined ? { webhookSecret: input.webhookSecret } : {}),
+    },
+  });
+
+  return {
+    webhookUrl: updated.webhookUrl,
+    webhookSecretConfigured: Boolean(updated.webhookSecret),
+  };
+}

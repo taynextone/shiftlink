@@ -10,7 +10,7 @@ import {
   listHospitalJobShifts,
 } from '../services/job-shift.service';
 import { getInvoiceDetail, markInvoicePaid } from '../services/billing.service';
-import { listHospitalWebhookEvents, retryWebhookEvent } from '../services/webhook.service';
+import { listHospitalWebhookEvents, retryWebhookEvent, updateHospitalWebhookConfig } from '../services/webhook.service';
 import { getHospitalWhatsAppEvents, getWhatsAppEventsForContract } from '../services/whatsapp.service';
 import { listAsyncProcessFailures, resolveAsyncFailure } from '../services/async-process.service';
 
@@ -137,6 +137,19 @@ export async function resolveAsyncFailureController(req: Request, res: Response)
   }
 
   const result = await resolveAsyncFailure(id);
+  res.status(200).json(result);
+}
+
+export async function updateWebhookConfigController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  if (req.auth.role !== UserRole.HOSPITAL_ADMIN) {
+    throw createHttpError(403, 'Only hospital admins can update webhook config');
+  }
+
+  const result = await updateHospitalWebhookConfig(req.auth, req.body);
   res.status(200).json(result);
 }
 
