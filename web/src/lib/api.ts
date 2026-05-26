@@ -503,3 +503,18 @@ export const api = {
     notifications: { total: number; delivered: number; failed: number; deliveryRate: number };
   }>('/admin/metrics'),
 };
+  getPayrollExport: () => request<{
+    rows: Array<{
+      nurseDisplayName: string;
+      nursePublicId: string;
+      contractId: string;
+      jobShiftTitle: string;
+      jobShiftStartDate: string;
+      jobShiftEndDate: string;
+      agreedHours: number;
+      hourlyRate: number;
+      totalAmount: string;
+      invoiceStatus: string;
+      invoiceId: string;
+    }>;
+  }>('/admin/payroll-export'),

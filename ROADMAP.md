@@ -208,16 +208,26 @@ Checklist:
 ---
 
 ## Current Active Block
-- Phase 4 — Commercial Readiness (nearly complete)
-- Remaining: Deployment documentation, final polish
+- Phase 4 — Commercial Readiness
+- Active: HR/Payroll-Export, eSignatur, Vertrags-PDF (from GAP_ANALYSIS)
 - Phase 3 — Go-Live Readiness: COMPLETE ✅
 - Phase 2 — Workflow Hardening: COMPLETE ✅
 - Phase 1 — Core Product Completion: COMPLETE ✅
 
-## Overall Progress: ~94%
+## Overall Progress: ~95%
 - Core product: Complete
 - Operations & admin: Complete
 - Workflow hardening: Complete
 - Go-live readiness: Complete
-- Commercial readiness: Nearly complete
-- Remaining: Deployment, final QA, launch
+- Commercial readiness: In progress
+- Remaining: eSignatur, Vertrags-PDF, HR-Export, Deployment
+
+## Open from GAP_ANALYSIS.md
+- [ ] eSignatur-Flow (wer signiert was, wann, womit)
+- [ ] Vertrags-PDF-Generierung + contractPdfUrl real anbinden
+- [ ] No-Refund/Post-Signature Policy modellieren
+- [ ] HR-/Payroll-Export (vereinbarte vs. geleistete Daten trennen)
+- [ ] Webhook-Admin/Retry-API
+- [ ] Fachweiterbildungen als verifizierbare Dokumente
+- [ ] Arbeitsmedizinische Nachweise modellieren
+- [ ] Dossier-Übersicht für Klinikseite

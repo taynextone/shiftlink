@@ -12,6 +12,7 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { api, type HospitalBillingExportRow } from '../../lib/api';
 import { exportRowsAsCsv } from '../../lib/export';
+import { exportPayrollAsCsv } from '../../lib/export';
 
 function getBillingRowIntervention(row: HospitalBillingExportRow) {
   if (row.invoiceStatus === 'PENDING' && row.matchStatus === 'SIGNED') {
@@ -38,6 +39,8 @@ export function HospitalBillingPage() {
   const [invoiceFeedback, setInvoiceFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [markingPaid, setMarkingPaid] = useState(false);
   const [confirmAction, setConfirmAction] = useState<null | { title: string; message: string; tone: 'danger' | 'warning' | 'neutral'; onConfirm: () => void | Promise<void> }>(null);
+  const [payrollExportData, setPayrollExportData] = useState<Array<{ nurseDisplayName: string; nursePublicId: string; contractId: string; jobShiftTitle: string; jobShiftStartDate: string; jobShiftEndDate: string; agreedHours: number; hourlyRate: number; totalAmount: string; invoiceStatus: string; invoiceId: string }>>([]);
+  const [payrollLoading, setPayrollLoading] = useState(false);
   const pendingRows = useMemo(() => rows.filter((row) => row.invoiceStatus === 'PENDING'), [rows]);
   const paidRows = useMemo(() => rows.filter((row) => row.invoiceStatus === 'PAID'), [rows]);
   const rowsWithArtifacts = useMemo(() => rows.filter((row) => row.signedAt), [rows]);
