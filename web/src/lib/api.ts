@@ -533,4 +533,7 @@ export const api = {
       lastAssignmentDate: string | null;
     }>;
   }>('/job-shifts/dossier-overview'),
+  reportNoShow: (contractId: string) => request(`/matches/contract/${encodeURIComponent(contractId)}/no-show`, { method: 'POST' }),
+  cancelContractByHospital: (contractId: string, reason: string) => request(`/matches/contract/${encodeURIComponent(contractId)}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  completeContract: (contractId: string) => request(`/matches/contract/${encodeURIComponent(contractId)}/complete`, { method: 'POST' }),
 };

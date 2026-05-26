@@ -16,6 +16,9 @@ import {
   getWhatsAppEventsController,
   updateWebhookConfigController,
   getDossierOverviewController,
+  reportNoShowController,
+  cancelByHospitalController,
+  completeContractController,
 } from '../controllers/job-shift.controller';
 import { requireAuth, requireRole } from '../middlewares/auth';
 import { validateBody } from '../middlewares/validate';
@@ -133,5 +136,9 @@ router.post(
   validateBody(createJobShiftSchema),
   asyncHandler(createJobShiftController),
 );
+
+router.post('/contract/:id/no-show', requireAuth, requireRole(UserRole.HOSPITAL_ADMIN), asyncHandler(reportNoShowController));
+router.post('/contract/:id/cancel', requireAuth, requireRole(UserRole.HOSPITAL_ADMIN), asyncHandler(cancelByHospitalController));
+router.post('/contract/:id/complete', requireAuth, requireRole(UserRole.HOSPITAL_ADMIN), asyncHandler(completeContractController));
 
 export default router;

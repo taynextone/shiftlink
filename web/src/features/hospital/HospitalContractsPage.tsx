@@ -43,6 +43,7 @@ export function HospitalContractsPage() {
   const [voiding, setVoiding] = useState<ContractVoidOverview | null>(null);
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
   const { data: shiftData, loading: shiftsLoading, error: shiftsError } = useAsyncData(() => api.listHospitalJobShifts(), []);
   const { data: billingSummaryData } = useAsyncData(() => api.getHospitalBillingSummary(), []);
   const availableShifts = shiftData?.jobShifts ?? [];
@@ -68,6 +69,9 @@ export function HospitalContractsPage() {
   const canSignExecution = Boolean(contractId) && lifecycle?.status === 'SIGNED' && lifecycle.executionStatus !== 'FULLY_EXECUTED' && lifecycle.executionStatus !== 'VOIDED';
   const [confirmAction, setConfirmAction] = useState<null | { title: string; message: string; tone: 'danger' | 'warning' | 'neutral'; onConfirm: () => void | Promise<void> }>(null);
   const canVoidContract = Boolean(contractId) && voidIntervention?.label === 'Void möglich' && billingConflict?.tone !== 'error' && voidReason.trim().length > 0;
+  const canReportNoShow = Boolean(contractId) && (lifecycle?.status === 'SIGNED' || lifecycle?.status === 'ACTIVE');
+  const canCancelByHospital = Boolean(contractId) && (lifecycle?.status === 'SIGNED' || lifecycle?.status === 'ACTIVE');
+  const canComplete = Boolean(contractId) && lifecycle?.status === 'ACTIVE';
 
   async function loadLifecycle(targetContractId: string) {
     const result = await api.getContractLifecycle(targetContractId);
@@ -197,6 +201,88 @@ export function HospitalContractsPage() {
           setStatus({ tone: 'success', message: `Execution signiert. Neuer Status: ${result.execution.executionStatus}` });
         } catch (err) {
           setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Execution konnte nicht signiert werden' });
+        } finally {
+          setSubmitting(false);
+        }
+      },
+    });
+  }
+
+  function handleReportNoShow() {
+    if (!contractId) {
+      setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
+      return;
+    }
+    setConfirmAction({
+      title: 'No-Show melden',
+      message: `No-Show für diesen Contract wirklich melden?\n\nContract: ${contractId}`,
+      tone: 'warning',
+      onConfirm: async () => {
+        setConfirmAction(null);
+        setSubmitting(true);
+        setStatus(null);
+        try {
+          await api.reportNoShow(contractId);
+          await loadLifecycle(contractId);
+          setStatus({ tone: 'success', message: 'No-Show gemeldet.' });
+        } catch (err) {
+          setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'No-Show konnte nicht gemeldet werden' });
+        } finally {
+          setSubmitting(false);
+        }
+      },
+    });
+  }
+
+  function handleCancelByHospital() {
+    if (!contractId) {
+      setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
+      return;
+    }
+    if (!cancelReason.trim()) {
+      setStatus({ tone: 'error', message: 'Bitte einen Kündigungsgrund angeben.' });
+      return;
+    }
+    setConfirmAction({
+      title: 'Contract durch Klinik kündigen',
+      message: `Contract wirklich durch die Klinik kündigen?\n\nContract: ${contractId}\nGrund: ${cancelReason.trim()}`,
+      tone: 'danger',
+      onConfirm: async () => {
+        setConfirmAction(null);
+        setSubmitting(true);
+        setStatus(null);
+        try {
+          await api.cancelContractByHospital(contractId, cancelReason.trim());
+          await loadLifecycle(contractId);
+          setStatus({ tone: 'success', message: 'Contract wurde gekündigt.' });
+        } catch (err) {
+          setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Kündigung fehlgeschlagen' });
+        } finally {
+          setSubmitting(false);
+        }
+      },
+    });
+  }
+
+  function handleComplete() {
+    if (!contractId) {
+      setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
+      return;
+    }
+    setConfirmAction({
+      title: 'Contract abschließen',
+      message: `Contract wirklich als abgeschlossen markieren?\n\nContract: ${contractId}`,
+      tone: 'warning',
+      onConfirm: async () => {
+        setConfirmAction(null);
+        setSubmitting(true);
+        setStatus(null);
+        try {
+          await api.completeContract(contractId);
+          await loadLifecycle(contractId);
+          setStatus({ tone: 'success', message: 'Contract abgeschlossen.' });
+        } catch (err) {
+          setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Abschluss fehlgeschlagen' });
         } finally {
           setSubmitting(false);
         }
@@ -399,6 +485,31 @@ export function HospitalContractsPage() {
                 <ActionBar>
                   <button type="button" className="secondary" disabled={submitting || !canVoidContract} onClick={() => void handleVoid()}>
                     {submitting ? 'Bitte warten…' : 'Contract voiden'}
+                  </button>
+                </ActionBar>
+              </FormSection>
+              <FormSection title="No-Show" description="Meldet eine No-Show für den Contract.">
+                <ActionBar>
+                  <button type="button" className="secondary" disabled={submitting || !canReportNoShow} onClick={() => void handleReportNoShow()}>
+                    {submitting ? 'Bitte warten…' : 'No-Show melden'}
+                  </button>
+                </ActionBar>
+              </FormSection>
+              <FormSection title="Kündigung durch Klinik" description="Kündigt den Contract seitens der Klinik mit Grund.">
+                <label>
+                  <span>Kündigungsgrund</span>
+                  <input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Grund der Kündigung" />
+                </label>
+                <ActionBar>
+                  <button type="button" className="secondary" disabled={submitting || !canCancelByHospital || !cancelReason.trim()} onClick={() => void handleCancelByHospital()}>
+                    {submitting ? 'Bitte warten…' : 'Contract kündigen'}
+                  </button>
+                </ActionBar>
+              </FormSection>
+              <FormSection title="Abschluss" description="Schließt den Contract nach erfolgreichem Einsatz ab.">
+                <ActionBar>
+                  <button type="button" disabled={submitting || !canComplete} onClick={() => void handleComplete()}>
+                    {submitting ? 'Bitte warten…' : 'Contract abschliessen'}
                   </button>
                 </ActionBar>
               </FormSection>
