@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ActionBar } from '../../components/ActionBar';
 import { AsyncState } from '../../components/AsyncState';
+import { ConfirmModal } from '../../components/ConfirmModal';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { FormSection } from '../../components/FormSection';
 import { InfoList } from '../../components/InfoList';
@@ -28,6 +29,7 @@ export function HospitalOffersPage() {
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [lastOfferFailure, setLastOfferFailure] = useState<{ nurseProfileId: string; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<null | { title: string; message: string; tone: 'danger' | 'warning' | 'neutral'; onConfirm: () => void }>(null);
   const [expandedCommId, setExpandedCommId] = useState<string | null>(null);
   const [commEvents, setCommEvents] = useState<Record<string, Array<{ id: string; eventType: string; phoneNumber: string; messageText: string; status: string; attemptCount: number; lastError: string | null; deliveredAt: string | null; createdAt: string; updatedAt: string }>>>({});
   const [commLoading, setCommLoading] = useState<Record<string, boolean>>({});
@@ -106,30 +108,34 @@ export function HospitalOffersPage() {
     }
   }
 
-  async function handleRespondToOffer(matchContractId: string, action: 'ACCEPT' | 'DECLINE') {
-    const confirmationMessage = action === 'ACCEPT'
-      ? `Offer wirklich annehmen?\n\nContract: ${matchContractId}`
-      : `Offer wirklich ablehnen?\n\nContract: ${matchContractId}`;
-    if (!window.confirm(confirmationMessage)) {
-      return;
-    }
-
-    setSubmitting(true);
-    setStatus(null);
-    try {
-      const result = await api.respondToMatchOffer({ matchContractId, action });
-      const actionLabel = action === 'ACCEPT' ? 'angenommen' : 'abgelehnt';
-      const nextStep = action === 'ACCEPT'
-        ? 'Vertragskontext prüfen.'
-        : 'Nurse-Offer beendet. Ggf. neue Schicht oder Reopen prüfen.';
-      setOffers((prev) => prev.map((offer) => offer.id === matchContractId ? { ...offer, ...result.matchContract } : offer));
-      setStatus({ tone: 'success', message: `Offer ${actionLabel}. ${nextStep}` });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Offer-Antwort fehlgeschlagen';
-      setStatus({ tone: 'error', message });
-    } finally {
-      setSubmitting(false);
-    }
+  function handleRespondToOffer(matchContractId: string, action: 'ACCEPT' | 'DECLINE') {
+    const actionLabel = action === 'ACCEPT' ? 'annehmen' : 'ablehnen';
+    setConfirmAction({
+      title: `Offer ${actionLabel}`,
+      message: action === 'ACCEPT'
+        ? `Offer wirklich annehmen?\n\nContract: ${matchContractId}`
+        : `Offer wirklich ablehnen?\n\nContract: ${matchContractId}\n\nNurse-Offer wird beendet. Ggf. neue Schicht oder Reopen prüfen.`,
+      tone: action === 'ACCEPT' ? 'warning' : 'danger',
+      onConfirm: async () => {
+        setConfirmAction(null);
+        setSubmitting(true);
+        setStatus(null);
+        try {
+          const result = await api.respondToMatchOffer({ matchContractId, action });
+          const doneLabel = action === 'ACCEPT' ? 'angenommen' : 'abgelehnt';
+          const nextStep = action === 'ACCEPT'
+            ? 'Vertragskontext prüfen.'
+            : 'Nurse-Offer beendet. Ggf. neue Schicht oder Reopen prüfen.';
+          setOffers((prev) => prev.map((offer) => offer.id === matchContractId ? { ...offer, ...result.matchContract } : offer));
+          setStatus({ tone: 'success', message: `Offer ${doneLabel}. ${nextStep}` });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Offer-Antwort fehlgeschlagen';
+          setStatus({ tone: 'error', message });
+        } finally {
+          setSubmitting(false);
+        }
+      },
+    });
   }
 
   async function handleToggleComm(offerId: string) {
@@ -150,23 +156,27 @@ export function HospitalOffersPage() {
     }
   }
 
-  async function handleReopenOffer(matchContractId: string) {
-    if (!window.confirm(`Offer wirklich erneut öffnen?\n\nContract: ${matchContractId}`)) {
-      return;
-    }
-
-    setSubmitting(true);
-    setStatus(null);
-    try {
-      const result = await api.reopenOffer({ matchContractId });
-      setOffers((prev) => prev.map((offer) => offer.id === matchContractId ? { ...offer, ...result.matchContract } : offer));
-      setStatus({ tone: 'success', message: `Offer erneut geöffnet: ${result.matchContract.id}. Kommunikation wurde ggf. neu angestoßen.` });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Offer-Reopen fehlgeschlagen';
-      setStatus({ tone: 'error', message });
-    } finally {
-      setSubmitting(false);
-    }
+  function handleReopenOffer(matchContractId: string) {
+    setConfirmAction({
+      title: 'Offer erneut öffnen',
+      message: `Offer wirklich erneut öffnen?\n\nContract: ${matchContractId}\n\nBei Opt-in wird die WhatsApp-Kommunikation erneut angestoßen.`,
+      tone: 'warning',
+      onConfirm: async () => {
+        setConfirmAction(null);
+        setSubmitting(true);
+        setStatus(null);
+        try {
+          const result = await api.reopenOffer({ matchContractId });
+          setOffers((prev) => prev.map((offer) => offer.id === matchContractId ? { ...offer, ...result.matchContract } : offer));
+          setStatus({ tone: 'success', message: `Offer erneut geöffnet: ${result.matchContract.id}. Kommunikation wurde ggf. neu angestoßen.` });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Offer-Reopen fehlgeschlagen';
+          setStatus({ tone: 'error', message });
+        } finally {
+          setSubmitting(false);
+        }
+      },
+    });
   }
 
   useEffect(() => {
@@ -411,6 +421,17 @@ export function HospitalOffersPage() {
           </div>
         </div>
       </div>
+      {confirmAction ? (
+        <ConfirmModal
+          title={confirmAction.title}
+          message={confirmAction.message}
+          confirmLabel="Bestätigen"
+          cancelLabel="Abbrechen"
+          tone={confirmAction.tone}
+          onConfirm={confirmAction.onConfirm}
+          onCancel={() => setConfirmAction(null)}
+        />
+      ) : null}
     </section>
   );
 }
