@@ -4,6 +4,7 @@ import { UserRole } from '@prisma/client';
 import { getAuditLogs, type AuditAction } from '../services/audit.service';
 import { getBusinessMetrics } from '../services/metrics.service';
 import { getPayrollExport } from '../services/payroll-export.service';
+import { prisma } from '../config/prisma';
 
 export async function getAuditLogsController(req: Request, res: Response): Promise<void> {
   if (!req.auth) {

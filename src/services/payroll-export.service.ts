@@ -41,7 +41,7 @@ export async function getPayrollExport(hospitalProfileId: string): Promise<{ row
     jobShiftTitle: invoice.matchContract.jobShift.title ?? 'Pflegeeinsatz',
     jobShiftStartDate: invoice.matchContract.jobShift.startTime.toISOString().slice(0, 10),
     jobShiftEndDate: invoice.matchContract.jobShift.endTime.toISOString().slice(0, 10),
-    agreedHours: invoice.matchContract.jobShift.totalPlannedHours,
+    agreedHours: invoice.matchContract.jobShift.totalPlannedHours.toNumber(),
     hourlyRate: invoice.matchContract.nurseProfile.minHourlyRate.toNumber(),
     totalAmount: invoice.amount.toString(),
     invoiceStatus: invoice.status,
