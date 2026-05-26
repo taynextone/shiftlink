@@ -490,4 +490,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+  getBusinessMetrics: () => request<{
+    users: { totalNurses: number; totalHospitals: number };
+    shifts: { total: number };
+    contracts: { total: number; signed: number; pending: number; declined: number; expired: number; conversionRate: number };
+    invoices: { total: number; paid: number; pending: number; paymentRate: number };
+    notifications: { total: number; delivered: number; failed: number; deliveryRate: number };
+  }>('/admin/metrics'),
 };

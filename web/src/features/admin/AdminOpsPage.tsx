@@ -3,6 +3,7 @@ import { ActionBar } from '../../components/ActionBar';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
 import { AuditLogViewer } from './AuditLogViewer';
+import { BusinessMetricsDashboard } from './BusinessMetricsDashboard';
 import { HospitalDashboardPage } from '../hospital/HospitalDashboardPage';
 
 export function AdminOpsPage() {
@@ -80,6 +81,7 @@ export function AdminOpsPage() {
         </div>
       </SectionCard>
 
+      <BusinessMetricsDashboard />
       <AuditLogViewer />
       <HospitalDashboardPage mode="superadmin" />
     </section>

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import createHttpError from 'http-errors';
 import { UserRole } from '@prisma/client';
 import { getAuditLogs, type AuditAction } from '../services/audit.service';
+import { getBusinessMetrics } from '../services/metrics.service';
 
 export async function getAuditLogsController(req: Request, res: Response): Promise<void> {
   if (!req.auth) {
@@ -18,4 +19,17 @@ export async function getAuditLogsController(req: Request, res: Response): Promi
   const result = await getAuditLogs({ action, limit });
 
   res.status(200).json(result);
+}
+
+export async function getBusinessMetricsController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  if (req.auth.role !== UserRole.SUPER_ADMIN) {
+    throw createHttpError(403, 'Only super admins can view business metrics');
+  }
+
+  const metrics = await getBusinessMetrics();
+  res.status(200).json(metrics);
 }
