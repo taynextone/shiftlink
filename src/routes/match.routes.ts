@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { UserRole } from '@prisma/client';
 import {
   createMatchOfferController,
+  extendOfferExpiryController,
   findCandidatesController,
   getContractExecutionOverviewController,
   getContractLifecycleOverviewController,
@@ -21,6 +22,7 @@ import {
 import { validateBody } from '../middlewares/validate';
 import {
   createMatchOfferSchema,
+  extendOfferExpirySchema,
   findCandidatesSchema,
   reopenMatchOfferSchema,
   respondToMatchOfferSchema,
@@ -116,6 +118,14 @@ router.post(
   requireRole(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
   validateBody(signMatchContractSchema),
   asyncHandler(signMatchContractController),
+);
+
+router.post(
+  '/extend-offer',
+  requireAuth,
+  requireRole(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
+  validateBody(extendOfferExpirySchema),
+  asyncHandler(extendOfferExpiryController),
 );
 
 router.post(

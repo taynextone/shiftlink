@@ -156,6 +156,29 @@ export function HospitalOffersPage() {
     }
   }
 
+  function handleExtendOfferExpiry(matchContractId: string) {
+    setConfirmAction({
+      title: 'Offer verlängern',
+      message: `Abgelaufenes Offer verlängern?\n\nContract: ${matchContractId}\n\nDas Offer wird auf PENDING gesetzt und ein neues Ablaufdatum erhält.`,
+      tone: 'warning',
+      onConfirm: async () => {
+        setConfirmAction(null);
+        setSubmitting(true);
+        setStatus(null);
+        try {
+          const result = await api.extendOfferExpiry({ matchContractId });
+          setOffers((prev) => prev.map((offer) => offer.id === matchContractId ? { ...offer, ...result.matchContract } : offer));
+          setStatus({ tone: 'success', message: `Offer verlängert: ${result.matchContract.id}. Neues Ablaufdatum gesetzt.` });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Offer-Verlängerung fehlgeschlagen';
+          setStatus({ tone: 'error', message });
+        } finally {
+          setSubmitting(false);
+        }
+      },
+    });
+  }
+
   function handleReopenOffer(matchContractId: string) {
     setConfirmAction({
       title: 'Offer erneut öffnen',
@@ -376,6 +399,11 @@ export function HospitalOffersPage() {
                       {offer.status === 'DECLINED' || offer.status === 'EXPIRED' ? (
                         <button className="secondary" disabled={submitting} onClick={() => void handleReopenOffer(offer.id)}>
                           {submitting ? '…' : 'Offer erneut öffnen'}
+                        </button>
+                      ) : null}
+                      {offer.status === 'EXPIRED' ? (
+                        <button className="secondary" disabled={submitting} onClick={() => void handleExtendOfferExpiry(offer.id)}>
+                          {submitting ? '…' : 'Offer verlängern'}
                         </button>
                       ) : null}
                       <button

@@ -643,6 +643,62 @@ export async function reopenMatchOffer(
   return reopenedContract;
 }
 
+export async function extendOfferExpiry(
+  actor: { userId: string; role: UserRole },
+  input: { matchContractId: string },
+) {
+  const contract = await prisma.matchContract.findUnique({
+    where: { id: input.matchContractId },
+    include: {
+      nurseProfile: true,
+      jobShift: {
+        include: {
+          hospitalProfile: true,
+          requirements: true,
+        },
+      },
+      invoice: true,
+    },
+  });
+
+  if (!contract) {
+    throw createHttpError(404, 'Match contract not found');
+  }
+
+  const isSuperAdmin = actor.role === UserRole.SUPER_ADMIN;
+  const isHospitalOwner = actor.role === UserRole.HOSPITAL_ADMIN && contract.jobShift.hospitalProfile.userId === actor.userId;
+  if (!isSuperAdmin && !isHospitalOwner) {
+    throw createHttpError(403, 'You are not allowed to extend this offer');
+  }
+
+  const normalizedContract = await markOfferExpiredIfNeeded(contract);
+
+  if (normalizedContract.status !== MatchContractStatus.EXPIRED) {
+    throw createHttpError(409, 'Only expired offers can be extended');
+  }
+
+  const updatedContract = await prisma.matchContract.update({
+    where: { id: normalizedContract.id },
+    data: {
+      status: MatchContractStatus.PENDING,
+      expiresAt: computeOfferExpiry(new Date()),
+      respondedAt: null,
+    },
+    include: {
+      invoice: true,
+      nurseProfile: true,
+      jobShift: {
+        include: {
+          hospitalProfile: true,
+          requirements: true,
+        },
+      },
+    },
+  });
+
+  return updatedContract;
+}
+
 export async function retryMatchOfferWhatsappNotification(
   actor: { userId: string; role: UserRole },
   input: { matchContractId: string },

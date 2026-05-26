@@ -445,6 +445,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+  extendOfferExpiry: (input: { matchContractId: string }) =>
+    request<{ matchContract: { id: string; status: string } }>('/matches/extend-offer', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
   retryOfferWhatsapp: (input: { matchContractId: string }) =>
     request<{ matchContractId: string; queued: boolean }>('/matches/retry-whatsapp', {
       method: 'POST',

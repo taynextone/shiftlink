@@ -17,6 +17,10 @@ export const reopenMatchOfferSchema = z.object({
   matchContractId: z.string().trim().min(1),
 });
 
+export const extendOfferExpirySchema = z.object({
+  matchContractId: z.string().trim().min(1),
+});
+
 export const listVisibleJobShiftsSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional(),
 });
@@ -34,6 +38,7 @@ export type SignMatchContractInput = z.infer<typeof signMatchContractSchema>;
 export type FindCandidatesInput = z.infer<typeof findCandidatesSchema>;
 export type CreateMatchOfferInput = z.infer<typeof createMatchOfferSchema>;
 export type ReopenMatchOfferInput = z.infer<typeof reopenMatchOfferSchema>;
+export type ExtendOfferExpiryInput = z.infer<typeof extendOfferExpirySchema>;
 export type ListVisibleJobShiftsInput = z.infer<typeof listVisibleJobShiftsSchema>;
 export type ListHospitalMatchOffersInput = z.infer<typeof listHospitalMatchOffersSchema>;
 export const signContractExecutionSchema = z.object({
