@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { UserRole } from '@prisma/client';
 import {
+  completeOnboardingController,
   getOwnVerificationOverviewController,
   getPublicNurseProfileController,
   getSuperadminVerificationOverviewByPublicIdController,
@@ -28,6 +29,14 @@ router.patch(
   requireRole(UserRole.NURSE),
   validateBody(updateNurseProfileSchema),
   asyncHandler(updateOwnNurseProfileController),
+);
+
+router.post(
+  '/me/onboarding',
+  requireAuth,
+  requireRole(UserRole.NURSE),
+  validateBody(updateNurseProfileSchema),
+  asyncHandler(completeOnboardingController),
 );
 router.get(
   '/verification/admin/:publicId',

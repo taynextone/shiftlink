@@ -359,3 +359,25 @@ export async function getPublicNurseProfile(publicId: string) {
     })),
   };
 }
+
+export async function completeOnboarding(
+  actor: { userId: string; role: UserRole },
+  input: UpdateNurseProfileInput,
+) {
+  if (actor.role !== UserRole.NURSE) {
+    throw createHttpError(403, 'Only nurses can complete onboarding');
+  }
+
+  const profile = await updateOwnNurseProfile(actor, input);
+
+  // Note: document review is handled separately by superadmin
+  // Onboarding just sets up the profile
+
+  return {
+    id: profile.id,
+    displayName: profile.displayName,
+    phoneNumber: profile.phoneNumber,
+    whatsappOptIn: profile.whatsappOptIn,
+    hasCompletedOnboarding: true,
+  };
+}

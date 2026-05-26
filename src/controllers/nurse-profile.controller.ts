@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import createHttpError from 'http-errors';
 import {
+  completeOnboarding,
   getOwnVerificationOverview,
   getPublicNurseProfile,
   getSuperadminVerificationOverviewByPublicId,
@@ -19,6 +20,16 @@ export async function updateOwnNurseProfileController(req: Request, res: Respons
   res.status(200).json({
     nurseProfile: profile,
   });
+}
+
+export async function completeOnboardingController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const result = await completeOnboarding(req.auth, req.body);
+
+  res.status(200).json(result);
 }
 
 export async function reviewVerificationDocumentController(req: Request, res: Response): Promise<void> {

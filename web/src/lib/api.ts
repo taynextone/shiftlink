@@ -485,4 +485,9 @@ export const api = {
   getContractPdf: (contractId: string) => request<{ contractPdf: ContractPdfResponse }>(`/matches/contract/${contractId}/pdf`),
   getContractExecutionOverview: (contractId: string) => request<{ execution: ContractExecutionOverview }>(`/matches/contract/${contractId}/execution`),
   getContractVoidOverview: (contractId: string) => request<{ voiding: ContractVoidOverview }>(`/matches/contract/${contractId}/void`),
+  completeOnboarding: (input: { displayName: string; phoneNumber: string; whatsappOptIn: boolean; minHourlyRate?: number; specializations?: string[]; clinicName?: string; billingAddress?: string }) =>
+    request<{ id: string; displayName: string; phoneNumber: string; whatsappOptIn: boolean; hasCompletedOnboarding: boolean }>('/nurse-profiles/me/onboarding', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
 };

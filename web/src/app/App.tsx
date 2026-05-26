@@ -17,6 +17,7 @@ import { NurseDashboardPage } from '../features/nurse/NurseDashboardPage';
 import { NurseAvailabilityPage } from '../features/nurse/NurseAvailabilityPage';
 import { NurseJobsPage } from '../features/nurse/NurseJobsPage';
 import { NurseMatchesPage } from '../features/nurse/NurseMatchesPage';
+import { OnboardingWizard } from '../features/onboarding/OnboardingWizard';
 import { NurseProfilePage } from '../features/nurse/NurseProfilePage';
 
 export function App() {
@@ -32,6 +33,7 @@ export function App() {
           <Route path="/nurse/availability" element={<ProtectedRoute allowedRoles={['NURSE']}><NurseAvailabilityPage /></ProtectedRoute>} />
           <Route path="/nurse/matches" element={<ProtectedRoute allowedRoles={['NURSE']}><NurseMatchesPage /></ProtectedRoute>} />
           <Route path="/nurse/profile" element={<ProtectedRoute allowedRoles={['NURSE']}><NurseProfilePage /></ProtectedRoute>} />
+          <Route path="/onboarding" element={<ProtectedRoute allowedRoles={['NURSE', 'HOSPITAL_ADMIN']}><OnboardingWizard /></ProtectedRoute>} />
           <Route path="/hospital" element={<ProtectedRoute allowedRoles={['HOSPITAL_ADMIN', 'SUPER_ADMIN']}><HospitalDashboardPage /></ProtectedRoute>} />
           <Route path="/hospital/shifts" element={<ProtectedRoute allowedRoles={['HOSPITAL_ADMIN', 'SUPER_ADMIN']}><HospitalShiftsPage /></ProtectedRoute>} />
           <Route path="/hospital/offers" element={<ProtectedRoute allowedRoles={['HOSPITAL_ADMIN', 'SUPER_ADMIN']}><HospitalOffersPage /></ProtectedRoute>} />
