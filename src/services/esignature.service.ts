@@ -72,8 +72,8 @@ export async function signContract(
 
   const signatureText =
     party === 'HOSPITAL'
-      ? `Ich, ${contract.jobShift.hospitalProfile.clinicName}, bestätige hiermit den Vertrag mit ${contract.nurseProfile.displayName} für den Einsatz "${contract.jobShift.title ?? 'Pflegeeinsatz'}" vom ${contract.jobShift.startTime.toLocaleDateString('de-DE')} bis ${contract.jobShift.endTime.toLocaleDateString('de-DE')}.`
-      : `Ich, ${contract.nurseProfile.displayName}, bestätige hiermit den Vertrag mit ${contract.jobShift.hospitalProfile.clinicName} für den Einsatz "${contract.jobShift.title ?? 'Pflegeeinsatz'}" vom ${contract.jobShift.startTime.toLocaleDateString('de-DE')} bis ${contract.jobShift.endTime.toLocaleDateString('de-DE')}.`;
+      ? `Ich, ${contract.jobShift.hospitalProfile.clinicName}, bestaetige hiermit den Vertrag mit ${contract.nurseProfile.displayName} fuer den Einsatz \"${contract.jobShift.title ?? 'Pflegeeinsatz'}\" vom ${new Date(contract.jobShift.startTime).toLocaleDateString('de-DE')} bis ${new Date(contract.jobShift.endTime).toLocaleDateString('de-DE')}.`
+      : `Ich, ${contract.nurseProfile.displayName}, bestaetige hiermit den Vertrag mit ${contract.jobShift.hospitalProfile.clinicName} fuer den Einsatz \"${contract.jobShift.title ?? 'Pflegeeinsatz'}\" vom ${new Date(contract.jobShift.startTime).toLocaleDateString('de-DE')} bis ${new Date(contract.jobShift.endTime).toLocaleDateString('de-DE')}.`;
 
   const signed = await prisma.contractSignatureEvent.create({
     data: {
