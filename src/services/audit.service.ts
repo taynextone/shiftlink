@@ -17,7 +17,8 @@ export type AuditAction =
   | 'WHATSAPP_RETRY'
   | 'WEBHOOK_RETRY'
   | 'FAILURE_RESOLVE'
-  | 'PROFILE_RELEASE';
+  | 'PROFILE_RELEASE'
+  | 'NURSE_DOCUMENT_UPLOAD';
 
 export async function recordAuditLog(data: {
   action: AuditAction;

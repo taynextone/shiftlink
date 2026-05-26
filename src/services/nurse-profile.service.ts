@@ -1,7 +1,8 @@
 import createHttpError from 'http-errors';
 import { Prisma, UserRole, VerificationDocumentStatus, VerificationDocumentType } from '@prisma/client';
 import { prisma } from '../config/prisma';
-import { ReviewVerificationDocumentInput, SetMatchingReleaseInput, UpdateNurseProfileInput } from '../schemas/nurse-profile.schema';
+import { ReviewVerificationDocumentInput, SetMatchingReleaseInput, UpdateNurseProfileInput, UploadDocumentInput } from '../schemas/nurse-profile.schema';
+import { recordAuditLog } from './audit.service';
 
 const REQUIRED_DOCUMENT_TYPES: VerificationDocumentType[] = [
   VerificationDocumentType.EXAMEN,
@@ -379,5 +380,60 @@ export async function completeOnboarding(
     phoneNumber: profile.phoneNumber,
     whatsappOptIn: profile.whatsappOptIn,
     hasCompletedOnboarding: true,
+  };
+}
+
+export async function uploadVerificationDocument(
+  actor: { userId: string; role: UserRole },
+  input: UploadDocumentInput,
+) {
+  if (actor.role !== UserRole.NURSE) {
+    throw createHttpError(403, 'Only nurses can upload verification documents');
+  }
+
+  const nurseProfile = await prisma.nurseProfile.findUnique({
+    where: { userId: actor.userId },
+    include: { verificationDocuments: true },
+  });
+
+  if (!nurseProfile) {
+    throw createHttpError(404, 'Nurse profile not found');
+  }
+
+  // Check if document of this type already exists and is pending
+  const existingDoc = nurseProfile.verificationDocuments.find(
+    (doc) => doc.documentType === input.documentType && doc.status === 'PENDING',
+  );
+
+  if (existingDoc) {
+    throw createHttpError(409, 'A pending document of this type already exists. Please wait for review.');
+  }
+
+  const document = await prisma.verificationDocument.create({
+    data: {
+      nurseProfileId: nurseProfile.id,
+      documentType: input.documentType as VerificationDocumentType,
+      fileUrl: `verification/${nurseProfile.id}/${input.documentType}/${Date.now()}-${input.fileName}`,
+      status: VerificationDocumentStatus.PENDING,
+      fileSize: input.fileSize,
+      contentType: input.contentType,
+    },
+  });
+
+  void recordAuditLog({
+    action: 'NURSE_DOCUMENT_UPLOAD',
+    actorUserId: actor.userId,
+    actorRole: actor.role,
+    targetEntityType: 'VerificationDocument',
+    targetEntityId: document.id,
+    metadata: { documentType: input.documentType, fileName: input.fileName },
+  });
+
+  return {
+    id: document.id,
+    documentType: document.documentType,
+    status: document.status,
+    fileUrl: document.fileUrl,
+    uploadUrl: `/api/v1/nurse-profiles/me/documents/${document.id}/upload`,
   };
 }

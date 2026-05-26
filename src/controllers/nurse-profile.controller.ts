@@ -8,6 +8,7 @@ import {
   reviewVerificationDocument,
   setMatchingReleaseByPublicId,
   updateOwnNurseProfile,
+  uploadVerificationDocument,
 } from '../services/nurse-profile.service';
 
 export async function updateOwnNurseProfileController(req: Request, res: Response): Promise<void> {
@@ -30,6 +31,16 @@ export async function completeOnboardingController(req: Request, res: Response):
   const result = await completeOnboarding(req.auth, req.body);
 
   res.status(200).json(result);
+}
+
+export async function uploadDocumentController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const result = await uploadVerificationDocument(req.auth, req.body);
+
+  res.status(201).json(result);
 }
 
 export async function reviewVerificationDocumentController(req: Request, res: Response): Promise<void> {

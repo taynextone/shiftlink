@@ -490,6 +490,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+  uploadVerificationDocument: (input: { documentType: string; fileName: string; contentType: string; fileSize: number }) =>
+    request<{ id: string; uploadUrl: string }>('/nurse-profiles/me/documents', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
   getBusinessMetrics: () => request<{
     users: { totalNurses: number; totalHospitals: number };
     shifts: { total: number };

@@ -103,5 +103,14 @@ export const reviewVerificationDocumentSchema = z.object({
 });
 
 export type UpdateNurseProfileInput = z.infer<typeof updateNurseProfileSchema>;
+
+export const uploadDocumentSchema = z.object({
+  documentType: z.enum(['EXAMEN', 'OCCUPATIONAL_HEALTH_CLEARANCE']),
+  fileName: z.string().trim().min(1).max(255),
+  contentType: z.string().trim().min(1),
+  fileSize: z.number().int().positive().max(10 * 1024 * 1024),
+});
+
+export type UploadDocumentInput = z.infer<typeof uploadDocumentSchema>;
 export type ReviewVerificationDocumentInput = z.infer<typeof reviewVerificationDocumentSchema>;
 export type SetMatchingReleaseInput = z.infer<typeof setMatchingReleaseSchema>;
