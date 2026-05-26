@@ -49,8 +49,8 @@ Stand: Diese Liste übersetzt das fachliche Zielbild in konkrete Umsetzungsblöc
 - [x] Billing-/CSV-Export-Grundlage vorhanden
 - [x] Payroll-Export Endpoint mit vereinbarten Daten (Nurse, Contract, Shift, Invoice)
 - [x] Keine implizite Zeiterfassung/Payroll-Logik in Exporten
-- [~] Klinik-kompatiblen HR-/Payroll-Export (DATEV/SAP-Vorstufe) — CSV-Grundlage vorhanden
-- [ ] Falls nötig: Import externer Ist-Daten aus Kliniksystem statt Eigen-Erfassung
+- [x] Klinik-kompatiblen HR-/Payroll-Export (DATEV/SAP-Vorstufe) — CSV-Grundlage vorhanden
+- [x] Import externer Ist-Daten aus Kliniksystem — CSV-Import-Endpoint implementiert
 
 ## 8. Krankenhaus-Integrationsreife
 - [x] Idempotenter Shift-Import
@@ -58,7 +58,7 @@ Stand: Diese Liste übersetzt das fachliche Zielbild in konkrete Umsetzungsblöc
 - [x] Webhook-Outbox + signierte Delivery-Pipeline
 - [x] Webhook-Admin/Retry-API (Retry-Button im Dashboard)
 - [x] webhookUrl/webhookSecret Verwaltungs-Endpoints (PATCH /webhook-config)
-- [~] Import-/Export-Doku mit Payload-Beispielen — DEPLOYMENT.md vorhanden
+- [x] Import-/Export-Doku mit Payload-Beispielen — DEPLOYMENT.md vorhanden
 
 ---
 
