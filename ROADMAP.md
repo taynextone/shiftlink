@@ -146,23 +146,25 @@ Blocked note:
 Status: in_progress
 Priority: critical
 
-Needed:
-- verify access controls across sensitive flows
-- audit log visibility and retention expectations
-- data handling review for healthcare-adjacent sensitivity
-- deletion / retention / export policy support
-- permission boundary review across nurse/hospital/admin roles
+Checklist:
+- [done] Verify access controls across sensitive flows
+- [done] Audit log visibility and retention expectations
+- [done] Audit log viewer for superadmins
+- [done] Destructive-action confirmation patterns (ConfirmModal)
+- [partial] Data handling review for healthcare-adjacent sensitivity
+- [todo] Deletion / retention / export policy support
+- [partial] Permission boundary review across nurse/hospital/admin roles
 
 ### 9. Reliability / Production Hardening
 Status: in_progress
 Priority: critical
 
-Needed:
-- queue failure recovery visibility
-- retry/error handling review
-- concurrency/race-condition review in contract/offer flows
-- operational health checks and runbooks
-- deployment/runtime configuration review
+Checklist:
+- [done] Queue failure recovery visibility
+- [done] Retry/error handling review
+- [done] Concurrency/race-condition review in contract/offer flows
+- [done] Operational health checks and runbooks
+- [partial] Deployment/runtime configuration review
 
 ---
 
