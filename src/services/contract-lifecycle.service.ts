@@ -1,5 +1,6 @@
 import { prisma } from '../config/prisma';
 import createHttpError from 'http-errors';
+import { billingQueue } from '../config/queues';
 
 const NO_SHOW_DEADLINE_HOURS = 24;
 
@@ -44,7 +45,7 @@ export async function reportNoShow(contractId: string, actor: { userId: string; 
     throw createHttpError(409, 'No-show reporting deadline has passed');
   }
 
-  return prisma.matchContract.update({
+  const updated = await prisma.matchContract.update({
     where: { id: contractId },
     data: {
       status: 'NO_SHOW_REPORTED',
@@ -52,6 +53,14 @@ export async function reportNoShow(contractId: string, actor: { userId: string; 
       cancelReason: 'No-show reported by hospital',
     },
   });
+
+  // No-Refund Policy: Create invoice if not exists
+  const freshContract = await prisma.matchContract.findUnique({ where: { id: contractId }, include: { invoice: true } });
+  if (!freshContract?.invoice) {
+    await billingQueue.add('create-invoice', { matchContractId: contractId }, { jobId: `invoice:${contractId}` });
+  }
+
+  return updated;
 }
 
 export async function cancelByHospital(contractId: string, reason: string) {
@@ -67,7 +76,7 @@ export async function cancelByHospital(contractId: string, reason: string) {
     throw createHttpError(409, 'Can only cancel signed or active contracts');
   }
 
-  return prisma.matchContract.update({
+  const updated = await prisma.matchContract.update({
     where: { id: contractId },
     data: {
       status: 'CANCELED_BY_HOSPITAL',
@@ -75,6 +84,14 @@ export async function cancelByHospital(contractId: string, reason: string) {
       cancelReason: reason,
     },
   });
+
+  // No-Refund Policy: Create invoice if not exists
+  const freshContract = await prisma.matchContract.findUnique({ where: { id: contractId }, include: { invoice: true } });
+  if (!freshContract?.invoice) {
+    await billingQueue.add('create-invoice', { matchContractId: contractId }, { jobId: `invoice:${contractId}` });
+  }
+
+  return updated;
 }
 
 export async function completeContract(contractId: string) {
