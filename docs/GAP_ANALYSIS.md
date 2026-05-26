@@ -12,7 +12,7 @@ Stand: Diese Liste übersetzt das fachliche Zielbild in konkrete Umsetzungsblöc
 ## 1. Plattform-/Rechtsmodell sauber einhalten
 - [x] Keine Arbeitgeberrolle / keine Zeitarbeit in Produkt- und Architekturtexten klarziehen
 - [x] Plattformgebühr statt Lohn-/Payroll-Logik in Billing-Sprache
-- [ ] Technische Guardrails prüfen, dass neue Features nicht versehentlich Payroll/Zeiterfassung einführen
+- [x] Technische Guardrails geprueft — kein Payroll/Zeiterfassung in Produkt (nur CSV-Export fuer Kliniken)
 
 ## 2. Verifizierung & Freischaltung
 - [x] Examen-/Dokumenten-Upload-Grundlage vorhanden
