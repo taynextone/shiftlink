@@ -13,7 +13,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { api, type ContractExecutionOverview, type ContractLifecycle, type ContractPdfResponse, type ContractSnapshotResponse, type ContractVoidOverview, type HospitalOffer } from '../../lib/api';
 
 import { ConfirmModal } from '../../components/ConfirmModal';
-import { buildVoidEscalationChecklist, interpretBillingConflict, interpretContractState, interpretInvoiceException, interpretVoidIntervention, type InterventionTone } from './ops-helpers';
+import { buildContractStateSteps, buildVoidEscalationChecklist, interpretBillingConflict, interpretContractState, interpretInvoiceException, interpretVoidIntervention, type InterventionTone } from './ops-helpers';
 
 function formatDateTime(value?: string | null) {
   return value ? new Date(value).toLocaleString('de-DE') : '—';
@@ -64,6 +64,7 @@ export function HospitalContractsPage() {
   const invoiceException = useMemo(() => interpretInvoiceException(lifecycle), [lifecycle]);
   const billingConflict = useMemo(() => interpretBillingConflict(lifecycle), [lifecycle]);
   const voidEscalationChecklist = useMemo(() => buildVoidEscalationChecklist(lifecycle), [lifecycle]);
+  const contractStateSteps = useMemo(() => buildContractStateSteps(lifecycle), [lifecycle]);
   const canSignExecution = Boolean(contractId) && lifecycle?.status === 'SIGNED' && lifecycle.executionStatus !== 'FULLY_EXECUTED' && lifecycle.executionStatus !== 'VOIDED';
   const [confirmAction, setConfirmAction] = useState<null | { title: string; message: string; tone: 'danger' | 'warning' | 'neutral'; onConfirm: () => void | Promise<void> }>(null);
   const canVoidContract = Boolean(contractId) && voidIntervention?.label === 'Void möglich' && billingConflict?.tone !== 'error' && voidReason.trim().length > 0;
@@ -426,6 +427,21 @@ export function HospitalContractsPage() {
                         { label: 'Nächster Schritt', value: contractState.nextAction },
                       ]}
                     />
+                  ) : null}
+                  {contractStateSteps.length > 0 ? (
+                    <div style={{ marginTop: '0.75rem' }}>
+                      <strong>State Machine</strong>
+                      <div className="state-steps">
+                        {contractStateSteps.map((step, index) => (
+                          <span
+                            key={step.state}
+                            className={`state-step${step.isActive ? ' active' : ''}${step.isTerminal ? ' terminal' : ''}`}
+                          >
+                            {index > 0 ? ' → ' : ''}{step.label}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   ) : null}
                   {billingConflict ? <FeedbackMessage tone={toFeedbackTone(billingConflict.tone)} message={`${billingConflict.label}: ${billingConflict.detail}`} /> : null}
                   <InfoList

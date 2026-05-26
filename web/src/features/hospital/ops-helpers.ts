@@ -150,6 +150,39 @@ export function interpretBillingConflict(lifecycle: ContractLifecycle | null): B
   return null;
 }
 
+export type ContractStateStep = {
+  state: string;
+  label: string;
+  isActive: boolean;
+  isTerminal: boolean;
+};
+
+export function buildContractStateSteps(lifecycle: ContractLifecycle | null): ContractStateStep[] {
+  if (!lifecycle) return [];
+
+  const status = lifecycle.status;
+  const executionStatus = lifecycle.executionStatus;
+
+  const steps: ContractStateStep[] = [
+    { state: 'PENDING', label: 'Offer Pending', isActive: status === 'PENDING', isTerminal: false },
+    { state: 'SIGNED', label: 'Contract Signed', isActive: status === 'SIGNED', isTerminal: false },
+    { state: 'EXECUTING', label: 'In Execution', isActive: status === 'SIGNED' && executionStatus !== 'FULLY_EXECUTED' && executionStatus !== 'VOIDED', isTerminal: false },
+    { state: 'FULLY_EXECUTED', label: 'Fully Executed', isActive: executionStatus === 'FULLY_EXECUTED', isTerminal: true },
+  ];
+
+  if (status === 'DECLINED') {
+    steps.push({ state: 'DECLINED', label: 'Declined', isActive: true, isTerminal: true });
+  }
+  if (status === 'EXPIRED') {
+    steps.push({ state: 'EXPIRED', label: 'Expired', isActive: true, isTerminal: true });
+  }
+  if (executionStatus === 'VOIDED') {
+    steps.push({ state: 'VOIDED', label: 'Voided', isActive: true, isTerminal: true });
+  }
+
+  return steps;
+}
+
 export type BillingConflictResult = {
   tone: InterventionTone;
   label: string;

@@ -11,6 +11,7 @@ import { SectionCard } from '../../components/SectionCard';
 import { StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { api, type HospitalBillingExportRow } from '../../lib/api';
+import { exportRowsAsCsv } from '../../lib/export';
 
 function getBillingRowIntervention(row: HospitalBillingExportRow) {
   if (row.invoiceStatus === 'PENDING' && row.matchStatus === 'SIGNED') {
@@ -164,6 +165,9 @@ export function HospitalBillingPage() {
         </div>
         <ActionBar>
           <button type="button" disabled={submitting} onClick={() => void handleLoadExport()}>{submitting ? 'Lädt…' : 'Export laden'}</button>
+            {rows.length > 0 ? (
+              <button type="button" className="secondary" onClick={() => exportRowsAsCsv(rows, 'billing-export')}>CSV Export</button>
+            ) : null}
         </ActionBar>
         {feedback ? <FeedbackMessage tone={feedback.tone} message={feedback.message} /> : null}
         <div className="record-list compact-list">
