@@ -15,6 +15,7 @@ import {
   getHospitalWhatsAppEventsController,
   getWhatsAppEventsController,
   updateWebhookConfigController,
+  getDossierOverviewController,
 } from '../controllers/job-shift.controller';
 import { requireAuth, requireRole } from '../middlewares/auth';
 import { validateBody } from '../middlewares/validate';
@@ -71,6 +72,13 @@ router.patch(
   requireRole(UserRole.HOSPITAL_ADMIN),
   validateBody(updateWebhookConfigSchema),
   asyncHandler(updateWebhookConfigController),
+);
+
+router.get(
+  '/dossier-overview',
+  requireAuth,
+  requireRole(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
+  asyncHandler(getDossierOverviewController),
 );
 
 router.get(

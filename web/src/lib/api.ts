@@ -522,4 +522,15 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(input),
     }),
+  getHospitalDossierOverview: () => request<{
+    dossiers: Array<{
+      nurseProfileId: string;
+      publicId: string;
+      displayName: string;
+      isReleasedForMatching: boolean;
+      signedAssignmentsCount: number;
+      verifiedDocumentsCount: number;
+      lastAssignmentDate: string | null;
+    }>;
+  }>('/job-shifts/dossier-overview'),
 };

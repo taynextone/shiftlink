@@ -11,6 +11,7 @@ import {
 } from '../services/job-shift.service';
 import { getInvoiceDetail, markInvoicePaid } from '../services/billing.service';
 import { listHospitalWebhookEvents, retryWebhookEvent, updateHospitalWebhookConfig } from '../services/webhook.service';
+import { getHospitalDossierOverview } from '../services/dossier.service';
 import { getHospitalWhatsAppEvents, getWhatsAppEventsForContract } from '../services/whatsapp.service';
 import { listAsyncProcessFailures, resolveAsyncFailure } from '../services/async-process.service';
 
@@ -150,6 +151,35 @@ export async function updateWebhookConfigController(req: Request, res: Response)
   }
 
   const result = await updateHospitalWebhookConfig(req.auth, req.body);
+  res.status(200).json(result);
+}
+
+export async function getDossierOverviewController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const isSuperAdmin = req.auth.role === UserRole.SUPER_ADMIN;
+  const isHospitalAdmin = req.auth.role === UserRole.HOSPITAL_ADMIN;
+  if (!isSuperAdmin && !isHospitalAdmin) {
+    throw createHttpError(403, 'Access denied');
+  }
+
+  let hospitalProfileId: string | undefined;
+  if (isHospitalAdmin) {
+    const hospitalProfile = await prisma.hospitalProfile.findUnique({
+      where: { userId: req.auth.userId },
+    });
+    hospitalProfileId = hospitalProfile?.id;
+  } else {
+    hospitalProfileId = typeof req.query.hospitalProfileId === 'string' ? req.query.hospitalProfileId : undefined;
+  }
+
+  if (!hospitalProfileId) {
+    throw createHttpError(400, 'Hospital profile ID is required');
+  }
+
+  const result = await getHospitalDossierOverview(hospitalProfileId);
   res.status(200).json(result);
 }
 
