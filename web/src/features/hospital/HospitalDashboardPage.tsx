@@ -66,7 +66,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
   const nextOperationalFocus = interventionHotspots.map((item) => item.hint);
 
   const [interveningId, setInterveningId] = useState<string | null>(null);
-  const [interventionFeedback, setInterventionFeedback] = useState<string | null>(null);
+  const [interventionFeedback, setInterventionFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
 
   const handleRetryWebhook = useCallback(async (eventId: string) => {
     setInterveningId(eventId);
@@ -75,9 +75,9 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
       await api.retryWebhookEvent(eventId);
       await reloadWebhookData();
       await reloadAsyncFailureData();
-      setInterventionFeedback('Webhook-Retry wurde ausgelöst und die sichtbaren Daten wurden aktualisiert.');
+      setInterventionFeedback({ tone: 'success', message: 'Webhook-Retry wurde ausgelöst und die sichtbaren Daten wurden aktualisiert.' });
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Retry fehlgeschlagen');
+      setInterventionFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Retry fehlgeschlagen' });
     } finally {
       setInterveningId(null);
     }
@@ -97,9 +97,9 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
         try {
           await api.resolveAsyncFailure(failureId);
           await reloadAsyncFailureData();
-          setInterventionFeedback('Der Worker-Fehler wurde als behandelt markiert und aus der Liste entfernt.');
+          setInterventionFeedback({ tone: 'success', message: 'Der Worker-Fehler wurde als behandelt markiert und aus der Liste entfernt.' });
         } catch (error) {
-          alert(error instanceof Error ? error.message : 'Resolve fehlgeschlagen');
+          setInterventionFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Resolve fehlgeschlagen' });
         } finally {
           setInterveningId(null);
         }
@@ -114,9 +114,9 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
       await api.retryWebhookEvent(webhookEventId);
       await reloadWebhookData();
       await reloadAsyncFailureData();
-      setInterventionFeedback('Webhook-Retry wurde direkt aus dem Worker-Fehler ausgelöst.');
+      setInterventionFeedback({ tone: 'success', message: 'Webhook-Retry wurde direkt aus dem Worker-Fehler ausgelöst.' });
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Webhook-Retry aus Fehlerkarte fehlgeschlagen');
+      setInterventionFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Webhook-Retry fehlgeschlagen' });
     } finally {
       setInterveningId(null);
     }
@@ -128,9 +128,9 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
     try {
       await api.retryOfferWhatsapp({ matchContractId });
       await reloadAsyncFailureData();
-      setInterventionFeedback('WhatsApp-Kommunikation wurde erneut in die Queue gestellt.');
+      setInterventionFeedback({ tone: 'success', message: 'WhatsApp-Kommunikation wurde erneut in die Queue gestellt.' });
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'WhatsApp-Retry aus Fehlerkarte fehlgeschlagen');
+      setInterventionFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'WhatsApp-Retry fehlgeschlagen' });
     } finally {
       setInterveningId(null);
     }
@@ -143,7 +143,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
         title={mode === 'superadmin' ? 'Superadmin Operations Control Plane' : 'Hospital Operations Dashboard'}
         description={mode === 'superadmin' ? 'Zentrale Superadmin-Sicht auf operative Hotspots, Failures und Governance-nahe Interventionen.' : 'Zentrale operative Startseite für Bedarfe, Offers, Verträge und Billing. Fokus auf echtem Backend-Status statt Platzhalter-Widgets.'}
       />
-      {interventionFeedback ? <FeedbackMessage tone="success" message={interventionFeedback} /> : null}
+      {interventionFeedback ? <FeedbackMessage tone={interventionFeedback.tone} message={interventionFeedback.message} /> : null}
       <div className="stats-grid">
         <KpiCard label="Offene Schichten" value={String(openShifts.length)} helper="Bedarfe, die aktiv in Kandidaten- und Offer-Arbeit gezogen werden können." />
         <KpiCard label="Pending Offers" value={String(totalPendingOffers)} helper="Angebote, bei denen operatives Follow-up oder Beobachtung nötig ist." />
