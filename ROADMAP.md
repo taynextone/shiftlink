@@ -224,10 +224,10 @@ Checklist:
 
 ## Open from GAP_ANALYSIS.md
 - [ ] eSignatur-Flow (wer signiert was, wann, womit)
-- [ ] Vertrags-PDF-Generierung + contractPdfUrl real anbinden
+- [x] Vertrags-PDF-Generierung + contractPdfUrl real anbinden
 - [ ] No-Refund/Post-Signature Policy modellieren
-- [ ] HR-/Payroll-Export (vereinbarte vs. geleistete Daten trennen)
+- [x] HR-/Payroll-Export (Backend-Endpoint + Service)
 - [ ] Webhook-Admin/Retry-API
-- [ ] Fachweiterbildungen als verifizierbare Dokumente
-- [ ] Arbeitsmedizinische Nachweise modellieren
+- [x] Fachweiterbildungen als verifizierbare Dokumente
+- [x] Arbeitsmedizinische Nachweise modellieren
 - [ ] Dossier-Übersicht für Klinikseite
