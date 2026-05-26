@@ -6,6 +6,7 @@ import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { Field } from '../../components/Field';
 import { FormSection } from '../../components/FormSection';
 import { InfoList } from '../../components/InfoList';
+import { MetricList } from '../../components/MetricList';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -33,6 +34,7 @@ export function HospitalShiftsPage() {
   const [externalJobShiftId, setExternalJobShiftId] = useState('ext-demo-1');
   const [title, setTitle] = useState('ITS Einsatz');
   const [submitting, setSubmitting] = useState(false);
+  const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
 
   const errors = useMemo(() => ({
     externalJobShiftId: !externalJobShiftId.trim() ? 'Externe ID ist erforderlich' : null,
@@ -40,6 +42,8 @@ export function HospitalShiftsPage() {
   }), [externalJobShiftId, title]);
 
   const canSubmit = Boolean(externalJobShiftId.trim()) && Boolean(title.trim());
+
+  const selectedShift = useMemo(() => jobShifts.find((s) => s.id === selectedShiftId) ?? null, [jobShifts, selectedShiftId]);
 
   async function handleImport(event: React.FormEvent) {
     event.preventDefault();
@@ -100,35 +104,86 @@ export function HospitalShiftsPage() {
         </ActionBar>
       </form>
       {status ? <FeedbackMessage tone={status.tone} message={status.message} /> : null}
-      <AsyncState loading={loading} error={error} isEmpty={jobShifts.length === 0} emptyMessage="Noch keine Schichten vorhanden.">
-        <div className="record-list">
-          {jobShifts.map((shift) => {
-            const importState = computeShiftImportState(shift);
-            return (
+
+      <div className="content-grid two-columns-equal">
+        <div className="stack">
+          <SectionCard title="Schicht-Übersicht" description={`${jobShifts.length} Schichten geladen. Klick auf eine Schicht für Detailansicht und Quick-Actions.`}>
+            <div className="record-list compact-list">
+              {loading ? <p className="hint">Wird geladen…</p> : null}
+              {error ? <p className="hint">Fehler: {String(error)}</p> : null}
+              {jobShifts.length === 0 && !loading ? <p className="hint">Noch keine Schichten vorhanden.</p> : null}
+              {jobShifts.map((shift) => {
+                const importState = computeShiftImportState(shift);
+                const isSelected = selectedShiftId === shift.id;
+                return (
+                  <button
+                    key={shift.id}
+                    type="button"
+                    className={`panel subpanel${isSelected ? ' selected' : ''}`}
+                    style={{ width: '100%', textAlign: 'left', cursor: 'pointer' }}
+                    onClick={() => setSelectedShiftId(shift.id)}
+                  >
+                    <div className="section-heading-row">
+                      <strong>{shift.title ?? 'Pflegeeinsatz'}</strong>
+                      <StatusBadge value={shift.status} />
+                    </div>
+                    <p>{shift.locationCity ?? 'ohne Ort'} · {new Date(shift.startTime).toLocaleDateString('de-DE')}</p>
+                    <p>Offers: {shift.offerCounts?.total ?? 0} total / {shift.offerCounts?.pending ?? 0} pending / {shift.offerCounts?.signed ?? 0} signed</p>
+                    <p className="hint">{importState.label}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </SectionCard>
+        </div>
+
+        <div className="stack">
+          {selectedShift ? (
+            <>
               <SectionCard
-                key={shift.id}
-                title={shift.title ?? 'Pflegeeinsatz'}
-                description={shift.locationCity ?? 'ohne Ort'}
-                actions={<StatusBadge value={shift.status} />}
+                title={selectedShift.title ?? 'Pflegeeinsatz'}
+                description={`${selectedShift.locationCity ?? 'ohne Ort'} · ${new Date(selectedShift.startTime).toLocaleString('de-DE')}`}
+                actions={<StatusBadge value={selectedShift.status} />}
               >
                 <InfoList
                   items={[
-                    { label: 'Start', value: new Date(shift.startTime).toLocaleString('de-DE') },
-                    { label: 'Ende', value: new Date(shift.endTime).toLocaleString('de-DE') },
-                    { label: 'Geplante Stunden', value: shift.totalPlannedHours },
-                    { label: 'Offer-Lage', value: `${shift.offerCounts?.total ?? 0} total / ${shift.offerCounts?.pending ?? 0} pending / ${shift.offerCounts?.signed ?? 0} signed` },
-                    { label: 'Import-Interventionsstatus', value: importState.label },
-                    { label: 'Import-Hinweis', value: importState.reason },
+                    { label: 'Start', value: new Date(selectedShift.startTime).toLocaleString('de-DE') },
+                    { label: 'Ende', value: new Date(selectedShift.endTime).toLocaleString('de-DE') },
+                    { label: 'Geplante Stunden', value: selectedShift.totalPlannedHours },
+                    { label: 'Offer-Lage', value: `${selectedShift.offerCounts?.total ?? 0} total / ${selectedShift.offerCounts?.pending ?? 0} pending / ${selectedShift.offerCounts?.signed ?? 0} signed` },
+                    { label: 'Import-Interventionsstatus', value: computeShiftImportState(selectedShift).label },
+                    { label: 'Import-Hinweis', value: computeShiftImportState(selectedShift).reason },
+                  ]}
+                />
+              </SectionCard>
+              <SectionCard title="Quick-Actions" description="Direkte Sprungpunkte aus dem Schicht-Kontext.">
+                <MetricList
+                  items={[
+                    { label: 'Offers', value: `${selectedShift.offerCounts?.total ?? 0} gesamt` },
+                    { label: 'Pending', value: `${selectedShift.offerCounts?.pending ?? 0} offen` },
+                    { label: 'Signed', value: `${selectedShift.offerCounts?.signed ?? 0} abgeschlossen` },
                   ]}
                 />
                 <ActionBar>
-                  <Link to={`/hospital/offers?jobShiftId=${encodeURIComponent(shift.id)}`}>Offers zur Schicht öffnen</Link>
+                  <Link to={`/hospital/offers?jobShiftId=${encodeURIComponent(selectedShift.id)}`}>
+                    <button type="button" className="secondary">Offers öffnen</button>
+                  </Link>
+                  <Link to={`/hospital/contracts?jobShiftId=${encodeURIComponent(selectedShift.id)}`}>
+                    <button type="button" className="secondary">Contracts öffnen</button>
+                  </Link>
+                  <Link to={`/hospital/billing`}>
+                    <button type="button" className="secondary">Billing öffnen</button>
+                  </Link>
                 </ActionBar>
               </SectionCard>
-            );
-          })}
+            </>
+          ) : (
+            <SectionCard title="Schicht-Details" description="Wähle eine Schicht aus der Liste, um Details und Quick-Actions zu sehen.">
+              <p className="hint">Keine Schicht ausgewählt.</p>
+            </SectionCard>
+          )}
         </div>
-      </AsyncState>
+      </div>
     </section>
   );
 }
