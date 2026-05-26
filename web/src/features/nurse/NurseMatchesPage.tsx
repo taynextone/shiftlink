@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ActionBar } from '../../components/ActionBar';
 import { AsyncState } from '../../components/AsyncState';
+import { ConfirmModal } from '../../components/ConfirmModal';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { InfoList } from '../../components/InfoList';
 import { PageHeader } from '../../components/PageHeader';
@@ -14,19 +15,30 @@ export function NurseMatchesPage() {
   const contracts = data?.matchContracts ?? [];
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
-
-  async function handleRespond(matchContractId: string, action: 'ACCEPT' | 'DECLINE') {
-    setActiveId(matchContractId);
-    setStatus(null);
-    try {
-      await api.respondToMatchOffer({ matchContractId, action });
-      setStatus({ tone: 'success', message: `Angebot ${action === 'ACCEPT' ? 'angenommen' : 'abgelehnt'}.` });
-      await reload();
-    } catch (err) {
-      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Aktion fehlgeschlagen' });
-    } finally {
-      setActiveId(null);
-    }
+  const [confirmAction, setConfirmAction] = useState<null | { title: string; message: string; tone: 'danger' | 'warning' | 'neutral'; onConfirm: () => void | Promise<void> }>(null);
+  function handleRespond(matchContractId: string, action: 'ACCEPT' | 'DECLINE') {
+    const actionLabel = action === 'ACCEPT' ? 'annehmen' : 'ablehnen';
+    setConfirmAction({
+      title: `Offer ${actionLabel}`,
+      message: action === 'ACCEPT'
+        ? `Offer wirklich annehmen?\n\nContract: ${matchContractId}\n\nDamit wird ein verbindlicher Vertrag erzeugt.`
+        : `Offer wirklich ablehnen?\n\nContract: ${matchContractId}\n\nDas Angebot wird endgültig geschlossen.`,
+      tone: action === 'ACCEPT' ? 'warning' : 'danger',
+      onConfirm: async () => {
+        setConfirmAction(null);
+        setActiveId(matchContractId);
+        setStatus(null);
+        try {
+          await api.respondToMatchOffer({ matchContractId, action });
+          setStatus({ tone: 'success', message: `Angebot ${action === 'ACCEPT' ? 'angenommen' : 'abgelehnt'}.` });
+          await reload();
+        } catch (err) {
+          setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Aktion fehlgeschlagen' });
+        } finally {
+          setActiveId(null);
+        }
+      },
+    });
   }
 
   return (
@@ -65,6 +77,17 @@ export function NurseMatchesPage() {
           })}
         </div>
       </AsyncState>
+      {confirmAction ? (
+        <ConfirmModal
+          title={confirmAction.title}
+          message={confirmAction.message}
+          confirmLabel="Bestätigen"
+          cancelLabel="Abbrechen"
+          tone={confirmAction.tone}
+          onConfirm={confirmAction.onConfirm}
+          onCancel={() => setConfirmAction(null)}
+        />
+      ) : null}
     </section>
   );
 }
