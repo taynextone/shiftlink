@@ -214,13 +214,15 @@ Checklist:
 - Phase 2 — Workflow Hardening: COMPLETE ✅
 - Phase 1 — Core Product Completion: COMPLETE ✅
 
-## Overall Progress: ~95%
+## Overall Progress: ~96%
 - Core product: Complete
 - Operations & admin: Complete
 - Workflow hardening: Complete
 - Go-live readiness: Complete
-- Commercial readiness: In progress
-- Remaining: eSignatur, Vertrags-PDF, HR-Export, Deployment
+- Commercial readiness: Complete
+- GAP_ANALYSIS: Complete
+- Test coverage: 58 tests green
+- Remaining: Visual QA, server deployment, external e-signature integration
 
 ## Open from GAP_ANALYSIS.md
 - [x] eSignatur-Flow (eigener Flow, kein DocuSign nötig)
