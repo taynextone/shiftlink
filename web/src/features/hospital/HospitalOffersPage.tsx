@@ -278,8 +278,15 @@ export function HospitalOffersPage() {
           <form className="panel form-panel stack" onSubmit={handleLoadOffers}>
             <FormSection title="Operativer Kontext" description="Die ausgewählte Schicht steuert Kandidatensuche und Offer-Liste in einem gemeinsamen Arbeitsraum.">
               <label>
-                <span>Ausgewählte Job Shift ID</span>
-                <input value={jobShiftId} onChange={(event) => setJobShiftId(event.target.value)} placeholder="jobShiftId" />
+                <span>Job Shift auswählen</span>
+                <select value={jobShiftId} onChange={(event) => setJobShiftId(event.target.value)}>
+                  <option value="">— Shift auswählen —</option>
+                  {availableShifts.map((shift) => (
+                    <option key={shift.id} value={shift.id}>
+                      {shift.title ?? 'Pflegeeinsatz'} · {shift.locationCity ?? 'ohne Ort'} · {new Date(shift.startTime).toLocaleDateString('de-DE')}
+                    </option>
+                  ))}
+                </select>
               </label>
               {focusNurseProfileId ? <p className="hint">Gefiltert auf Nurse Profile ID: {focusNurseProfileId}</p> : null}
               {selectedShift ? (

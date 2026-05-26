@@ -277,8 +277,15 @@ export function HospitalContractsPage() {
           <form className="panel form-panel stack" onSubmit={handleLoadLifecycle}>
             <FormSection title="Schichtkontext" description="Optionaler Einstieg: Offers für die ausgewählte Schicht laden und daraus den Contract wählen.">
               <label>
-                <span>Ausgewählte Job Shift ID</span>
-                <input value={jobShiftId} onChange={(event) => setJobShiftId(event.target.value)} placeholder="jobShiftId" />
+                <span>Job Shift auswählen</span>
+                <select value={jobShiftId} onChange={(event) => setJobShiftId(event.target.value)}>
+                  <option value="">— Shift auswählen —</option>
+                  {availableShifts.map((shift) => (
+                    <option key={shift.id} value={shift.id}>
+                      {shift.title ?? 'Pflegeeinsatz'} · {shift.locationCity ?? 'ohne Ort'} · {new Date(shift.startTime).toLocaleDateString('de-DE')}
+                    </option>
+                  ))}
+                </select>
               </label>
               {selectedShift ? (
                 <>
@@ -307,8 +314,15 @@ export function HospitalContractsPage() {
             </FormSection>
             <FormSection title="Contract-Kontext" description="Die Match Contract ID öffnet den auditierbaren Lifecycle samt kontrollierter Aktionen.">
               <label>
-                <span>Match Contract ID</span>
-                <input value={contractId} onChange={(event) => setContractId(event.target.value)} placeholder="matchContractId" />
+                <span>Contract auswählen</span>
+                <select value={contractId} onChange={(event) => setContractId(event.target.value)}>
+                  <option value="">— Contract auswählen —</option>
+                  {offers.map((offer) => (
+                    <option key={offer.id} value={offer.id}>
+                      {offer.nurse.displayName} · {offer.status} · {offer.createdAt ? new Date(offer.createdAt).toLocaleDateString('de-DE') : '—'}
+                    </option>
+                  ))}
+                </select>
               </label>
             </FormSection>
             <ActionBar>

@@ -87,14 +87,14 @@ Definition of done:
 ## Phase 2 — Workflow Hardening
 
 ### 4. Notifications / Delivery Flows
-Status: pending
+Status: in_progress
 Priority: high
 
 Checklist:
-- [todo] Visible notification state in UI
-- [partial] Offer communication lifecycle visibility
-- [partial] Delivery failure handling where applicable
-- [partial] More complete event / status feedback around async processes
+- [done] Visible notification state in UI
+- [done] Offer communication lifecycle visibility
+- [done] Delivery failure handling where applicable
+- [done] More complete event / status feedback around async processes
 
 ### 5. Form / Validation / Error Hardening
 Status: in_progress
@@ -207,12 +207,12 @@ Needed:
 ---
 
 ## Current Active Block
-- Operations / Admin Surface
+- Phase 2 — Workflow Hardening (starting with Form / Validation / Error Hardening)
 - Immediate remaining checklist in this block:
   - [partial] central superadmin / ops dashboard depth
   - [done] release / unrelease controls
   - [partial] queue / webhook / processing failure visibility
   - [partial] stronger exception / intervention tooling
-  - [todo] real operator actions for async / webhook failure handling
-  - [todo] final contract / billing edge-state intervention coverage
-  - [todo] final offer / notification lifecycle intervention coverage
+  - [done] real operator actions for async / webhook failure handling
+  - [done] final contract / billing edge-state intervention coverage
+  - [done] final offer / notification lifecycle intervention coverage
