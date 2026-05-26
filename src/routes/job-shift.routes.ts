@@ -19,6 +19,7 @@ import {
   reportNoShowController,
   cancelByHospitalController,
   completeContractController,
+  signContractController,
 } from '../controllers/job-shift.controller';
 import { requireAuth, requireRole } from '../middlewares/auth';
 import { validateBody } from '../middlewares/validate';
@@ -140,5 +141,12 @@ router.post(
 router.post('/contract/:id/no-show', requireAuth, requireRole(UserRole.HOSPITAL_ADMIN), asyncHandler(reportNoShowController));
 router.post('/contract/:id/cancel', requireAuth, requireRole(UserRole.HOSPITAL_ADMIN), asyncHandler(cancelByHospitalController));
 router.post('/contract/:id/complete', requireAuth, requireRole(UserRole.HOSPITAL_ADMIN), asyncHandler(completeContractController));
+
+router.post(
+  '/contract/:id/sign',
+  requireAuth,
+  requireRole(UserRole.HOSPITAL_ADMIN, UserRole.NURSE),
+  asyncHandler(signContractController),
+);
 
 export default router;

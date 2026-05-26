@@ -12,6 +12,7 @@ import {
 import { getInvoiceDetail, markInvoicePaid } from '../services/billing.service';
 import { listHospitalWebhookEvents, retryWebhookEvent, updateHospitalWebhookConfig } from '../services/webhook.service';
 import { getHospitalDossierOverview } from '../services/dossier.service';
+import { signContract } from '../services/esignature.service';
 import { getHospitalWhatsAppEvents, getWhatsAppEventsForContract } from '../services/whatsapp.service';
 import { listAsyncProcessFailures, resolveAsyncFailure } from '../services/async-process.service';
 import { reportNoShow, cancelByHospital, completeContract } from '../services/contract-lifecycle.service';
@@ -244,6 +245,19 @@ export async function completeContractController(req: Request, res: Response): P
   const id = typeof req.params.id === 'string' ? req.params.id : '';
   if (!id) throw createHttpError(400, 'Contract ID is required');
   const result = await completeContract(id);
+  res.status(200).json(result);
+}
+
+export async function signContractController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) throw createHttpError(401, 'Authentication required');
+  const id = typeof req.params.id === 'string' ? req.params.id : '';
+  if (!id) throw createHttpError(400, 'Contract ID is required');
+  const party = req.body.party as 'HOSPITAL' | 'NURSE';
+  if (!party || (party !== 'HOSPITAL' && party !== 'NURSE')) {
+    throw createHttpError(400, 'Party must be HOSPITAL or NURSE');
+  }
+  const consentText = typeof req.body.consentText === 'string' ? req.body.consentText : '';
+  const result = await signContract(id, party, req.auth, consentText);
   res.status(200).json(result);
 }
 

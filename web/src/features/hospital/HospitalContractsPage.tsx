@@ -72,6 +72,8 @@ export function HospitalContractsPage() {
   const canReportNoShow = Boolean(contractId) && (lifecycle?.status === 'SIGNED' || lifecycle?.status === 'ACTIVE');
   const canCancelByHospital = Boolean(contractId) && (lifecycle?.status === 'SIGNED' || lifecycle?.status === 'ACTIVE');
   const canComplete = Boolean(contractId) && lifecycle?.status === 'ACTIVE';
+  const canSignHospital = Boolean(contractId) && (lifecycle?.status === 'SIGNED' || lifecycle?.status === 'ACTIVE') && lifecycle?.executionStatus !== 'FULLY_EXECUTED' && lifecycle?.executionStatus !== 'VOIDED';
+  const [consentText, setConsentText] = useState('');
 
   async function loadLifecycle(targetContractId: string) {
     const result = await api.getContractLifecycle(targetContractId);
@@ -201,6 +203,34 @@ export function HospitalContractsPage() {
           setStatus({ tone: 'success', message: `Execution signiert. Neuer Status: ${result.execution.executionStatus}` });
         } catch (err) {
           setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Execution konnte nicht signiert werden' });
+        } finally {
+          setSubmitting(false);
+        }
+      },
+    });
+  }
+
+  async function handleSignHospital() {
+    if (!contractId) return;
+    const consent = consentText.trim() || 'Ich bestätige hiermit den Vertrag elektronisch.';
+    setConfirmAction({
+      title: 'Vertrag als Klinik unterschreiben',
+      message: `Vertrag ${contractId} elektronisch unterschreiben?\n\nConsent: ${consent}`,
+      tone: 'warning',
+      onConfirm: async () => {
+        setConfirmAction(null);
+        setSubmitting(true);
+        setStatus(null);
+        try {
+          const result = await api.signContract(contractId, 'HOSPITAL', consent);
+          await loadLifecycle(contractId);
+          if (result.fullyExecuted) {
+            setStatus({ tone: 'success', message: 'Vertrag vollständig signiert! Beide Parteien haben unterschrieben.' });
+          } else {
+            setStatus({ tone: 'success', message: 'Klinik-Signatur gespeichert. Auf Pflegekraft-Signatur warten.' });
+          }
+        } catch (err) {
+          setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Signatur fehlgeschlagen' });
         } finally {
           setSubmitting(false);
         }
@@ -511,6 +541,18 @@ export function HospitalContractsPage() {
                   <button type="button" disabled={submitting || !canComplete} onClick={() => void handleComplete()}>
                     {submitting ? 'Bitte warten…' : 'Contract abschliessen'}
                   </button>
+                </ActionBar>
+              </FormSection>
+              <FormSection title="eSignatur" description="Elektronische Unterschrift fuer Klinik und Pflegekraft.">
+                <label>
+                  <span>Consent Text</span>
+                  <input value={consentText} onChange={(event) => setConsentText(event.target.value)} placeholder="Ich bestaetige hiermit den Vertrag elektronisch." />
+                </label>
+                <ActionBar>
+                  <button type="button" disabled={submitting || !canSignHospital} onClick={() => void handleSignHospital()}>
+                    {submitting ? 'Signiert…' : 'Als Klinik unterschreiben'}
+                  </button>
+                  <span className="hint">Klinik: {lifecycle?.signatureStatus?.HOSPITAL_ADMIN ? 'signiert' : 'offen'} | Pflegekraft: {lifecycle?.signatureStatus?.NURSE ? 'signiert' : 'offen'}</span>
                 </ActionBar>
               </FormSection>
             </SectionCard>

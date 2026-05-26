@@ -251,6 +251,7 @@ export type ContractLifecycle = {
   fullyExecutedAt?: string | null;
   hospital?: { hospitalProfileId: string; clinicName: string };
   nurse?: { nurseProfileId: string; publicId: string; displayName: string };
+  signatureStatus?: { HOSPITAL_ADMIN?: boolean; NURSE?: boolean };
   contractPdf: { available: boolean; fileUrl: string | null };
   invoice?: null | { id: string; status: string; amount: string; invoicePdfUrl: string | null };
   snapshotSummary: {
@@ -521,6 +522,11 @@ export const api = {
     request<{ webhookUrl: string | null; webhookSecretConfigured: boolean }>('/job-shifts/webhook-config', {
       method: 'PATCH',
       body: JSON.stringify(input),
+    }),
+  signContract: (contractId: string, party: 'HOSPITAL' | 'NURSE', consentText: string) =>
+    request<{ contractId: string; party: string; signed: boolean; fullyExecuted: boolean }>(`/matches/contract/${encodeURIComponent(contractId)}/sign`, {
+      method: 'POST',
+      body: JSON.stringify({ party, consentText }),
     }),
   getHospitalDossierOverview: () => request<{
     dossiers: Array<{

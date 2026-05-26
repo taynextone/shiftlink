@@ -102,6 +102,10 @@ export async function getContractLifecycleOverview(
         createdAt: event.createdAt,
       })),
     },
+    signatureStatus: {
+      HOSPITAL_ADMIN: contract.signatureEvents.some((e) => e.signerRole === 'HOSPITAL_ADMIN'),
+      NURSE: contract.signatureEvents.some((e) => e.signerRole === 'NURSE'),
+    },
     voidSummary: contract.voidEvent
       ? {
           id: contract.voidEvent.id,
