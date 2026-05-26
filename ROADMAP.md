@@ -227,7 +227,7 @@ Checklist:
 - [x] Vertrags-PDF-Generierung + contractPdfUrl real anbinden
 - [ ] No-Refund/Post-Signature Policy modellieren
 - [x] HR-/Payroll-Export (Backend-Endpoint + Service)
-- [ ] Webhook-Admin/Retry-API
+- [x] Webhook-Admin/Retry-API
 - [x] Fachweiterbildungen als verifizierbare Dokumente
 - [x] Arbeitsmedizinische Nachweise modellieren
 - [ ] Dossier-Übersicht für Klinikseite
