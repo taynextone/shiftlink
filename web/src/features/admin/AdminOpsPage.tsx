@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ActionBar } from '../../components/ActionBar';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
+import { AuditLogViewer } from './AuditLogViewer';
 import { HospitalDashboardPage } from '../hospital/HospitalDashboardPage';
 
 export function AdminOpsPage() {
@@ -79,6 +80,7 @@ export function AdminOpsPage() {
         </div>
       </SectionCard>
 
+      <AuditLogViewer />
       <HospitalDashboardPage mode="superadmin" />
     </section>
   );

@@ -457,6 +457,13 @@ export const api = {
     }),
   getWhatsAppEvents: (contractId: string) =>
     request<{ events: Array<{ id: string; eventType: string; phoneNumber: string; messageText: string; status: string; attemptCount: number; lastError: string | null; deliveredAt: string | null; createdAt: string; updatedAt: string }> }>(`/job-shifts/whatsapp/${encodeURIComponent(contractId)}/events`),
+  getAuditLogs: (options?: { action?: string; limit?: number }) => {
+    const params = new URLSearchParams();
+    if (options?.action) params.set('action', options.action);
+    if (options?.limit) params.set('limit', String(options.limit));
+    const suffix = params.toString() ? `?${params.toString()}` : '';
+    return request<{ logs: Array<{ id: string; action: string; actorUserId: string; actorRole: string; targetEntityType: string | null; targetEntityId: string | null; metadata: Record<string, unknown> | null; createdAt: string }>; total: number }>(`/admin/audit-logs${suffix}`);
+  },
   getHospitalWhatsAppEvents: (options?: { status?: string; limit?: number }) => {
     const params = new URLSearchParams();
     if (options?.status) params.set('status', options.status);

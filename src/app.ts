@@ -4,6 +4,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { ZodError } from 'zod';
 import healthRoutes from './routes/health.routes';
+import { router as adminRoutes } from './routes/admin.routes';
 import authRoutes from './routes/auth.routes';
 import matchRoutes from './routes/match.routes';
 import documentRoutes from './routes/document.routes';
@@ -30,6 +31,7 @@ export function createApp() {
   app.use(cookieParser());
 
   app.use('/api/v1', healthRoutes);
+app.use('/api/v1', adminRoutes);
   app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1/matches', matchRoutes);
   app.use('/api/v1/documents', documentRoutes);
