@@ -12,6 +12,7 @@ import {
   markInvoicePaidController,
   retryWebhookEventController,
   resolveAsyncFailureController,
+  getHospitalWhatsAppEventsController,
   getWhatsAppEventsController,
 } from '../controllers/job-shift.controller';
 import { requireAuth, requireRole } from '../middlewares/auth';
@@ -54,6 +55,13 @@ router.post(
   requireAuth,
   requireRole(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
   asyncHandler(markInvoicePaidController),
+);
+
+router.get(
+  '/whatsapp/events',
+  requireAuth,
+  requireRole(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
+  asyncHandler(getHospitalWhatsAppEventsController),
 );
 
 router.get(

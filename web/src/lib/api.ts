@@ -457,6 +457,13 @@ export const api = {
     }),
   getWhatsAppEvents: (contractId: string) =>
     request<{ events: Array<{ id: string; eventType: string; phoneNumber: string; messageText: string; status: string; attemptCount: number; lastError: string | null; deliveredAt: string | null; createdAt: string; updatedAt: string }> }>(`/job-shifts/whatsapp/${encodeURIComponent(contractId)}/events`),
+  getHospitalWhatsAppEvents: (options?: { status?: string; limit?: number }) => {
+    const params = new URLSearchParams();
+    if (options?.status) params.set('status', options.status);
+    if (options?.limit) params.set('limit', String(options.limit));
+    const suffix = params.toString() ? `?${params.toString()}` : '';
+    return request<{ events: Array<{ id: string; eventType: string; phoneNumber: string; messageText: string; status: string; attemptCount: number; lastError: string | null; deliveredAt: string | null; createdAt: string; updatedAt: string; contractId: string; nurseDisplayName: string; jobShiftTitle: string | null }> }>(`/job-shifts/whatsapp/events${suffix}`);
+  },
   signContractExecution: (contractId: string) =>
     request<{ execution: { executionStatus: string; signatureCount: number } }>(`/matches/contract/${contractId}/execution/sign`, {
       method: 'POST',

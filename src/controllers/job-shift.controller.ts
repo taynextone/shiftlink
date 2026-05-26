@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import createHttpError from 'http-errors';
+import { UserRole } from '@prisma/client';
+import { prisma } from '../config/prisma';
 import {
   createJobShift,
   exportHospitalBillingData,
@@ -9,7 +11,7 @@ import {
 } from '../services/job-shift.service';
 import { getInvoiceDetail, markInvoicePaid } from '../services/billing.service';
 import { listHospitalWebhookEvents, retryWebhookEvent } from '../services/webhook.service';
-import { getWhatsAppEventsForContract } from '../services/whatsapp.service';
+import { getHospitalWhatsAppEvents, getWhatsAppEventsForContract } from '../services/whatsapp.service';
 import { listAsyncProcessFailures, resolveAsyncFailure } from '../services/async-process.service';
 
 export async function createJobShiftController(req: Request, res: Response): Promise<void> {
@@ -156,6 +158,25 @@ export async function markInvoicePaidController(req: Request, res: Response): Pr
   if (!id) throw createHttpError(400, 'Invoice ID is required');
   const result = await markInvoicePaid(id);
   res.status(200).json({ id: result.id, status: result.status });
+}
+
+export async function getHospitalWhatsAppEventsController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+  if (req.auth.role !== UserRole.HOSPITAL_ADMIN && req.auth.role !== UserRole.SUPER_ADMIN) {
+    throw createHttpError(403, 'Only hospital admins can view notification events');
+  }
+  const hospitalProfile = await prisma.hospitalProfile.findUnique({
+    where: { userId: req.auth.userId },
+  });
+  if (!hospitalProfile) {
+    throw createHttpError(404, 'Hospital profile not found');
+  }
+  const status = typeof req.query.status === 'string' ? req.query.status : undefined;
+  const limit = typeof req.query.limit === 'string' ? Number(req.query.limit) : 50;
+  const events = await getHospitalWhatsAppEvents(hospitalProfile.id, { status, limit });
+  res.status(200).json({ events });
 }
 
 export async function getWhatsAppEventsController(req: Request, res: Response): Promise<void> {

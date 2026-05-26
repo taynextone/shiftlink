@@ -10,6 +10,7 @@ import { useAsyncData } from '../../hooks/useAsyncData';
 import { useAuth } from '../../state/AuthContext';
 import { api } from '../../lib/api';
 import { buildInterventionHotspots, describeAsyncFailure, describeWebhookStatus, getCriticalAsyncFailures, getFailedWebhookEvents, getImportBlockedShifts, rankAsyncFailures } from './dashboard-helpers';
+import { NotificationCenter } from './NotificationCenter';
 
 export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital' | 'superadmin' }) {
   const { session } = useAuth();
@@ -337,6 +338,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
             {visibleAsyncFailures.length === 0 ? <p className="hint">{isSuperAdmin ? 'Für den aktuellen Queue-Filter sind keine persistierten Worker-Fehler sichtbar.' : 'Für Hospital Admins ist diese Fehlerklasse nicht direkt sichtbar; bei Bedarf Superadmin einbeziehen.'}</p> : null}
           </div>
         </SectionCard>
+        <NotificationCenter />
         <SectionCard title="Direkte Arbeitswege" description="Schneller Einstieg in die bereits ausgebauten Operations-Flows.">
           <MetricList
             items={[

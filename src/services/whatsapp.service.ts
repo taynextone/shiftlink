@@ -131,6 +131,47 @@ export async function sendNewMatchOfferWhatsapp(payload: NewMatchOfferWhatsappPa
   }
 }
 
+export async function getHospitalWhatsAppEvents(hospitalProfileId: string, options?: { status?: string; limit?: number }) {
+  const where = {
+    matchContract: {
+      jobShift: {
+        hospitalProfileId,
+      },
+    },
+    ...(options?.status ? { status: options.status } : {}),
+  };
+
+  const events = await prisma.whatsAppEvent.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    take: options?.limit ?? 50,
+    include: {
+      matchContract: {
+        include: {
+          nurseProfile: true,
+          jobShift: true,
+        },
+      },
+    },
+  });
+
+  return events.map((event) => ({
+    id: event.id,
+    eventType: event.eventType,
+    phoneNumber: event.phoneNumber,
+    messageText: event.messageText,
+    status: event.status,
+    attemptCount: event.attemptCount,
+    lastError: event.lastError,
+    deliveredAt: event.deliveredAt?.toISOString() ?? null,
+    createdAt: event.createdAt.toISOString(),
+    updatedAt: event.updatedAt.toISOString(),
+    contractId: event.matchContractId,
+    nurseDisplayName: event.matchContract.nurseProfile.displayName,
+    jobShiftTitle: event.matchContract.jobShift.title,
+  }));
+}
+
 export async function getWhatsAppEventsForContract(matchContractId: string) {
   const events = await prisma.whatsAppEvent.findMany({
     where: { matchContractId },
