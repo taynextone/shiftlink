@@ -2,6 +2,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActionBar } from '../../components/ActionBar';
 import { AsyncState } from '../../components/AsyncState';
+import { ConfirmModal } from '../../components/ConfirmModal';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { Field } from '../../components/Field';
 import { MetricList } from '../../components/MetricList';
@@ -35,7 +36,7 @@ export function HospitalBillingPage() {
   const [invoiceDetail, setInvoiceDetail] = useState<InvoiceDetail | null>(null);
   const [invoiceFeedback, setInvoiceFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [markingPaid, setMarkingPaid] = useState(false);
-
+  const [confirmAction, setConfirmAction] = useState<null | { title: string; message: string; tone: 'danger' | 'warning' | 'neutral'; onConfirm: () => void | Promise<void> }>(null);
   const pendingRows = useMemo(() => rows.filter((row) => row.invoiceStatus === 'PENDING'), [rows]);
   const paidRows = useMemo(() => rows.filter((row) => row.invoiceStatus === 'PAID'), [rows]);
   const rowsWithArtifacts = useMemo(() => rows.filter((row) => row.signedAt), [rows]);
@@ -76,22 +77,29 @@ export function HospitalBillingPage() {
     }
   }, []);
 
-  const handleMarkPaid = useCallback(async () => {
+  const handleMarkPaid = useCallback(() => {
     if (!invoiceDetail || invoiceDetail.status === 'PAID') return;
-    if (!window.confirm(`Rechnung ${invoiceDetail.id} als bezahlt markieren? Betrag: ${invoiceDetail.amount} €`)) return;
-    setMarkingPaid(true);
-    setInvoiceFeedback(null);
-    try {
-      await api.markInvoicePaid(invoiceDetail.id);
-      setInvoiceFeedback({ tone: 'success', message: 'Rechnung wurde als bezahlt markiert.' });
-      setInvoiceDetail((prev) => prev ? { ...prev, status: 'PAID' } : prev);
-      setRows((prev) => prev.map((row) => row.invoiceId === invoiceDetail.id ? { ...row, invoiceStatus: 'PAID' } : row));
-      setFeedback({ tone: 'success', message: `Invoice ${invoiceDetail.id} wurde in der Export-Ansicht auf PAID aktualisiert.` });
-    } catch (error) {
-      setInvoiceFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Mark-Paid fehlgeschlagen' });
-    } finally {
-      setMarkingPaid(false);
-    }
+    setConfirmAction({
+      title: 'Rechnung als bezahlt markieren',
+      message: `Rechnung ${invoiceDetail.id} als bezahlt markieren?\n\nBetrag: ${invoiceDetail.amount} €`,
+      tone: 'warning',
+      onConfirm: async () => {
+        setConfirmAction(null);
+        setMarkingPaid(true);
+        setInvoiceFeedback(null);
+        try {
+          await api.markInvoicePaid(invoiceDetail.id);
+          setInvoiceFeedback({ tone: 'success', message: 'Rechnung wurde als bezahlt markiert.' });
+          setInvoiceDetail((prev) => prev ? { ...prev, status: 'PAID' } : prev);
+          setRows((prev) => prev.map((row) => row.invoiceId === invoiceDetail.id ? { ...row, invoiceStatus: 'PAID' } : row));
+          setFeedback({ tone: 'success', message: `Invoice ${invoiceDetail.id} wurde in der Export-Ansicht auf PAID aktualisiert.` });
+        } catch (error) {
+          setInvoiceFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Mark-Paid fehlgeschlagen' });
+        } finally {
+          setMarkingPaid(false);
+        }
+      },
+    });
   }, [invoiceDetail]);
 
   useEffect(() => {
@@ -215,6 +223,17 @@ export function HospitalBillingPage() {
             <button type="button" className="secondary" onClick={() => { setSelectedInvoiceId(null); setInvoiceDetail(null); setInvoiceFeedback(null); }}>Schließen</button>
           </ActionBar>
         </SectionCard>
+      ) : null}
+      {confirmAction ? (
+        <ConfirmModal
+          title={confirmAction.title}
+          message={confirmAction.message}
+          confirmLabel="Bestätigen"
+          cancelLabel="Abbrechen"
+          tone={confirmAction.tone}
+          onConfirm={confirmAction.onConfirm}
+          onCancel={() => setConfirmAction(null)}
+        />
       ) : null}
     </section>
   );

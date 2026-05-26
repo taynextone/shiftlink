@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { KpiCard } from '../../components/KpiCard';
 import { MetricList } from '../../components/MetricList';
 import { PageHeader } from '../../components/PageHeader';
+import { ConfirmModal } from '../../components/ConfirmModal';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { SectionCard } from '../../components/SectionCard';
 import { useAsyncData } from '../../hooks/useAsyncData';
@@ -79,19 +80,28 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
     }
   }, [reloadAsyncFailureData, reloadWebhookData]);
 
-  const handleResolveFailure = useCallback(async (failureId: string) => {
-    if (!window.confirm('Diesen Fehler als behandelt markieren und aus der Liste entfernen?')) return;
-    setInterveningId(failureId);
-    setInterventionFeedback(null);
-    try {
-      await api.resolveAsyncFailure(failureId);
-      await reloadAsyncFailureData();
-      setInterventionFeedback('Der Worker-Fehler wurde als behandelt markiert und aus der Liste entfernt.');
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'Resolve fehlgeschlagen');
-    } finally {
-      setInterveningId(null);
-    }
+  const [confirmAction, setConfirmAction] = useState<null | { title: string; message: string; tone: 'danger' | 'warning' | 'neutral'; onConfirm: () => void | Promise<void> }>(null);
+
+  const handleResolveFailure = useCallback((failureId: string) => {
+    setConfirmAction({
+      title: 'Fehler als behandelt markieren',
+      message: 'Diesen Fehler als behandelt markieren und aus der Liste entfernen?',
+      tone: 'warning',
+      onConfirm: async () => {
+        setConfirmAction(null);
+        setInterveningId(failureId);
+        setInterventionFeedback(null);
+        try {
+          await api.resolveAsyncFailure(failureId);
+          await reloadAsyncFailureData();
+          setInterventionFeedback('Der Worker-Fehler wurde als behandelt markiert und aus der Liste entfernt.');
+        } catch (error) {
+          alert(error instanceof Error ? error.message : 'Resolve fehlgeschlagen');
+        } finally {
+          setInterveningId(null);
+        }
+      },
+    });
   }, [reloadAsyncFailureData]);
 
   const handleRetryWebhookFromFailure = useCallback(async (failureId: string, webhookEventId: string) => {
@@ -312,7 +322,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
                         type="button"
                         className="secondary"
                         disabled={interveningId === failure.id}
-                        onClick={() => void handleResolveFailure(failure.id)}
+                        onClick={() => handleResolveFailure(failure.id)}
                       >
                         {interveningId === failure.id ? '…' : 'Als behandelt markieren'}
                       </button>
@@ -380,6 +390,17 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
           </div>
         </SectionCard>
       </div>
+      {confirmAction ? (
+        <ConfirmModal
+          title={confirmAction.title}
+          message={confirmAction.message}
+          confirmLabel="Bestätigen"
+          cancelLabel="Abbrechen"
+          tone={confirmAction.tone}
+          onConfirm={confirmAction.onConfirm}
+          onCancel={() => setConfirmAction(null)}
+        />
+      ) : null}
     </section>
   );
 }

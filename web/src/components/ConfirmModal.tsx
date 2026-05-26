@@ -7,7 +7,7 @@ export type ConfirmModalProps = {
   confirmLabel: string;
   cancelLabel: string;
   tone: 'danger' | 'warning' | 'neutral';
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   onCancel: () => void;
 };
 

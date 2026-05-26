@@ -7,6 +7,7 @@ import { InfoList } from '../../components/InfoList';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
 import { StatusBadge } from '../../components/StatusBadge';
+import { ConfirmModal } from '../../components/ConfirmModal';
 import { api, type AdminVerificationOverview, type VerificationDocumentReviewResult } from '../../lib/api';
 
 export function AdminVerificationPage() {
@@ -19,7 +20,7 @@ export function AdminVerificationPage() {
   const [result, setResult] = useState<VerificationDocumentReviewResult | null>(null);
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
+  const [confirmAction, setConfirmAction] = useState<null | { title: string; message: string; tone: 'danger' | 'warning' | 'neutral'; onConfirm: () => void | Promise<void> }>(null);
   const rejectionRequired = status === 'REJECTED';
   const nursePublicIdError = !nursePublicId.trim() && feedback?.tone === 'error' && feedback.message.includes('Nurse Public ID') ? 'Pflichtfeld' : null;
   const documentIdError = !documentId.trim() && feedback?.tone === 'error' && feedback.message.includes('Dokument') ? 'Pflichtfeld' : null;
@@ -54,7 +55,31 @@ export function AdminVerificationPage() {
       setFeedback({ tone: 'error', message: 'Bitte zuerst Verifikationskontext laden.' });
       return;
     }
-    if (!release && !window.confirm(`Freigabe wirklich zurückziehen?\n\nPflegekraft: ${overview.nurseProfile.displayName} (${overview.nurseProfile.publicId})`)) {
+    if (!release) {
+      setConfirmAction({
+        title: 'Freigabe zurückziehen',
+        message: `Freigabe wirklich zurückziehen?\n\nPflegekraft: ${overview.nurseProfile.displayName} (${overview.nurseProfile.publicId})`,
+        tone: 'danger',
+        onConfirm: async () => {
+          setConfirmAction(null);
+          setSubmitting(true);
+          setFeedback(null);
+          try {
+            const response = await api.setMatchingRelease({
+              publicId: overview.nurseProfile.publicId,
+              release,
+              reason: releaseReason.trim() || undefined,
+            });
+            setOverview(response.releaseControl);
+            setResult(null);
+            setFeedback({ tone: 'success', message: 'Pflegekraft für Matching zurückgezogen.' });
+          } catch (error) {
+            setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Release-Änderung fehlgeschlagen' });
+          } finally {
+            setSubmitting(false);
+          }
+        },
+      });
       return;
     }
 
@@ -68,7 +93,7 @@ export function AdminVerificationPage() {
       });
       setOverview(response.releaseControl);
       setResult(null);
-      setFeedback({ tone: 'success', message: release ? 'Pflegekraft für Matching freigegeben.' : 'Pflegekraft für Matching zurückgezogen.' });
+      setFeedback({ tone: 'success', message: 'Pflegekraft für Matching freigegeben.' });
     } catch (error) {
       setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Release-Änderung fehlgeschlagen' });
     } finally {
@@ -229,6 +254,17 @@ export function AdminVerificationPage() {
         </SectionCard>
       </div>
       {feedback ? <FeedbackMessage tone={feedback.tone} message={feedback.message} /> : null}
+      {confirmAction ? (
+        <ConfirmModal
+          title={confirmAction.title}
+          message={confirmAction.message}
+          confirmLabel="Bestätigen"
+          cancelLabel="Abbrechen"
+          tone={confirmAction.tone}
+          onConfirm={confirmAction.onConfirm}
+          onCancel={() => setConfirmAction(null)}
+        />
+      ) : null}
     </section>
   );
 }

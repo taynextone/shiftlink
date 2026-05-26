@@ -12,6 +12,7 @@ import { useAsyncData } from '../../hooks/useAsyncData';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, type ContractExecutionOverview, type ContractLifecycle, type ContractPdfResponse, type ContractSnapshotResponse, type ContractVoidOverview, type HospitalOffer } from '../../lib/api';
 
+import { ConfirmModal } from '../../components/ConfirmModal';
 import { buildVoidEscalationChecklist, interpretBillingConflict, interpretContractState, interpretInvoiceException, interpretVoidIntervention, type InterventionTone } from './ops-helpers';
 
 function formatDateTime(value?: string | null) {
@@ -64,6 +65,7 @@ export function HospitalContractsPage() {
   const billingConflict = useMemo(() => interpretBillingConflict(lifecycle), [lifecycle]);
   const voidEscalationChecklist = useMemo(() => buildVoidEscalationChecklist(lifecycle), [lifecycle]);
   const canSignExecution = Boolean(contractId) && lifecycle?.status === 'SIGNED' && lifecycle.executionStatus !== 'FULLY_EXECUTED' && lifecycle.executionStatus !== 'VOIDED';
+  const [confirmAction, setConfirmAction] = useState<null | { title: string; message: string; tone: 'danger' | 'warning' | 'neutral'; onConfirm: () => void | Promise<void> }>(null);
   const canVoidContract = Boolean(contractId) && voidIntervention?.label === 'Void möglich' && billingConflict?.tone !== 'error' && voidReason.trim().length > 0;
 
   async function loadLifecycle(targetContractId: string) {
@@ -175,29 +177,33 @@ export function HospitalContractsPage() {
     }
   }
 
-  async function handleExecutionSign() {
+  function handleExecutionSign() {
     if (!contractId) {
       setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
       return;
     }
-    if (!window.confirm(`Execution wirklich signieren?\n\nContract: ${contractId}`)) {
-      return;
-    }
-
-    setSubmitting(true);
-    setStatus(null);
-    try {
-      const result = await api.signContractExecution(contractId);
-      await Promise.all([loadLifecycle(contractId), loadExecution(contractId), loadVoiding(contractId)]);
-      setStatus({ tone: 'success', message: `Execution signiert. Neuer Status: ${result.execution.executionStatus}` });
-    } catch (err) {
-      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Execution konnte nicht signiert werden' });
-    } finally {
-      setSubmitting(false);
-    }
+    setConfirmAction({
+      title: 'Execution signieren',
+      message: `Execution wirklich signieren?\n\nContract: ${contractId}`,
+      tone: 'warning',
+      onConfirm: async () => {
+        setConfirmAction(null);
+        setSubmitting(true);
+        setStatus(null);
+        try {
+          const result = await api.signContractExecution(contractId);
+          await Promise.all([loadLifecycle(contractId), loadExecution(contractId), loadVoiding(contractId)]);
+          setStatus({ tone: 'success', message: `Execution signiert. Neuer Status: ${result.execution.executionStatus}` });
+        } catch (err) {
+          setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Execution konnte nicht signiert werden' });
+        } finally {
+          setSubmitting(false);
+        }
+      },
+    });
   }
 
-  async function handleVoid() {
+  function handleVoid() {
     if (!contractId) {
       setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
       return;
@@ -206,21 +212,25 @@ export function HospitalContractsPage() {
       setStatus({ tone: 'error', message: 'Bitte einen Void-Grund angeben.' });
       return;
     }
-    if (!window.confirm(`Contract wirklich voiden?\n\nContract: ${contractId}\nGrund: ${voidReason.trim()}`)) {
-      return;
-    }
-
-    setSubmitting(true);
-    setStatus(null);
-    try {
-      const result = await api.voidContract(contractId, voidReason.trim());
-      await Promise.all([loadLifecycle(contractId), loadExecution(contractId), loadVoiding(contractId)]);
-      setStatus({ tone: 'success', message: `Contract voided: ${result.voiding.executionStatus}` });
-    } catch (err) {
-      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Void-Flow fehlgeschlagen' });
-    } finally {
-      setSubmitting(false);
-    }
+    setConfirmAction({
+      title: 'Contract voiden',
+      message: `Contract wirklich voiden?\n\nContract: ${contractId}\nGrund: ${voidReason.trim()}`,
+      tone: 'danger',
+      onConfirm: async () => {
+        setConfirmAction(null);
+        setSubmitting(true);
+        setStatus(null);
+        try {
+          const result = await api.voidContract(contractId, voidReason.trim());
+          await Promise.all([loadLifecycle(contractId), loadExecution(contractId), loadVoiding(contractId)]);
+          setStatus({ tone: 'success', message: `Contract voided: ${result.voiding.executionStatus}` });
+        } catch (err) {
+          setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Void-Flow fehlgeschlagen' });
+        } finally {
+          setSubmitting(false);
+        }
+      },
+    });
   }
 
   return (
@@ -529,6 +539,17 @@ export function HospitalContractsPage() {
           {status ? <FeedbackMessage tone={status.tone} message={status.message} /> : null}
         </div>
       </div>
+      {confirmAction ? (
+        <ConfirmModal
+          title={confirmAction.title}
+          message={confirmAction.message}
+          confirmLabel="Bestätigen"
+          cancelLabel="Abbrechen"
+          tone={confirmAction.tone}
+          onConfirm={confirmAction.onConfirm}
+          onCancel={() => setConfirmAction(null)}
+        />
+      ) : null}
     </section>
   );
 }

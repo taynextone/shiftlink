@@ -29,7 +29,7 @@ export function HospitalOffersPage() {
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [lastOfferFailure, setLastOfferFailure] = useState<{ nurseProfileId: string; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<null | { title: string; message: string; tone: 'danger' | 'warning' | 'neutral'; onConfirm: () => void }>(null);
+  const [confirmAction, setConfirmAction] = useState<null | { title: string; message: string; tone: 'danger' | 'warning' | 'neutral'; onConfirm: () => void | Promise<void> }>(null);
   const [expandedCommId, setExpandedCommId] = useState<string | null>(null);
   const [commEvents, setCommEvents] = useState<Record<string, Array<{ id: string; eventType: string; phoneNumber: string; messageText: string; status: string; attemptCount: number; lastError: string | null; deliveredAt: string | null; createdAt: string; updatedAt: string }>>>({});
   const [commLoading, setCommLoading] = useState<Record<string, boolean>>({});
