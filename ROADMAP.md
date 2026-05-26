@@ -52,7 +52,7 @@ Status: pending
 Priority: critical
 
 Checklist:
-- [todo] Document upload UX
+- [done] Document upload UX
 - [done] Review / approve / reject UI
 - [partial] Verification state transitions visible in UI
 - [done] Nurse dossier review UX for hospital side where allowed
