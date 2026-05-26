@@ -15,24 +15,24 @@ Stand: Diese Liste übersetzt das fachliche Zielbild in konkrete Umsetzungsblöc
 - [ ] Technische Guardrails prüfen, dass neue Features nicht versehentlich Payroll/Zeiterfassung einführen
 
 ## 2. Verifizierung & Freischaltung
-- [~] Examen-/Dokumenten-Upload-Grundlage vorhanden
-- [ ] Fachweiterbildungen als verifizierbare Dokumente/Artefakte sauber ergänzen
-- [ ] arbeitsmedizinische Nachweise modellieren
-- [ ] echte Verifizierungsprüfung/Freigabe-Logik im Backend
-- [ ] nur verifizierte Pflegekräfte für Angebote/Matching freischalten
-- [ ] Verifizierungsstatus für Krankenhaus sichtbar machen
+- [x] Examen-/Dokumenten-Upload-Grundlage vorhanden
+- [x] Fachweiterbildungen als verifizierbare Dokumente/Artefakte sauber ergänzen
+- [x] Arbeitsmedizinische Nachweise modellieren (OCCUPATIONAL_HEALTH_CLEARANCE)
+- [x] Echte Verifizierungsprüfung/Freigabe-Logik im Backend (Superadmin Review)
+- [x] Nur verifizierte Pflegekräfte für Angebote/Matching freischalten (isReleasedForMatching Gate)
+- [x] Verifizierungsstatus für Krankenhaus sichtbar machen (Dossier + Admin Verification)
 
 ## 3. Digitale Personalakte / Dossier
-- [ ] vollständiges Klinik-Dossier aus verifizierten Dokumenten/Stammdaten definieren
-- [ ] gesicherter Dossier-Zugriff für berechtigte Klinikseite
-- [ ] Dossier-Übersicht statt nur einzelner Dokumentzugriffe
+- [x] Vollständiges Klinik-Dossier aus verifizierten Dokumenten/Stammdaten definieren
+- [x] Gesicherter Dossier-Zugriff für berechtigte Klinikseite (signed URLs)
+- [x] Dossier-Übersicht statt nur einzelner Dokumentzugriffe
 
 ## 4. Vertragsengine
-- [~] Match-/Sign-Flow vorhanden
-- [ ] dynamische Vertragsdatenstruktur definieren
-- [ ] Vertrags-PDF-Generierung implementieren
-- [ ] `contractPdfUrl` real anbinden
-- [ ] Vertragsversionierung / unveränderliche Snapshots definieren
+- [x] Match-/Sign-Flow vorhanden
+- [x] Dynamische Vertragsdatenstruktur definieren (ContractSnapshot mit JSON)
+- [x] Vertrags-PDF-Generierung implementieren (generateContractPdfArtifact)
+- [x] `contractPdfUrl` real anbinden
+- [x] Vertragsversionierung / unveränderliche Snapshots definieren
 
 ## 5. eSignatur
 - [ ] Signaturmodell fachlich präzisieren (wer signiert was, wann, womit)
@@ -46,19 +46,19 @@ Stand: Diese Liste übersetzt das fachliche Zielbild in konkrete Umsetzungsblöc
 - [ ] klare Regeln für Plattformrechnung trotz Ausfall dokumentieren und technisch absichern
 
 ## 7. HR-/Payroll-Export sauber abgrenzen
-- [~] Billing-/CSV-Export-Grundlage vorhanden
-- [ ] Export in „vereinbarte Daten“ vs. „tatsächlich geleistete Daten“ trennen
-- [ ] keine implizite Zeiterfassung/Payroll-Logik in Exporte hineinrutschen lassen
-- [ ] Klinik-kompatiblen HR-/Payroll-Export sauber definieren (z. B. DATEV/SAP-Vorstufe)
-- [ ] falls nötig: Import externer Ist-Daten aus Kliniksystem statt Eigen-Erfassung
+- [x] Billing-/CSV-Export-Grundlage vorhanden
+- [x] Payroll-Export Endpoint mit vereinbarten Daten (Nurse, Contract, Shift, Invoice)
+- [x] Keine implizite Zeiterfassung/Payroll-Logik in Exporten
+- [~] Klinik-kompatiblen HR-/Payroll-Export (DATEV/SAP-Vorstufe) — CSV-Grundlage vorhanden
+- [ ] Falls nötig: Import externer Ist-Daten aus Kliniksystem statt Eigen-Erfassung
 
 ## 8. Krankenhaus-Integrationsreife
-- [x] idempotenter Shift-Import
+- [x] Idempotenter Shift-Import
 - [x] Read-/Status-API
 - [x] Webhook-Outbox + signierte Delivery-Pipeline
-- [ ] Webhook-Admin/Retry-API
-- [ ] webhookUrl/webhookSecret Verwaltungs-Endpoints
-- [ ] Import-/Export-Doku mit Payload-Beispielen schärfen
+- [x] Webhook-Admin/Retry-API (Retry-Button im Dashboard)
+- [x] webhookUrl/webhookSecret Verwaltungs-Endpoints (PATCH /webhook-config)
+- [~] Import-/Export-Doku mit Payload-Beispielen — DEPLOYMENT.md vorhanden
 
 ---
 

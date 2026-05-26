@@ -223,11 +223,13 @@ Checklist:
 - Remaining: eSignatur, Vertrags-PDF, HR-Export, Deployment
 
 ## Open from GAP_ANALYSIS.md
-- [ ] eSignatur-Flow (wer signiert was, wann, womit)
+- [ ] eSignatur-Flow (wer signiert was, wann, womit) — braucht externe Integration
 - [x] Vertrags-PDF-Generierung + contractPdfUrl real anbinden
-- [ ] No-Refund/Post-Signature Policy modellieren
+- [ ] No-Refund/Post-Signature Policy modellieren — braucht fachliche Spezifikation
 - [x] HR-/Payroll-Export (Backend-Endpoint + Service)
 - [x] Webhook-Admin/Retry-API
 - [x] Fachweiterbildungen als verifizierbare Dokumente
 - [x] Arbeitsmedizinische Nachweise modellieren
 - [x] Dossier-Übersicht für Klinikseite
+- [x] Verifizierungsstatus für Krankenhaus sichtbar
+- [x] Technische Guardrails gegen Payroll/Zeiterfassung
