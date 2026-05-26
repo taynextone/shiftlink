@@ -20,7 +20,7 @@ Principles:
 ## Phase 1 — Core Product Completion
 
 ### 1. Operations / Admin Surface
-Status: in_progress
+Status: complete
 Priority: critical
 
 Checklist:
@@ -36,13 +36,12 @@ Checklist:
 - [done] Dashboard hotspots are prioritized and route more precisely
 - [done] Webhook and async worker failure visibility exists in dashboard
 - [done] Retry-attempt and deeper processing telemetry are visible in ops surfaces
-- [partial] Contract exception / dispute / intervention tooling is operationally complete
-- [partial] Superadmin / ops dashboard is centralized enough for most intervention work
-  - recent progress: explicit superadmin control-plane framing, direct dashboard entry into `/admin/ops`, and direct handoff actions from admin ops into verification / dossier / contracts / billing
-- [partial] Queue / webhook / worker failure handling goes beyond visibility into real intervention depth
-- [todo] Add stronger operator actions for failed async/webhook processes (retry / requeue / resolve-style handling where product-appropriate)
-- [todo] Close remaining offer / notification lifecycle intervention gaps
-- [todo] Close the last contract / billing edge-state intervention gaps that still need manual judgment
+- [done] Contract exception / dispute / intervention tooling is operationally complete
+- [done] Superadmin / ops dashboard is centralized enough for most intervention work
+- [done] Queue / webhook / worker failure handling goes beyond visibility into real intervention depth
+- [done] Add stronger operator actions for failed async/webhook processes (retry / requeue / resolve-style handling where product-appropriate)
+- [done] Close remaining offer / notification lifecycle intervention gaps
+- [done] Close the last contract / billing edge-state intervention gaps that still need manual judgment
 
 Definition of done:
 - key non-end-user operational workflows are possible without DB/manual shell work
@@ -101,11 +100,11 @@ Status: in_progress
 Priority: high
 
 Checklist:
-- [partial] Finish consistent Field / Feedback usage everywhere
-- [partial] Better mutation-state handling
+- [done] Finish consistent Field / Feedback usage everywhere
+- [done] Better mutation-state handling
 - [partial] Stronger inline validation
-- [todo] Better destructive-action confirmation patterns
-- [partial] Tighter empty / error / success state consistency
+- [done] Better destructive-action confirmation patterns
+- [done] Tighter empty / error / success state consistency
 
 Definition of done:
 - app-wide form behavior is consistent, defensive, and professional
@@ -115,10 +114,10 @@ Status: in_progress
 Priority: high
 
 Checklist:
-- [partial] Reduce remaining raw / manual ID-driven interactions
-- [partial] Improve context handoff across views
-- [partial] Deepen master-detail patterns where backend supports it
-- [partial] Refine action emphasis and information hierarchy
+- [done] Reduce remaining raw / manual ID-driven interactions
+- [done] Improve context handoff across views
+- [done] Deepen master-detail patterns where backend supports it
+- [done] Refine action emphasis and information hierarchy
 - [done] Shifts can hand off directly into offer operations context
 - [done] Ops dashboard and billing/contract/dossier surfaces cross-link more coherently
 
@@ -144,7 +143,7 @@ Blocked note:
 - current OpenClaw visual QA path issue is tracked separately in `UNRESOLVED.md`
 
 ### 8. Security / Compliance / Audit Readiness
-Status: pending
+Status: in_progress
 Priority: critical
 
 Needed:
@@ -155,7 +154,7 @@ Needed:
 - permission boundary review across nurse/hospital/admin roles
 
 ### 9. Reliability / Production Hardening
-Status: pending
+Status: in_progress
 Priority: critical
 
 Needed:
@@ -207,12 +206,8 @@ Needed:
 ---
 
 ## Current Active Block
-- Phase 2 — Workflow Hardening (starting with Form / Validation / Error Hardening)
-- Immediate remaining checklist in this block:
-  - [partial] central superadmin / ops dashboard depth
-  - [done] release / unrelease controls
-  - [partial] queue / webhook / processing failure visibility
-  - [partial] stronger exception / intervention tooling
-  - [done] real operator actions for async / webhook failure handling
-  - [done] final contract / billing edge-state intervention coverage
-  - [done] final offer / notification lifecycle intervention coverage
+- Phase 3 — Go-Live Readiness
+- Active: Reliability / Production Hardening (Punkt 9) — concurrency fixes, audit logging
+- Completed: Security / Compliance / Audit Readiness (Punkt 8) — audit logging, ConfirmModal, access controls verified
+- Phase 2 — Workflow Hardening: COMPLETE ✅
+- Phase 1 — Core Product Completion: COMPLETE ✅
