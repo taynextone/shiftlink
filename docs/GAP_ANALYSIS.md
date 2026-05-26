@@ -39,11 +39,11 @@ Stand: Diese Liste übersetzt das fachliche Zielbild in konkrete Umsetzungsblöc
 - [ ] rechtsgültigen eSignatur-Flow technisch auswählen und anbinden
 - [ ] Audit-Trail für Signaturen speichern
 
-## 6. No-Refund / Post-Signature Policy
-- [~] Plattformrechnung bei Signatur vorhanden
-- [ ] No-Refund-/No-Show-/Krankheits-Policy explizit modellieren
-- [ ] Statusmodell nach Signatur erweitern, falls fachlich nötig
-- [ ] klare Regeln für Plattformrechnung trotz Ausfall dokumentieren und technisch absichern
+## 6. No-Refund / Post-Signature Status
+- [x] Plattformrechnung bei Signatur vorhanden
+- [x] No-Refund-/No-Show-/Krankheits-Policy explizit modellieren
+- [x] Statusmodell nach Signatur erweitert (SIGNED → ACTIVE → COMPLETED, NO_SHOW_REPORTED, CANCELED_BY_HOSPITAL/NURSE)
+- [x] Klare Regeln für Plattformrechnung trotz Ausfall dokumentiert und technisch abgesichert
 
 ## 7. HR-/Payroll-Export sauber abgrenzen
 - [x] Billing-/CSV-Export-Grundlage vorhanden
