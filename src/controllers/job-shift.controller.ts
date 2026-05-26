@@ -14,6 +14,7 @@ import { listHospitalWebhookEvents, retryWebhookEvent, updateHospitalWebhookConf
 import { getHospitalDossierOverview } from '../services/dossier.service';
 import { getHospitalWhatsAppEvents, getWhatsAppEventsForContract } from '../services/whatsapp.service';
 import { listAsyncProcessFailures, resolveAsyncFailure } from '../services/async-process.service';
+import { reportNoShow, cancelByHospital, completeContract } from '../services/contract-lifecycle.service';
 
 export async function createJobShiftController(req: Request, res: Response): Promise<void> {
   if (!req.auth) {
@@ -220,6 +221,30 @@ export async function getHospitalWhatsAppEventsController(req: Request, res: Res
   const limit = typeof req.query.limit === 'string' ? Number(req.query.limit) : 50;
   const events = await getHospitalWhatsAppEvents(hospitalProfile.id, { status, limit });
   res.status(200).json({ events });
+}
+
+export async function reportNoShowController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) throw createHttpError(401, 'Auth required');
+  const id = typeof req.params.id === 'string' ? req.params.id : '';
+  if (!id) throw createHttpError(400, 'Contract ID is required');
+  const result = await reportNoShow(id, req.auth);
+  res.status(200).json(result);
+}
+
+export async function cancelByHospitalController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) throw createHttpError(401, 'Auth required');
+  const id = typeof req.params.id === 'string' ? req.params.id : '';
+  if (!id) throw createHttpError(400, 'Contract ID is required');
+  const result = await cancelByHospital(id, req.body.reason);
+  res.status(200).json(result);
+}
+
+export async function completeContractController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) throw createHttpError(401, 'Auth required');
+  const id = typeof req.params.id === 'string' ? req.params.id : '';
+  if (!id) throw createHttpError(400, 'Contract ID is required');
+  const result = await completeContract(id);
+  res.status(200).json(result);
 }
 
 export async function getWhatsAppEventsController(req: Request, res: Response): Promise<void> {

@@ -28,6 +28,11 @@ enum MatchContractStatus {
   PENDING
   DECLINED
   SIGNED
+  ACTIVE
+  COMPLETED
+  CANCELED_BY_HOSPITAL
+  CANCELED_BY_NURSE
+  NO_SHOW_REPORTED
   EXPIRED
   CANCELED
 }
@@ -222,6 +227,12 @@ model MatchContract {
   expiresAt             DateTime?
   respondedAt           DateTime?
   signedAt              DateTime?
+  activatedAt           DateTime?
+  completedAt           DateTime?
+  canceledAt            DateTime?
+  cancelReason          String?
+  noShowReportedAt      DateTime?
+  noShowDeadline        DateTime?
   contractPdfUrl        String?
   executionStatus       ContractExecutionStatus @default(DRAFT)
   fullyExecutedAt       DateTime?
