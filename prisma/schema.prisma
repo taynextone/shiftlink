@@ -247,6 +247,7 @@ model MatchContract {
   voidEvent             ContractVoidEvent?
   invoice               Invoice?
   whatsAppEvents        WhatsAppEvent[]
+  actualWork            ContractActualWork?
 
   @@unique([jobShiftId, nurseProfileId])
   @@index([status])
@@ -335,6 +336,19 @@ model ContractSignatureEvent {
   @@index([matchContractId, signerRole, createdAt])
   @@index([signerUserId, createdAt])
   @@index([snapshotId])
+}
+
+model ContractActualWork {
+  id              String   @id @default(cuid())
+  contractId      String   @unique
+  actualHours     Float
+  actualStartTime String?
+  actualEndTime   String?
+  notes           String?
+  importedAt      DateTime @default(now())
+  contract        MatchContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([contractId])
 }
 
 model ContractVoidEvent {

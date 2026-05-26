@@ -20,6 +20,7 @@ import {
   cancelByHospitalController,
   completeContractController,
   signContractController,
+  importActualsController,
 } from '../controllers/job-shift.controller';
 import { requireAuth, requireRole } from '../middlewares/auth';
 import { validateBody } from '../middlewares/validate';
@@ -147,6 +148,13 @@ router.post(
   requireAuth,
   requireRole(UserRole.HOSPITAL_ADMIN, UserRole.NURSE),
   asyncHandler(signContractController),
+);
+
+router.post(
+  '/import-actuals',
+  requireAuth,
+  requireRole(UserRole.HOSPITAL_ADMIN),
+  asyncHandler(importActualsController),
 );
 
 export default router;

@@ -13,6 +13,7 @@ import { buildInterventionHotspots, describeAsyncFailure, describeWebhookStatus,
 import { NotificationCenter } from './NotificationCenter';
 import { WebhookAdminPanel } from './WebhookAdminPanel';
 import { DossierOverview } from './DossierOverview';
+import { ActualsImport } from './ActualsImport';
 
 export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital' | 'superadmin' }) {
   const { session } = useAuth();
@@ -343,6 +344,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
         <NotificationCenter />
         <WebhookAdminPanel />
         <DossierOverview />
+        <ActualsImport />
         <SectionCard title="Direkte Arbeitswege" description="Schneller Einstieg in die bereits ausgebauten Operations-Flows.">
           <MetricList
             items={[

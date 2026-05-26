@@ -528,6 +528,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ party, consentText }),
     }),
+  importActuals: (csvContent: string) =>
+    request<{ imported: number; errors: string[] }>('/job-shifts/import-actuals', {
+      method: 'POST',
+      body: JSON.stringify({ csvContent }),
+    }),
   getHospitalDossierOverview: () => request<{
     dossiers: Array<{
       nurseProfileId: string;

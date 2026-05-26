@@ -12,6 +12,7 @@ import {
 import { getInvoiceDetail, markInvoicePaid } from '../services/billing.service';
 import { listHospitalWebhookEvents, retryWebhookEvent, updateHospitalWebhookConfig } from '../services/webhook.service';
 import { getHospitalDossierOverview } from '../services/dossier.service';
+import { importActualWorkData } from '../services/actuals-import.service';
 import { signContract } from '../services/esignature.service';
 import { getHospitalWhatsAppEvents, getWhatsAppEventsForContract } from '../services/whatsapp.service';
 import { listAsyncProcessFailures, resolveAsyncFailure } from '../services/async-process.service';
@@ -259,6 +260,24 @@ export async function signContractController(req: Request, res: Response): Promi
   const consentText = typeof req.body.consentText === 'string' ? req.body.consentText : '';
   const result = await signContract(id, party, req.auth, consentText);
   res.status(200).json(result);
+}
+
+export async function importActualsController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) throw createHttpError(401, 'Authentication required');
+  if (req.auth.role !== UserRole.HOSPITAL_ADMIN) {
+    throw createHttpError(403, 'Only hospital admins can import actuals');
+  }
+
+  const hospitalProfile = await prisma.hospitalProfile.findUnique({
+    where: { userId: req.auth.userId },
+  });
+  if (!hospitalProfile) throw createHttpError(404, 'Hospital profile not found');
+
+  const csvContent = typeof req.body.csvContent === 'string' ? req.body.csvContent : '';
+  if (!csvContent.trim()) throw createHttpError(400, 'CSV content is required');
+
+  const result = await importActualWorkData(hospitalProfile.id, csvContent);
+  res.status(200).json({ imported: result.imported, errors: result.errors });
 }
 
 export async function getWhatsAppEventsController(req: Request, res: Response): Promise<void> {
