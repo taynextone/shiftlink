@@ -230,4 +230,4 @@ Checklist:
 - [x] Webhook-Admin/Retry-API
 - [x] Fachweiterbildungen als verifizierbare Dokumente
 - [x] Arbeitsmedizinische Nachweise modellieren
-- [ ] Dossier-Übersicht für Klinikseite
+- [x] Dossier-Übersicht für Klinikseite
