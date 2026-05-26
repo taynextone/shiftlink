@@ -16,6 +16,7 @@ import { getContractPdfDownload } from '../services/contract-pdf.service';
 import { getContractExecutionOverview, signContractExecution } from '../services/contract-signature.service';
 import { getContractVoidOverview, voidContractExecution } from '../services/contract-void.service';
 import { getContractLifecycleOverview } from '../services/contract-audit.service';
+import { recordAuditLog } from '../services/audit.service';
 import { findCandidatesForJobShift } from '../services/matching.service';
 
 export async function signMatchContractController(req: Request, res: Response): Promise<void> {
@@ -46,6 +47,15 @@ export async function createMatchOfferController(req: Request, res: Response): P
   }
 
   const matchContract = await createMatchOffer(req.auth, req.body);
+
+  void recordAuditLog({
+    action: 'OFFER_CREATE',
+    actorUserId: req.auth.userId,
+    actorRole: req.auth.role,
+    targetEntityType: 'MatchContract',
+    targetEntityId: matchContract.id,
+    metadata: { jobShiftId: req.body.jobShiftId, nurseProfileId: req.body.nurseProfileId },
+  });
 
   res.status(201).json({
     matchContract,
@@ -92,6 +102,15 @@ export async function respondToMatchOfferController(req: Request, res: Response)
   }
 
   const result = await respondToMatchOffer(req.auth, req.body);
+
+  void recordAuditLog({
+    action: req.body.action === 'ACCEPT' ? 'OFFER_ACCEPT' : 'OFFER_DECLINE',
+    actorUserId: req.auth.userId,
+    actorRole: req.auth.role,
+    targetEntityType: 'MatchContract',
+    targetEntityId: req.body.matchContractId,
+    metadata: { action: req.body.action },
+  });
 
   res.status(200).json(result);
 }

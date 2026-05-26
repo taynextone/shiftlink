@@ -357,6 +357,22 @@ model AsyncProcessFailure {
   @@index([createdAt])
 }
 
+model AuditLog {
+  id              String   @id @default(cuid())
+  action          String
+  actorUserId     String
+  actorRole       String
+  targetEntityType String?
+  targetEntityId  String?
+  metadataJson    String?
+  createdAt       DateTime @default(now())
+
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetEntityId])
+  @@index([createdAt])
+}
+
 model WhatsAppEvent {
   id              String        @id @default(cuid())
   matchContractId String
