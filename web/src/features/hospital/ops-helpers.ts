@@ -155,3 +155,34 @@ export type BillingConflictResult = {
   label: string;
   detail: string;
 };
+
+export function buildVoidEscalationChecklist(lifecycle: ContractLifecycle | null) {
+  if (!lifecycle) {
+    return [] as string[];
+  }
+
+  if (lifecycle.invoice?.status === 'PAID') {
+    return [
+      'Billing-Intervention öffnen und Zahlungsstatus / Nachweise prüfen.',
+      'Kommunikationsverlauf prüfen, ob bereits Follow-up oder Zusagen dokumentiert sind.',
+      'Danach erst entscheiden, ob manueller Support-/Governance-Eingriff nötig ist.',
+    ];
+  }
+
+  if (lifecycle.executionStatus === 'FULLY_EXECUTED') {
+    return [
+      'Vertrags- und Execution-Historie prüfen.',
+      'Billing-/PDF-Artefakte gegen den Abschlusszustand gegenlesen.',
+      'Nur mit dokumentiertem Ausnahmegrund in manuelle Eskalation gehen.',
+    ];
+  }
+
+  if (lifecycle.status === 'CANCELED') {
+    return [
+      'Bestehende Void-/Storno-Historie prüfen.',
+      'Kommunikation und Billing-Kontext gegen den stornierten Zustand abgleichen.',
+    ];
+  }
+
+  return [] as string[];
+}

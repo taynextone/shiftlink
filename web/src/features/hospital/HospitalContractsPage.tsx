@@ -12,7 +12,7 @@ import { useAsyncData } from '../../hooks/useAsyncData';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, type ContractExecutionOverview, type ContractLifecycle, type ContractPdfResponse, type ContractSnapshotResponse, type ContractVoidOverview, type HospitalOffer } from '../../lib/api';
 
-import { interpretBillingConflict, interpretContractState, interpretInvoiceException, interpretVoidIntervention, type InterventionTone } from './ops-helpers';
+import { buildVoidEscalationChecklist, interpretBillingConflict, interpretContractState, interpretInvoiceException, interpretVoidIntervention, type InterventionTone } from './ops-helpers';
 
 function formatDateTime(value?: string | null) {
   return value ? new Date(value).toLocaleString('de-DE') : '—';
@@ -62,6 +62,7 @@ export function HospitalContractsPage() {
   const voidIntervention = useMemo(() => interpretVoidIntervention(lifecycle, voiding), [lifecycle, voiding]);
   const invoiceException = useMemo(() => interpretInvoiceException(lifecycle), [lifecycle]);
   const billingConflict = useMemo(() => interpretBillingConflict(lifecycle), [lifecycle]);
+  const voidEscalationChecklist = useMemo(() => buildVoidEscalationChecklist(lifecycle), [lifecycle]);
   const canSignExecution = Boolean(contractId) && lifecycle?.status === 'SIGNED' && lifecycle.executionStatus !== 'FULLY_EXECUTED' && lifecycle.executionStatus !== 'VOIDED';
   const canVoidContract = Boolean(contractId) && voidIntervention?.label === 'Void möglich' && billingConflict?.tone !== 'error' && voidReason.trim().length > 0;
 
@@ -358,10 +359,17 @@ export function HospitalContractsPage() {
                 ) : null}
                 {billingConflict ? <FeedbackMessage tone={toFeedbackTone(billingConflict.tone)} message={`${billingConflict.label}: ${billingConflict.detail}`} /> : null}
                 {voidIntervention?.tone === 'error' || billingConflict?.tone === 'error' ? (
-                  <ActionBar>
-                    {lifecycle?.invoice?.id ? <Link to={`/hospital/billing?invoiceId=${encodeURIComponent(lifecycle.invoice.id)}`}><button type="button" className="secondary">Billing-Intervention öffnen</button></Link> : null}
-                    {lifecycle ? <Link to={`/hospital/offers?jobShiftId=${encodeURIComponent(lifecycle.jobShiftId)}&focusContractId=${encodeURIComponent(lifecycle.matchContractId)}`}><button type="button" className="secondary">Kommunikation prüfen</button></Link> : null}
-                  </ActionBar>
+                  <>
+                    {voidEscalationChecklist.length > 0 ? (
+                      <ol className="ordered-list compact-ordered-list">
+                        {voidEscalationChecklist.map((item) => <li key={item}>{item}</li>)}
+                      </ol>
+                    ) : null}
+                    <ActionBar>
+                      {lifecycle?.invoice?.id ? <Link to={`/hospital/billing?invoiceId=${encodeURIComponent(lifecycle.invoice.id)}`}><button type="button" className="secondary">Billing-Intervention öffnen</button></Link> : null}
+                      {lifecycle ? <Link to={`/hospital/offers?jobShiftId=${encodeURIComponent(lifecycle.jobShiftId)}&focusContractId=${encodeURIComponent(lifecycle.matchContractId)}`}><button type="button" className="secondary">Kommunikation prüfen</button></Link> : null}
+                    </ActionBar>
+                  </>
                 ) : null}
                 <ActionBar>
                   <button type="button" className="secondary" disabled={submitting || !canVoidContract} onClick={() => void handleVoid()}>
