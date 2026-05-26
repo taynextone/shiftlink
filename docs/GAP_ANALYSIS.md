@@ -35,9 +35,9 @@ Stand: Diese Liste übersetzt das fachliche Zielbild in konkrete Umsetzungsblöc
 - [x] Vertragsversionierung / unveränderliche Snapshots definieren
 
 ## 5. eSignatur
-- [ ] Signaturmodell fachlich präzisieren (wer signiert was, wann, womit)
-- [ ] rechtsgültigen eSignatur-Flow technisch auswählen und anbinden
-- [ ] Audit-Trail für Signaturen speichern
+- [x] Signaturmodell fachlich präzisiert (Hospital + Nurse signieren)
+- [x] eSignatur-Flow implementiert (eigener Flow, kein DocuSign)
+- [x] Audit-Trail für Signaturen gespeichert (ContractSignatureEvent mit Evidence JSON)
 
 ## 6. No-Refund / Post-Signature Status
 - [x] Plattformrechnung bei Signatur vorhanden

@@ -223,7 +223,7 @@ Checklist:
 - Remaining: eSignatur, Vertrags-PDF, HR-Export, Deployment
 
 ## Open from GAP_ANALYSIS.md
-- [ ] eSignatur-Flow (wer signiert was, wann, womit) — braucht externe Integration (DocuSign o.ä.)
+- [x] eSignatur-Flow (eigener Flow, kein DocuSign nötig)
 - [x] Vertrags-PDF-Generierung + contractPdfUrl real anbinden
 - [x] No-Refund/Post-Signature Policy modellieren
 - [x] HR-/Payroll-Export (Backend-Endpoint + Service)
