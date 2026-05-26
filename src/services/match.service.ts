@@ -540,12 +540,23 @@ export async function respondToMatchOffer(
   }
 
   if (input.action === 'DECLINE') {
-    const declinedContract = await prisma.matchContract.update({
-      where: { id: normalizedContract.id },
+    const declinedContract = await prisma.matchContract.updateMany({
+      where: {
+        id: normalizedContract.id,
+        status: MatchContractStatus.PENDING,
+      },
       data: {
         status: MatchContractStatus.DECLINED,
         respondedAt: new Date(),
       },
+    });
+
+    if (declinedContract.count === 0) {
+      throw createHttpError(409, 'This match offer can no longer be changed');
+    }
+
+    const freshContract = await prisma.matchContract.findUnique({
+      where: { id: normalizedContract.id },
       include: {
         invoice: true,
         nurseProfile: true,
@@ -558,9 +569,13 @@ export async function respondToMatchOffer(
       },
     });
 
+    if (!freshContract) {
+      throw createHttpError(404, 'Contract not found after update');
+    }
+
     return {
       status: 'DECLINED' as const,
-      matchContract: declinedContract,
+      matchContract: freshContract,
     };
   }
 
