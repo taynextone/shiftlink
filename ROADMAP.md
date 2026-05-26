@@ -171,24 +171,24 @@ Checklist:
 ## Phase 4 — Commercial Readiness
 
 ### 10. Onboarding / Activation UX
-Status: pending
+Status: in_progress
 Priority: medium
 
-Needed:
-- clearer first-run flows
-- role-specific onboarding help
-- activation progress cues
-- reduced operator dependency for new users
+Checklist:
+- [done] Onboarding wizard for new users
+- [done] Role-specific onboarding help
+- [partial] Activation progress cues
+- [partial] Reduced operator dependency for new users
 
 ### 11. Product Metrics / Business Visibility
-Status: pending
+Status: complete
 Priority: medium
 
-Needed:
-- fill-rate and conversion visibility
-- signed contract metrics
-- invoice pipeline visibility
-- operational KPIs in dashboards
+Checklist:
+- [done] Fill-rate and conversion visibility
+- [done] Signed contract metrics
+- [done] Invoice pipeline visibility
+- [done] Operational KPIs in dashboards
 
 ---
 
@@ -208,8 +208,16 @@ Needed:
 ---
 
 ## Current Active Block
-- Phase 3 — Go-Live Readiness
-- Active: Reliability / Production Hardening (Punkt 9) — concurrency fixes, audit logging
-- Completed: Security / Compliance / Audit Readiness (Punkt 8) — audit logging, ConfirmModal, access controls verified
+- Phase 4 — Commercial Readiness (nearly complete)
+- Remaining: Deployment documentation, final polish
+- Phase 3 — Go-Live Readiness: COMPLETE ✅
 - Phase 2 — Workflow Hardening: COMPLETE ✅
 - Phase 1 — Core Product Completion: COMPLETE ✅
+
+## Overall Progress: ~94%
+- Core product: Complete
+- Operations & admin: Complete
+- Workflow hardening: Complete
+- Go-live readiness: Complete
+- Commercial readiness: Nearly complete
+- Remaining: Deployment, final QA, launch
