@@ -357,6 +357,12 @@ export function HospitalContractsPage() {
                   </>
                 ) : null}
                 {billingConflict ? <FeedbackMessage tone={toFeedbackTone(billingConflict.tone)} message={`${billingConflict.label}: ${billingConflict.detail}`} /> : null}
+                {voidIntervention?.tone === 'error' || billingConflict?.tone === 'error' ? (
+                  <ActionBar>
+                    {lifecycle?.invoice?.id ? <Link to={`/hospital/billing?invoiceId=${encodeURIComponent(lifecycle.invoice.id)}`}><button type="button" className="secondary">Billing-Intervention öffnen</button></Link> : null}
+                    {lifecycle ? <Link to={`/hospital/offers?jobShiftId=${encodeURIComponent(lifecycle.jobShiftId)}&focusContractId=${encodeURIComponent(lifecycle.matchContractId)}`}><button type="button" className="secondary">Kommunikation prüfen</button></Link> : null}
+                  </ActionBar>
+                ) : null}
                 <ActionBar>
                   <button type="button" className="secondary" disabled={submitting || !canVoidContract} onClick={() => void handleVoid()}>
                     {submitting ? 'Bitte warten…' : 'Contract voiden'}
