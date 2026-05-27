@@ -11,11 +11,18 @@ services:
       - .env
     environment:
       - DATABASE_URL=postgresql://shiftlink:${DB_PASSWORD:-password}@db:5432/shiftlink?schema=public
+      - REDIS_URL=redis://redis:6379
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - app-uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "node", "/app/scripts/healthcheck.js"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 5
     networks:
       - shiftlink-net
 
