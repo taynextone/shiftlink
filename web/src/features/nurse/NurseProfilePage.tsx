@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AsyncState } from '../../components/AsyncState';
+import { ConfirmModal } from '../../components/ConfirmModal';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { Field } from '../../components/Field';
 import { InfoList } from '../../components/InfoList';
@@ -7,6 +9,7 @@ import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
 import { StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
+import { useAuth } from '../../state/AuthContext';
 import { api } from '../../lib/api';
 
 const DOCUMENT_TYPE_LABELS: Record<string, string> = {
@@ -57,11 +60,16 @@ function VerificationTimeline({ documents }: { documents: Array<{ id: string; do
 }
 
 export function NurseProfilePage() {
+  const navigate = useNavigate();
+  const { setAuthenticatedUser } = useAuth();
   const { data, loading, error, reload } = useAsyncData(() => api.getVerificationOverview(), []);
   const verification = data?.verification ?? null;
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [selectedDocumentType, setSelectedDocumentType] = useState<'EXAMEN' | 'SPECIALIZATION_CERTIFICATE' | 'OCCUPATIONAL_HEALTH_CLEARANCE'>('EXAMEN');
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   // Track which document types the nurse has already uploaded (any status)
   const uploadedTypes = new Set(verification?.documents.map((d) => d.documentType) ?? []);
@@ -91,6 +99,40 @@ export function NurseProfilePage() {
       setUploadStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Upload fehlgeschlagen' });
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    try {
+      await api.deleteAccount();
+      await setAuthenticatedUser(null);
+      navigate('/');
+    } catch (err) {
+      setUploadStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Account-Löschung fehlgeschlagen' });
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  }
+
+  async function handleExportData() {
+    setExporting(true);
+    setUploadStatus(null);
+    try {
+      const result = await api.exportData();
+      const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `shiftlink-data-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setUploadStatus({ tone: 'success', message: 'Datenexport heruntergeladen.' });
+    } catch (err) {
+      setUploadStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Export fehlgeschlagen' });
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -157,6 +199,30 @@ export function NurseProfilePage() {
               )}
             </SectionCard>
 
+            <SectionCard title="Datenschutz & Account" description="DSGVO-Rechte: Datenexport und Account-Löschung.">
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => void handleExportData()}
+                  disabled={exporting}
+                >
+                  {exporting ? 'Exportiert…' : 'Daten exportieren (JSON)'}
+                </button>
+                <button
+                  type="button"
+                  className="danger"
+                  onClick={() => setConfirmDelete(true)}
+                  disabled={deleting}
+                >
+                  Account löschen
+                </button>
+              </div>
+              <p className="hint" style={{ marginTop: '0.5rem' }}>
+                Die Account-Löschung entfernt alle personenbezogenen Daten unwiderruflich. Verträge und Rechnungen bleiben aus Compliance-Gründen anonymisiert erhalten.
+              </p>
+            </SectionCard>
+
             {availableTypes.length > 0 && (
               <SectionCard title="Dokument hochladen" description="Lade Verifikationsnachweise hoch (max. 10 MB, PDF oder Bilder).">
                 <div className="form-grid two">
@@ -178,6 +244,17 @@ export function NurseProfilePage() {
           </div>
         ) : null}
       </AsyncState>
+      {confirmDelete ? (
+        <ConfirmModal
+          title="Account unwiderruflich löschen"
+          message="Alle personenbezogenen Daten werden gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden."
+          confirmLabel="Ja, Account löschen"
+          cancelLabel="Abbrechen"
+          tone="danger"
+          onConfirm={() => void handleDeleteAccount()}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      ) : null}
     </section>
   );
 }

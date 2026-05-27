@@ -12,6 +12,7 @@ import nurseProfileRoutes from './routes/nurse-profile.routes';
 import nurseAvailabilityRoutes from './routes/nurse-availability.routes';
 import jobShiftRoutes from './routes/job-shift.routes';
 import { env } from './config/env';
+import userRoutes from './routes/user.routes';
 import path from 'path';
 import { notFoundMiddleware } from './middlewares/not-found';
 import { errorHandler } from './middlewares/error-handler';
@@ -47,6 +48,7 @@ app.use('/api/v1', adminRoutes);
   app.use('/api/v1/nurse-profile', nurseProfileRoutes);
   app.use('/api/v1/nurse-availability', nurseAvailabilityRoutes);
   app.use('/api/v1/job-shifts', jobShiftRoutes);
+  app.use('/api/v1/user', userRoutes);
 
   // Serve frontend static files
   const webDist = '/app/web/dist';

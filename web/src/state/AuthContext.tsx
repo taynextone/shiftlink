@@ -6,7 +6,7 @@ type AuthContextValue = {
   user: AuthUser | null;
   loading: boolean;
   refreshSession: () => Promise<void>;
-  setAuthenticatedUser: (user: AuthUser) => Promise<void>;
+  setAuthenticatedUser: (user: AuthUser | null) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -36,9 +36,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
     void refreshSession();
   }, [refreshSession]);
 
-  const setAuthenticatedUser = useCallback(async (nextUser: AuthUser) => {
+  const setAuthenticatedUser = useCallback(async (nextUser: AuthUser | null) => {
     setUser(nextUser);
-    await refreshSession();
+    if (nextUser) {
+      await refreshSession();
+    }
   }, [refreshSession]);
 
   const logout = useCallback(async () => {

@@ -386,6 +386,8 @@ export const api = {
     }),
   getSession: () => request<{ auth: AuthState }>('/auth/me'),
   logout: () => request<{ message: string }>('/auth/logout', { method: 'POST' }),
+  deleteAccount: () => request<{ message: string }>('/user', { method: 'DELETE' }),
+  exportData: () => request<{ data: Record<string, unknown> }>('/user/export'),
   getVisibleJobShifts: () => request<{ jobShifts: VisibleJobShift[] }>('/matches/visible-job-shifts'),
   getOwnMatches: () => request<{ matchContracts: OwnMatchContract[] }>('/matches/me'),
   getVerificationOverview: () => request<{ verification: VerificationOverview }>('/nurse-profile/me/verification'),
