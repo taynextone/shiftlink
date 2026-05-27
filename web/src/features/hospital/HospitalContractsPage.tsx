@@ -14,6 +14,7 @@ import { api, type ContractExecutionOverview, type ContractLifecycle, type Contr
 
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { SignatureDialog } from '../../components/SignatureDialog';
+import { HybridStatusCard } from '../../components/HybridStatusCard';
 import { buildContractStateSteps, buildVoidEscalationChecklist, interpretBillingConflict, interpretContractState, interpretInvoiceException, interpretVoidIntervention, type InterventionTone } from './ops-helpers';
 
 function formatDateTime(value?: string | null) {
@@ -561,6 +562,14 @@ export function HospitalContractsPage() {
                 </ActionBar>
               </FormSection>
             </SectionCard>
+            {contractId ? (
+              <HybridStatusCard
+                contractId={contractId}
+                onUpdatePaperStatus={async (paperStatus) => {
+                  await api.updatePaperContractStatus(contractId, paperStatus);
+                }}
+              />
+            ) : null}
             <SectionCard
               title="Lifecycle Summary"
               description="Auditierbare Sicht auf Status, Signaturen und Vertragsartefakte."

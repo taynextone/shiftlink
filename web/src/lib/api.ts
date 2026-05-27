@@ -238,6 +238,23 @@ export type ContractPdfResponse = {
   expiresIn: number;
 };
 
+export type HybridSignatureStatus = {
+  contractId: string;
+  digital: {
+    hospitalSigned: boolean;
+    nurseSigned: boolean;
+    fullySigned: boolean;
+    signatureCount: number;
+  };
+  paper: {
+    status: string;
+    signed: boolean;
+    waived: boolean;
+    signedAt: string | null;
+  };
+  hybridComplete: boolean;
+};
+
 export type ContractLifecycle = {
   matchContractId: string;
   jobShiftId: string;
@@ -522,6 +539,14 @@ export const api = {
     request<{ webhookUrl: string | null; webhookSecretConfigured: boolean }>('/job-shifts/webhook-config', {
       method: 'PATCH',
       body: JSON.stringify(input),
+    }),
+  getHybridSignatureStatus: (contractId: string) => request<HybridSignatureStatus>(
+    `/matches/contract/${encodeURIComponent(contractId)}/hybrid-status`,
+  ),
+  updatePaperContractStatus: (contractId: string, paperStatus: 'PENDING' | 'SIGNED' | 'WAIVED') =>
+    request<{ id: string; paperContractStatus: string }>(`/matches/contract/${encodeURIComponent(contractId)}/paper-sign`, {
+      method: 'POST',
+      body: JSON.stringify({ paperStatus }),
     }),
   signContract: (contractId: string, party: 'HOSPITAL' | 'NURSE', consentText: string, signatureImage?: string) =>
     request<{ contractId: string; party: string; signed: boolean; fullyExecuted: boolean }>(`/matches/contract/${encodeURIComponent(contractId)}/sign`, {

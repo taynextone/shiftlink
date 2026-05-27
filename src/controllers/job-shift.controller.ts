@@ -10,6 +10,7 @@ import {
   listHospitalJobShifts,
 } from '../services/job-shift.service';
 import { getInvoiceDetail, markInvoicePaid } from '../services/billing.service';
+import { updatePaperContractStatus, getHybridSignatureStatus, type PaperContractStatus } from '../services/hybrid-contract.service';
 import { listHospitalWebhookEvents, retryWebhookEvent, updateHospitalWebhookConfig } from '../services/webhook.service';
 import { getHospitalDossierOverview } from '../services/dossier.service';
 import { importActualWorkData } from '../services/actuals-import.service';
@@ -289,5 +290,25 @@ export async function getWhatsAppEventsController(req: Request, res: Response): 
   if (!contractId) throw createHttpError(400, 'Contract ID is required');
   const events = await getWhatsAppEventsForContract(contractId);
   res.status(200).json({ events });
+}
+
+export async function getHybridSignatureStatusController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) throw createHttpError(401, 'Authentication required');
+  const contractId = typeof req.params.id === 'string' ? req.params.id : '';
+  if (!contractId) throw createHttpError(400, 'Contract ID is required');
+  const status = await getHybridSignatureStatus(contractId);
+  res.status(200).json(status);
+}
+
+export async function updatePaperContractStatusController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) throw createHttpError(401, 'Authentication required');
+  const contractId = typeof req.params.id === 'string' ? req.params.id : '';
+  if (!contractId) throw createHttpError(400, 'Contract ID is required');
+  const paperStatus = req.body.paperStatus as PaperContractStatus;
+  if (!paperStatus || !['PENDING', 'SIGNED', 'WAIVED'].includes(paperStatus)) {
+    throw createHttpError(400, 'paperStatus must be PENDING, SIGNED, or WAIVED');
+  }
+  const result = await updatePaperContractStatus(contractId, paperStatus, req.auth);
+  res.status(200).json(result);
 }
 

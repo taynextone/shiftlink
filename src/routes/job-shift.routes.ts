@@ -20,6 +20,8 @@ import {
   cancelByHospitalController,
   completeContractController,
   signContractController,
+  getHybridSignatureStatusController,
+  updatePaperContractStatusController,
   importActualsController,
 } from '../controllers/job-shift.controller';
 import { requireAuth, requireRole } from '../middlewares/auth';
@@ -155,6 +157,20 @@ router.post(
   requireAuth,
   requireRole(UserRole.HOSPITAL_ADMIN),
   asyncHandler(importActualsController),
+);
+
+// Hybrid paper contract routes
+router.get(
+  '/contract/:id/hybrid-status',
+  requireAuth,
+  requireRole(UserRole.HOSPITAL_ADMIN, UserRole.NURSE),
+  asyncHandler(getHybridSignatureStatusController),
+);
+router.post(
+  '/contract/:id/paper-sign',
+  requireAuth,
+  requireRole(UserRole.HOSPITAL_ADMIN),
+  asyncHandler(updatePaperContractStatusController),
 );
 
 export default router;

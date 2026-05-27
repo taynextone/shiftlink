@@ -237,6 +237,8 @@ model MatchContract {
   executionStatus       ContractExecutionStatus @default(DRAFT)
   fullyExecutedAt       DateTime?
   currentSnapshotId     String?               @unique
+  paperContractStatus   String?               @default("NOT_REQUIRED")
+  paperContractSignedAt DateTime?
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
   jobShift              JobShift              @relation(fields: [jobShiftId], references: [id], onDelete: Cascade)
