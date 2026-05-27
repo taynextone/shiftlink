@@ -86,7 +86,7 @@ Definition of done:
 ## Phase 2 — Workflow Hardening
 
 ### 4. Notifications / Delivery Flows
-Status: in_progress
+Status: complete
 Priority: high
 
 Checklist:
@@ -96,13 +96,13 @@ Checklist:
 - [done] More complete event / status feedback around async processes
 
 ### 5. Form / Validation / Error Hardening
-Status: in_progress
+Status: complete
 Priority: high
 
 Checklist:
 - [done] Finish consistent Field / Feedback usage everywhere
 - [done] Better mutation-state handling
-- [partial] Stronger inline validation
+- [done] Stronger inline validation
 - [done] Better destructive-action confirmation patterns
 - [done] Tighter empty / error / success state consistency
 
@@ -110,7 +110,7 @@ Definition of done:
 - app-wide form behavior is consistent, defensive, and professional
 
 ### 6. List / Detail / Navigation Cohesion
-Status: in_progress
+Status: complete
 Priority: high
 
 Checklist:
@@ -156,7 +156,7 @@ Checklist:
 - [done] Permission boundary review across nurse/hospital/admin roles
 
 ### 9. Reliability / Production Hardening
-Status: in_progress
+Status: complete
 Priority: critical
 
 Checklist:
@@ -208,13 +208,15 @@ Checklist:
 ---
 
 ## Current Active Block
-- Phase 5 — Form Validation / Error Hardening (inline validation polish)
+- Phase 7 — QA / Browser Validation (blocked on OpenClaw visual QA path)
+- Phase 6 — List / Detail / Navigation Cohesion: COMPLETE ✅
+- Phase 5 — Form / Validation / Error Hardening: COMPLETE ✅
 - Phase 4 — Commercial Readiness: COMPLETE ✅
 - Phase 3 — Go-Live Readiness: COMPLETE ✅
 - Phase 2 — Workflow Hardening: COMPLETE ✅
 - Phase 1 — Core Product Completion: COMPLETE ✅
 
-## Overall Progress: ~98%
+## Overall Progress: ~99%
 - Core product: Complete
 - Operations & admin: Complete
 - Workflow hardening: Complete
@@ -226,9 +228,11 @@ Checklist:
 - Activation UX: Complete
 - Security/compliance: Complete
 - Permission boundaries: Complete
+- Form/validation hardening: Complete
+- Navigation cohesion: Complete
 - GAP_ANALYSIS: Complete
 - Test coverage: 58 tests green
-- Remaining: Visual QA (blocked on OpenClaw), server deployment (pending Jurica), inline validation polish (minor)
+- Remaining: Visual QA (blocked on OpenClaw), server deployment (pending Jurica)
 
 ## Open from GAP_ANALYSIS.md
 - [x] eSignatur-Flow (eigener Flow, kein DocuSign nötig)
