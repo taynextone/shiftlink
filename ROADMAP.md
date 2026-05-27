@@ -177,8 +177,8 @@ Priority: medium
 Checklist:
 - [done] Onboarding wizard for new users
 - [done] Role-specific onboarding help
-- [partial] Activation progress cues
-- [partial] Reduced operator dependency for new users
+- [done] Activation progress cues
+- [done] Reduced operator dependency for new users
 
 ### 11. Product Metrics / Business Visibility
 Status: complete
