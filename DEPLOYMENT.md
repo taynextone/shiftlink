@@ -1,92 +1,125 @@
 # Shiftlink Deployment Guide
 
-## Server Requirements
+## Quick Start (Docker)
 
+### Prerequisites
 - Ubuntu 22.04+ or Debian 12+
+- Docker 24+ and Docker Compose 2+
+- 2+ CPU cores, 4+ GB RAM
+
+### 1. Clone and Configure
+
+```bash
+git clone https://github.com/taynextone/shiftlink.git
+cd shiftlink
+
+# Create environment file
+cp .env.example .env
+nano .env
+```
+
+Edit `.env`:
+```env
+DB_PASSWORD=your-strong-password
+JWT_SECRET=your-32-char-minimum-secret-key
+NODE_ENV=production
+PORT=3000
+```
+
+### 2. Start Everything
+
+```bash
+docker compose up -d --build
+```
+
+This starts:
+- **app** — Shiftlink backend (port 3000)
+- **db** — PostgreSQL 16
+- **nginx** — Reverse proxy with SSL (ports 80, 443)
+
+### 3. Run Migrations (first start)
+
+```bash
+docker compose exec app npx prisma migrate deploy
+```
+
+### 4. Verify
+
+```bash
+curl http://localhost:3000/api/v1/health
+```
+
+### 5. Manage
+
+```bash
+# View logs
+docker compose logs -f app
+
+# Stop everything
+docker compose down
+
+# Restart
+docker compose restart
+
+# Rebuild after code changes
+docker compose up -d --build
+```
+
+---
+
+## Manual Setup (without Docker)
+
+### Prerequisites
 - Node.js 22+
 - PostgreSQL 16+
 - Redis 7+
-- 2+ CPU cores, 4+ GB RAM (production)
 
-## Initial Setup
+### Steps
 
 ```bash
-# Clone repository
 git clone https://github.com/taynextone/shiftlink.git
 cd shiftlink
 
 # Install dependencies
 npm install
 
-# Generate Prisma client
-npx prisma generate
+# Configure environment
+cp .env.example .env
+nano .env
 
-# Run database migrations
+# Database setup
+npx prisma generate
 npx prisma migrate deploy
 
-# Build backend
+# Build
 npm run build
-
-# Build frontend
 npm run web:build
+
+# Start
+node dist/server.js
 ```
+
+---
 
 ## Environment Variables
 
-Create `.env` with:
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | ✅ | PostgreSQL connection string |
+| `JWT_SECRET` | ✅ | Min 32 characters |
+| `PORT` | ✅ | Default: 3000 |
+| `NODE_ENV` | ✅ | production/development |
+| `APP_ORIGIN` | For prod | Your app URL |
+| `REDIS_URL` | For workers | Redis connection |
+| `S3_*` | For file storage | Object storage config |
 
-```env
-NODE_ENV=production
-PORT=3000
-APP_ORIGIN=https://your-domain.example
-DATABASE_URL=postgresql://user:password@localhost:5432/shiftlink
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=<generate-with-openssl-rand-base64-32>
-JWT_EXPIRES_IN=7d
-S3_ENDPOINT=https://s3.example.com
-S3_REGION=eu-central-1
-S3_BUCKET=shiftlink-uploads
-S3_ACCESS_KEY=your-access-key
-S3_SECRET_KEY=your-secret-key
-NURSE_LOGIN_URL=https://your-domain.example/login
-HOSPITAL_LOGIN_URL=https://your-domain.example/login
-TWILIO_ACCOUNT_SID=your-twilio-sid
-TWILIO_AUTH_TOKEN=your-twilio-token
-TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
-```
+---
 
-## Running
+## Troubleshooting
 
-```bash
-# Production
-node dist/index.js
-
-# With PM2
-pm2 start dist/index.js --name shiftlink
-pm2 save
-pm2 startup
-```
-
-## Health Check
-
-```
-GET /api/v1/health
-```
-
-Returns `200` when healthy, `503` when degraded.
-
-## Database Backups
-
-```bash
-pg_dump -U shiftlink shiftlink > backup-$(date +%Y%m%d).sql
-```
-
-## SSL/TLS
-
-Use nginx or Caddy as reverse proxy with Let's Encrypt certificates.
-
-## Monitoring
-
-- Health endpoint: `/api/v1/health`
-- Audit logs: Admin → Audit Log (superadmin only)
-- Business KPIs: Admin → Business Metrics (superadmin only)
+| Issue | Fix |
+|-------|-----|
+| App won't start | Check `docker compose logs app` |
+| DB connection failed | Verify DATABASE_URL in .env |
+| Migration errors | Run `docker compose exec app npx prisma migrate deploy` |
+| Health check fails | App takes ~10s to start |
