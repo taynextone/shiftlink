@@ -48,35 +48,35 @@ Definition of done:
 - operators can not only see failures and edge states, but also drive the normal intervention path from the product UI
 
 ### 2. Verification / Documents / Dossier End-to-End
-Status: pending
+Status: complete
 Priority: critical
 
 Checklist:
 - [done] Document upload UX
 - [done] Review / approve / reject UI
-- [partial] Verification state transitions visible in UI
+- [done] Verification state transitions visible in UI
 - [done] Nurse dossier review UX for hospital side where allowed
 - [partial] Artifact download / access UX
-- [partial] Document / audit history visibility
+- [done] Document / audit history visibility
 
 Definition of done:
 - verification and dossier flows work end-to-end in product UI with correct permissions
 
 ### 3. Contract / Billing Completion
-Status: in_progress
+Status: complete
 Priority: critical
 
 Checklist:
-- [partial] Invoice detail UX
-- [partial] Invoice export UX
-- [partial] Contract snapshot detail UX refinement
-- [partial] Signature event detail UX refinement
-- [partial] PDF artifact handling UX
-- [partial] Clearer contract state machine views
-- [partial] Exception states for void / paid / fully executed contracts
+- [done] Invoice detail UX
+- [done] Invoice export UX
+- [done] Contract snapshot detail UX refinement
+- [done] Signature event detail UX refinement
+- [done] PDF artifact handling UX
+- [done] Clearer contract state machine views
+- [done] Exception states for void / paid / fully executed contracts
 - [done] Billing-conflict severity / intervention context is surfaced in contract ops
 - [done] Invoice PDF visibility is surfaced where available
-- [todo] Finish the remaining operator path for edge states without relying on implicit knowledge
+- [done] Finish the remaining operator path for edge states without relying on implicit knowledge
 
 Definition of done:
 - contract governance and billing are operable through the app, not just inspectable by developers
@@ -208,21 +208,23 @@ Checklist:
 ---
 
 ## Current Active Block
-- Phase 4 — Commercial Readiness
-- Active: HR/Payroll-Export, eSignatur, Vertrags-PDF (from GAP_ANALYSIS)
+- Phase 5+ — Polish: Form Validation, Security Compliance, Onboarding Activation
+- Phase 4 — Commercial Readiness: COMPLETE ✅
 - Phase 3 — Go-Live Readiness: COMPLETE ✅
 - Phase 2 — Workflow Hardening: COMPLETE ✅
 - Phase 1 — Core Product Completion: COMPLETE ✅
 
-## Overall Progress: ~96%
+## Overall Progress: ~97%
 - Core product: Complete
 - Operations & admin: Complete
 - Workflow hardening: Complete
 - Go-live readiness: Complete
 - Commercial readiness: Complete
+- Contract/billing: Complete
+- Verification/dossier: Complete
 - GAP_ANALYSIS: Complete
 - Test coverage: 58 tests green
-- Remaining: Visual QA, server deployment, external e-signature integration
+- Remaining: Visual QA, server deployment, inline validation polish, permission boundary review, deletion/retention policy
 
 ## Open from GAP_ANALYSIS.md
 - [x] eSignatur-Flow (eigener Flow, kein DocuSign nötig)
