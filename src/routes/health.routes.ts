@@ -17,17 +17,19 @@ router.get('/health', async (_req: Request, res: Response) => {
     checks.database = { status: 'error', error: error instanceof Error ? error.message : 'Unknown' };
   }
 
-  // Queue check
+  // Queue check (with timeout)
   try {
-    const queueStatus = await getQueueStatus();
+    const queuePromise = getQueueStatus();
+    const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Queue check timeout')), 5000));
+    const queueStatus = await Promise.race([queuePromise, timeoutPromise]);
     checks.queue = { status: 'ok', latencyMs: 0 };
     checks.queueDetails = { status: `${queueStatus.waiting} waiting, ${queueStatus.active} active, ${queueStatus.failed} failed` };
   } catch (error) {
-    checks.queue = { status: 'error', error: error instanceof Error ? error.message : 'Unknown' };
+    checks.queue = { status: 'degraded', error: error instanceof Error ? error.message : 'Unknown' };
   }
 
   // Overall status
-  const allOk = Object.values(checks).every((c) => c.status === 'ok');
+  const allOk = Object.values(checks).every((c) => c.status === 'ok' || c.status === 'degraded');
 
   res.status(allOk ? 200 : 503).json({
     status: allOk ? 'healthy' : 'degraded',
