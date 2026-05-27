@@ -43,42 +43,49 @@ router.get(
 router.get(
   '/contract/:id',
   requireAuth,
+  requireRole(UserRole.NURSE, UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
   asyncHandler(getContractSnapshotController),
 );
 
 router.get(
   '/contract/:id/pdf',
   requireAuth,
+  requireRole(UserRole.NURSE, UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
   asyncHandler(getContractPdfController),
 );
 
 router.get(
   '/contract/:id/lifecycle',
   requireAuth,
+  requireRole(UserRole.NURSE, UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
   asyncHandler(getContractLifecycleOverviewController),
 );
 
 router.get(
   '/contract/:id/execution',
   requireAuth,
+  requireRole(UserRole.NURSE, UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
   asyncHandler(getContractExecutionOverviewController),
 );
 
 router.post(
   '/contract/:id/execution/sign',
   requireAuth,
+  requireRole(UserRole.NURSE, UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
   asyncHandler(signContractExecutionController),
 );
 
 router.get(
   '/contract/:id/void',
   requireAuth,
+  requireRole(UserRole.NURSE, UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
   asyncHandler(getContractVoidOverviewController),
 );
 
 router.post(
   '/contract/:id/void',
   requireAuth,
+  requireRole(UserRole.HOSPITAL_ADMIN, UserRole.SUPER_ADMIN),
   asyncHandler(voidContractExecutionController),
 );
 
