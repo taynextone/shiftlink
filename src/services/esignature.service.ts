@@ -43,6 +43,7 @@ export async function signContract(
   party: SignatureParty,
   actor: { userId: string; role: string },
   consentText: string,
+  signatureImage?: string,
 ) {
   const contract = await prisma.matchContract.findUnique({
     where: { id: contractId },
@@ -85,6 +86,7 @@ export async function signContract(
         consentText,
         signedAt: new Date().toISOString(),
         party,
+        ...(signatureImage ? { signatureImage } : {}),
       }),
     },
   });

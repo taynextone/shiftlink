@@ -537,3 +537,46 @@ label span { font-size: 0.92rem; }
   background: var(--success);
   color: #fff;
 }
+
+/* Signature Pad */
+.signature-pad {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.signature-pad .field-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.signature-canvas-wrapper {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.signature-canvas {
+  display: block;
+  background: #fff;
+}
+
+.signature-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.signature-hint {
+  font-size: 0.8rem;
+  color: #16a34a;
+}
+
+.signature-pad .field-error {
+  color: var(--danger);
+  font-size: 0.8rem;
+  margin: 0;
+}

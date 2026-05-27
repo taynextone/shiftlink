@@ -13,6 +13,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { api, type ContractExecutionOverview, type ContractLifecycle, type ContractPdfResponse, type ContractSnapshotResponse, type ContractVoidOverview, type HospitalOffer } from '../../lib/api';
 
 import { ConfirmModal } from '../../components/ConfirmModal';
+import { SignatureDialog } from '../../components/SignatureDialog';
 import { buildContractStateSteps, buildVoidEscalationChecklist, interpretBillingConflict, interpretContractState, interpretInvoiceException, interpretVoidIntervention, type InterventionTone } from './ops-helpers';
 
 function formatDateTime(value?: string | null) {
@@ -72,8 +73,15 @@ export function HospitalContractsPage() {
   const canReportNoShow = Boolean(contractId) && (lifecycle?.status === 'SIGNED' || lifecycle?.status === 'ACTIVE');
   const canCancelByHospital = Boolean(contractId) && (lifecycle?.status === 'SIGNED' || lifecycle?.status === 'ACTIVE');
   const canComplete = Boolean(contractId) && lifecycle?.status === 'ACTIVE';
-  const canSignHospital = Boolean(contractId) && (lifecycle?.status === 'SIGNED' || lifecycle?.status === 'ACTIVE') && lifecycle?.executionStatus !== 'FULLY_EXECUTED' && lifecycle?.executionStatus !== 'VOIDED';
+  const canSignHospital = Boolean(contractId) && (lifecycle?.status === 'SIGNED' || lifecycle?.status === 'ACTIVE') && lifecycle?.executionStatus !== 'FULLY_EXECUTED' && lifecycle?.executionStatus !== 'VOIDED' && !lifecycle?.signatureStatus?.HOSPITAL_ADMIN;
+  const canSignNurse = Boolean(contractId) && (lifecycle?.status === 'SIGNED' || lifecycle?.status === 'ACTIVE') && lifecycle?.executionStatus !== 'FULLY_EXECUTED' && lifecycle?.executionStatus !== 'VOIDED' && !lifecycle?.signatureStatus?.NURSE;
   const [consentText, setConsentText] = useState('');
+  const [signatureDialog, setSignatureDialog] = useState<null | {
+    contractId: string;
+    party: 'HOSPITAL' | 'NURSE';
+    title: string;
+    consentText: string;
+  }>(null);
 
   async function loadLifecycle(targetContractId: string) {
     const result = await api.getContractLifecycle(targetContractId);
@@ -210,31 +218,25 @@ export function HospitalContractsPage() {
     });
   }
 
-  async function handleSignHospital() {
+  function handleSignHospital() {
     if (!contractId) return;
     const consent = consentText.trim() || 'Ich bestätige hiermit den Vertrag elektronisch.';
-    setConfirmAction({
+    setSignatureDialog({
+      contractId,
+      party: 'HOSPITAL',
       title: 'Vertrag als Klinik unterschreiben',
-      message: `Vertrag ${contractId} elektronisch unterschreiben?\n\nConsent: ${consent}`,
-      tone: 'warning',
-      onConfirm: async () => {
-        setConfirmAction(null);
-        setSubmitting(true);
-        setStatus(null);
-        try {
-          const result = await api.signContract(contractId, 'HOSPITAL', consent);
-          await loadLifecycle(contractId);
-          if (result.fullyExecuted) {
-            setStatus({ tone: 'success', message: 'Vertrag vollständig signiert! Beide Parteien haben unterschrieben.' });
-          } else {
-            setStatus({ tone: 'success', message: 'Klinik-Signatur gespeichert. Auf Pflegekraft-Signatur warten.' });
-          }
-        } catch (err) {
-          setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Signatur fehlgeschlagen' });
-        } finally {
-          setSubmitting(false);
-        }
-      },
+      consentText: consent,
+    });
+  }
+
+  function handleSignNurse() {
+    if (!contractId) return;
+    const consent = consentText.trim() || 'Ich bestätige hiermit den Vertrag elektronisch.';
+    setSignatureDialog({
+      contractId,
+      party: 'NURSE',
+      title: 'Vertrag als Pflegekraft unterschreiben',
+      consentText: consent,
     });
   }
 
@@ -552,6 +554,9 @@ export function HospitalContractsPage() {
                   <button type="button" disabled={submitting || !canSignHospital} onClick={() => void handleSignHospital()}>
                     {submitting ? 'Signiert…' : 'Als Klinik unterschreiben'}
                   </button>
+                  <button type="button" disabled={submitting || !canSignNurse} onClick={() => void handleSignNurse()}>
+                    {submitting ? 'Signiert…' : 'Als Pflegekraft unterschreiben'}
+                  </button>
                   <span className="hint">Klinik: {lifecycle?.signatureStatus?.HOSPITAL_ADMIN ? 'signiert' : 'offen'} | Pflegekraft: {lifecycle?.signatureStatus?.NURSE ? 'signiert' : 'offen'}</span>
                 </ActionBar>
               </FormSection>
@@ -722,6 +727,21 @@ export function HospitalContractsPage() {
           {status ? <FeedbackMessage tone={status.tone} message={status.message} /> : null}
         </div>
       </div>
+      {signatureDialog ? (
+        <SignatureDialog
+          title={signatureDialog.title}
+          contractId={signatureDialog.contractId}
+          party={signatureDialog.party}
+          consentText={signatureDialog.consentText}
+          onSign={async (cid, p, consent, sigImg) => {
+            const result = await api.signContract(cid, p, consent, sigImg);
+            await loadLifecycle(cid);
+            return { fullyExecuted: result.fullyExecuted };
+          }}
+          onClose={() => setSignatureDialog(null)}
+          onStatus={setStatus}
+        />
+      ) : null}
       {confirmAction ? (
         <ConfirmModal
           title={confirmAction.title}

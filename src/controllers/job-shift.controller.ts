@@ -258,7 +258,8 @@ export async function signContractController(req: Request, res: Response): Promi
     throw createHttpError(400, 'Party must be HOSPITAL or NURSE');
   }
   const consentText = typeof req.body.consentText === 'string' ? req.body.consentText : '';
-  const result = await signContract(id, party, req.auth, consentText);
+  const signatureImage = typeof req.body.signatureImage === 'string' ? req.body.signatureImage : undefined;
+  const result = await signContract(id, party, req.auth, consentText, signatureImage);
   res.status(200).json(result);
 }
 

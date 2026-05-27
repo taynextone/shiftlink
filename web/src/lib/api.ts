@@ -523,10 +523,10 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(input),
     }),
-  signContract: (contractId: string, party: 'HOSPITAL' | 'NURSE', consentText: string) =>
+  signContract: (contractId: string, party: 'HOSPITAL' | 'NURSE', consentText: string, signatureImage?: string) =>
     request<{ contractId: string; party: string; signed: boolean; fullyExecuted: boolean }>(`/matches/contract/${encodeURIComponent(contractId)}/sign`, {
       method: 'POST',
-      body: JSON.stringify({ party, consentText }),
+      body: JSON.stringify({ party, consentText, signatureImage }),
     }),
   importActuals: (csvContent: string) =>
     request<{ imported: number; errors: string[] }>('/job-shifts/import-actuals', {
