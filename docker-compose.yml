@@ -12,6 +12,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://shiftlink:${DB_PASSWORD:-password}@db:5432/shiftlink?schema=public
       - REDIS_URL=redis://redis:6379
+      - APP_ORIGIN=http://localhost
     depends_on:
       db:
         condition: service_healthy
