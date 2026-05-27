@@ -143,7 +143,7 @@ Blocked note:
 - current OpenClaw visual QA path issue is tracked separately in `UNRESOLVED.md`
 
 ### 8. Security / Compliance / Audit Readiness
-Status: in_progress
+Status: complete
 Priority: critical
 
 Checklist:
@@ -151,9 +151,9 @@ Checklist:
 - [done] Audit log visibility and retention expectations
 - [done] Audit log viewer for superadmins
 - [done] Destructive-action confirmation patterns (ConfirmModal)
-- [partial] Data handling review for healthcare-adjacent sensitivity
+- [done] Data handling review for healthcare-adjacent sensitivity
 - [done] Deletion / retention / export policy support
-- [partial] Permission boundary review across nurse/hospital/admin roles
+- [done] Permission boundary review across nurse/hospital/admin roles
 
 ### 9. Reliability / Production Hardening
 Status: in_progress
@@ -171,7 +171,7 @@ Checklist:
 ## Phase 4 — Commercial Readiness
 
 ### 10. Onboarding / Activation UX
-Status: in_progress
+Status: complete
 Priority: medium
 
 Checklist:
@@ -208,7 +208,7 @@ Checklist:
 ---
 
 ## Current Active Block
-- Phase 5+ — Polish: Form Validation, Security Compliance
+- Phase 5 — Form Validation / Error Hardening (inline validation polish)
 - Phase 4 — Commercial Readiness: COMPLETE ✅
 - Phase 3 — Go-Live Readiness: COMPLETE ✅
 - Phase 2 — Workflow Hardening: COMPLETE ✅
@@ -224,9 +224,11 @@ Checklist:
 - Verification/dossier: Complete
 - GDPR compliance: Complete
 - Activation UX: Complete
+- Security/compliance: Complete
+- Permission boundaries: Complete
 - GAP_ANALYSIS: Complete
 - Test coverage: 58 tests green
-- Remaining: Visual QA (blocked), server deployment (pending Jurica), inline validation polish, permission boundary review
+- Remaining: Visual QA (blocked on OpenClaw), server deployment (pending Jurica), inline validation polish (minor)
 
 ## Open from GAP_ANALYSIS.md
 - [x] eSignatur-Flow (eigener Flow, kein DocuSign nötig)
