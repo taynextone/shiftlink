@@ -69,7 +69,7 @@ jest.mock('../src/config/prisma', () => ({
     jobShift: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn() },
     matchContract: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), updateMany: jest.fn(), delete: jest.fn() },
     contractSnapshot: { create: jest.fn() },
-    contractSignatureEvent: { create: jest.fn() },
+    contractSignatureEvent: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
     contractVoidEvent: { create: jest.fn() },
     invoice: { create: jest.fn(), findMany: jest.fn() },
     webhookEvent: { create: jest.fn() },
