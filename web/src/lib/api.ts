@@ -109,15 +109,19 @@ export type AdminVerificationOverview = {
   }>;
 };
 
+export type VerificationDocumentEntry = {
+  id: string;
+  documentType: string;
+  status: string;
+  reviewedAt?: string | null;
+  createdAt: string;
+  rejectionReason?: string | null;
+};
+
 export type VerificationOverview = {
   isReleasedForMatching: boolean;
   releasedAt?: string | null;
-  documents: Array<{
-    id: string;
-    documentType: string;
-    status: string;
-    reviewedAt?: string | null;
-  }>;
+  documents: VerificationDocumentEntry[];
 };
 
 export type HospitalJobShift = {
