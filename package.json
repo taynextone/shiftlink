@@ -1,7 +1,7 @@
 {
   "name": "shiftlink",
   "version": "1.0.0",
-  "description": "Digitaler Matching-Marktplatz f\u00fcr kurzfristige Pflegeeins\u00e4tze in Krankenh\u00e4usern, mit Fokus auf Direktvermittlung statt Zeitarbeit.",
+  "description": "Digitaler Matching-Marktplatz für kurzfristige Pflegeeinsätze in Krankenhäusern, mit Fokus auf Direktvermittlung statt Zeitarbeit.",
   "main": "dist/server.js",
   "directories": {
     "doc": "docs"
@@ -29,7 +29,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1047.0",
     "@aws-sdk/s3-request-presigner": "^3.1047.0",
-    "@prisma/client": "^7.8.0",
+    "@prisma/client": "^6.19.3",
     "argon2": "^0.44.0",
     "bullmq": "^5.76.8",
     "cookie-parser": "^1.4.7",
@@ -60,7 +60,7 @@
     "@types/supertest": "^7.2.0",
     "@vitejs/plugin-react": "^6.0.2",
     "jest": "^30.4.2",
-    "prisma": "^7.8.0",
+    "prisma": "^6.19.3",
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.9",
     "ts-node-dev": "^2.0.0",
