@@ -152,7 +152,7 @@ Checklist:
 - [done] Audit log viewer for superadmins
 - [done] Destructive-action confirmation patterns (ConfirmModal)
 - [partial] Data handling review for healthcare-adjacent sensitivity
-- [todo] Deletion / retention / export policy support
+- [done] Deletion / retention / export policy support
 - [partial] Permission boundary review across nurse/hospital/admin roles
 
 ### 9. Reliability / Production Hardening
