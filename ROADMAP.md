@@ -208,13 +208,13 @@ Checklist:
 ---
 
 ## Current Active Block
-- Phase 5+ — Polish: Form Validation, Security Compliance, Onboarding Activation
+- Phase 5+ — Polish: Form Validation, Security Compliance
 - Phase 4 — Commercial Readiness: COMPLETE ✅
 - Phase 3 — Go-Live Readiness: COMPLETE ✅
 - Phase 2 — Workflow Hardening: COMPLETE ✅
 - Phase 1 — Core Product Completion: COMPLETE ✅
 
-## Overall Progress: ~97%
+## Overall Progress: ~98%
 - Core product: Complete
 - Operations & admin: Complete
 - Workflow hardening: Complete
@@ -222,9 +222,11 @@ Checklist:
 - Commercial readiness: Complete
 - Contract/billing: Complete
 - Verification/dossier: Complete
+- GDPR compliance: Complete
+- Activation UX: Complete
 - GAP_ANALYSIS: Complete
 - Test coverage: 58 tests green
-- Remaining: Visual QA, server deployment, inline validation polish, permission boundary review, deletion/retention policy
+- Remaining: Visual QA (blocked), server deployment (pending Jurica), inline validation polish, permission boundary review
 
 ## Open from GAP_ANALYSIS.md
 - [x] eSignatur-Flow (eigener Flow, kein DocuSign nötig)
