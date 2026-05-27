@@ -1,5 +1,3 @@
-node_modules
-!node_modules/.prisma
 .git
 .gitignore
 .env
@@ -8,4 +6,5 @@ node_modules
 .vscode
 .idea
 web/node_modules
-web/dist
+node_modules
+!node_modules/.prisma
