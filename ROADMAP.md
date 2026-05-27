@@ -164,7 +164,7 @@ Checklist:
 - [done] Retry/error handling review
 - [done] Concurrency/race-condition review in contract/offer flows
 - [done] Operational health checks and runbooks
-- [partial] Deployment/runtime configuration review
+- [done] Deployment/runtime configuration review
 
 ---
 
