@@ -155,6 +155,40 @@ export type NurseDashboardSummary = {
   }>;
 };
 
+export type HospitalDashboardSummary = {
+  hospitalProfile: {
+    id: string;
+    clinicName: string;
+    billingAddress: string;
+  };
+  onboarding: {
+    steps: Array<{ label: string; done: boolean }>;
+    completedSteps: number;
+    totalSteps: number;
+    isComplete: boolean;
+  };
+  stats: {
+    totalShifts: number;
+    openShifts: number;
+    matchedShifts: number;
+  };
+  recentShifts: Array<{
+    id: string;
+    title: string | null;
+    status: string;
+    locationCity: string | null;
+    startTime: string;
+  }>;
+  recentWebhookEvents: Array<{
+    id: string;
+    eventType: string;
+    deliveredAt?: string | null;
+    deliveryAttempts: number;
+    lastError?: string | null;
+    createdAt: string;
+  }>;
+};
+
 export type HospitalJobShift = {
   id: string;
   externalJobShiftId?: string | null;
@@ -423,6 +457,7 @@ export const api = {
   getOwnMatches: () => request<{ matchContracts: OwnMatchContract[] }>('/matches/me'),
   getVerificationOverview: () => request<{ verification: VerificationOverview }>('/nurse-profile/me/verification'),
   getNurseDashboardSummary: () => request<{ dashboard: NurseDashboardSummary }>('/nurse-profile/me/dashboard'),
+  getHospitalDashboardSummary: () => request<{ dashboard: HospitalDashboardSummary }>('/nurse-profile/me/hospital-dashboard'),
   getAdminVerificationOverview: (publicId: string) => request<{ verification: AdminVerificationOverview }>(`/nurse-profile/verification/admin/${encodeURIComponent(publicId)}`),
   setMatchingRelease: (input: { publicId: string; release: boolean; reason?: string }) =>
     request<{ releaseControl: AdminReleaseControlResult }>('/nurse-profile/verification/release', {

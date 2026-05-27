@@ -522,3 +522,77 @@ export async function getNurseDashboardSummary(actor: { userId: string; role: Us
     })),
   };
 }
+
+export async function getHospitalDashboardSummary(actor: { userId: string; role: UserRole }) {
+  if (actor.role !== UserRole.HOSPITAL_ADMIN) {
+    throw createHttpError(403, 'Only hospital admins can access hospital dashboard summary');
+  }
+
+  const profile = await prisma.hospitalProfile.findUnique({
+    where: { userId: actor.userId },
+    include: {
+      jobShifts: {
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      },
+      webhookEvents: {
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+      },
+    },
+  });
+
+  if (!profile) {
+    throw createHttpError(404, 'Hospital profile not found');
+  }
+
+  // Compute onboarding completion for hospital
+  const hasProfile = Boolean(profile.clinicName && profile.billingAddress);
+  const hasJobShifts = profile.jobShifts.length > 0;
+  const hasWebhook = Boolean(profile.webhookUrl);
+  const openShifts = profile.jobShifts.filter((s) => s.status === 'OPEN').length;
+  const matchedShifts = profile.jobShifts.filter((s) => s.status === 'MATCHED').length;
+
+  const onboardingSteps = [
+    { label: 'Klinik-Profil vervollständigen', done: hasProfile },
+    { label: 'Erste Schichten importieren', done: hasJobShifts },
+    { label: 'Offers und Matching starten', done: matchedShifts > 0 },
+    { label: 'Webhook konfigurieren (optional)', done: hasWebhook },
+  ];
+
+  const completedSteps = onboardingSteps.filter((s) => s.done).length;
+
+  return {
+    hospitalProfile: {
+      id: profile.id,
+      clinicName: profile.clinicName,
+      billingAddress: profile.billingAddress,
+    },
+    onboarding: {
+      steps: onboardingSteps,
+      completedSteps,
+      totalSteps: onboardingSteps.length,
+      isComplete: completedSteps === onboardingSteps.length,
+    },
+    stats: {
+      totalShifts: profile.jobShifts.length,
+      openShifts,
+      matchedShifts,
+    },
+    recentShifts: profile.jobShifts.slice(0, 5).map((s) => ({
+      id: s.id,
+      title: s.title,
+      status: s.status,
+      locationCity: s.locationCity,
+      startTime: s.startTime,
+    })),
+    recentWebhookEvents: profile.webhookEvents.map((e) => ({
+      id: e.id,
+      eventType: e.eventType,
+      deliveredAt: e.deliveredAt,
+      deliveryAttempts: e.deliveryAttempts,
+      lastError: e.lastError,
+      createdAt: e.createdAt,
+    })),
+  };
+}
