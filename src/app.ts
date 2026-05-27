@@ -12,6 +12,7 @@ import nurseProfileRoutes from './routes/nurse-profile.routes';
 import nurseAvailabilityRoutes from './routes/nurse-availability.routes';
 import jobShiftRoutes from './routes/job-shift.routes';
 import { env } from './config/env';
+import path from 'path';
 import { notFoundMiddleware } from './middlewares/not-found';
 import { errorHandler } from './middlewares/error-handler';
 
@@ -38,6 +39,21 @@ app.use('/api/v1', adminRoutes);
   app.use('/api/v1/nurse-profile', nurseProfileRoutes);
   app.use('/api/v1/nurse-availability', nurseAvailabilityRoutes);
   app.use('/api/v1/job-shifts', jobShiftRoutes);
+
+  // Serve frontend static files
+  const webDist = '/app/web/dist';
+  app.use(express.static(webDist, { index: false, maxAge: '1d' }));
+
+  // SPA fallback — serve index.html for non-API routes
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api/')) {
+      res.sendFile(path.join(webDist, 'index.html'), (err) => {
+        if (err) next(err);
+      });
+      return;
+    }
+    next();
+  });
 
   app.use((err: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (err instanceof ZodError) {

@@ -29,6 +29,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/prisma ./prisma
 COPY scripts/healthcheck.js /app/scripts/healthcheck.js
+COPY web/dist /app/web/dist
 
 RUN chown -R appuser:appgroup /app
 USER appuser
