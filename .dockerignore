@@ -1,0 +1,11 @@
+node_modules
+!node_modules/.prisma
+.git
+.gitignore
+.env
+.env.example
+*.md
+.vscode
+.idea
+web/node_modules
+web/dist

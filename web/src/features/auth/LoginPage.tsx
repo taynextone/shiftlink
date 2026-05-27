@@ -14,6 +14,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [demoLoading, setDemoLoading] = useState<'NURSE' | 'HOSPITAL_ADMIN' | null>(null);
 
   const errors = useMemo(() => ({
     email: email && !email.includes('@') ? 'Ungültige E-Mail-Adresse' : null,
@@ -44,6 +45,21 @@ export function LoginPage() {
     }
   }
 
+  async function handleDemoLogin(role: 'NURSE' | 'HOSPITAL_ADMIN') {
+    setDemoLoading(role);
+    setStatus(null);
+    try {
+      const result = await api.demoLogin(role);
+      await setAuthenticatedUser(result.user);
+      setStatus({ tone: 'success', message: `Demo-Login als ${role === 'NURSE' ? 'Pflegekraft' : 'Krankenhaus'} erfolgreich.` });
+      navigate(role === 'HOSPITAL_ADMIN' ? '/hospital' : '/nurse');
+    } catch (error) {
+      setStatus({ tone: 'error', message: error instanceof Error ? error.message : 'Demo-Login fehlgeschlagen' });
+    } finally {
+      setDemoLoading(null);
+    }
+  }
+
   return (
     <section className="stack page-stack auth-layout auth-grid">
       <div className="stack">
@@ -61,6 +77,27 @@ export function LoginPage() {
           </Field>
           <button type="submit" disabled={submitting || !canSubmit}>{submitting ? 'Einloggen…' : 'Einloggen'}</button>
         </form>
+        <div className="panel form-panel narrow stack">
+          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginBottom: '0.75rem' }}>
+            Schnellzugang ohne Registrierung:
+          </p>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => handleDemoLogin('NURSE')}
+              disabled={demoLoading !== null}
+            >
+              {demoLoading === 'NURSE' ? 'Lädt…' : 'Demo: Pflegekraft'}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDemoLogin('HOSPITAL_ADMIN')}
+              disabled={demoLoading !== null}
+            >
+              {demoLoading === 'HOSPITAL_ADMIN' ? 'Lädt…' : 'Demo: Krankenhaus'}
+            </button>
+          </div>
+        </div>
         {status ? <FeedbackMessage tone={status.tone} message={status.message} /> : null}
       </div>
       <EmptyState

@@ -345,17 +345,17 @@ export async function getPublicNurseProfile(publicId: string) {
     preferredRegionsNote: profile.preferredRegionsNote,
     isReleasedForMatching: profile.isReleasedForMatching,
     hasVerifiedExamen: profile.verificationDocuments.some(
-      (document) => document.documentType === VerificationDocumentType.EXAMEN && document.status === VerificationDocumentStatus.VERIFIED,
+      (document: { documentType: string; status: string }) => document.documentType === VerificationDocumentType.EXAMEN && document.status === VerificationDocumentStatus.VERIFIED,
     ),
-    specializations: profile.specializations.map((item) => item.tag),
-    availabilityBlocks: profile.availabilityBlocks.map((block) => ({
+    specializations: profile.specializations.map((item: { tag: string }) => item.tag),
+    availabilityBlocks: profile.availabilityBlocks.map((block: { id: string; title: string | null; city: string; postalCode: string | null; radiusKm: number; startTime: Date; endTime: Date; notes: string | null }) => ({
       id: block.id,
       title: block.title,
       city: block.city,
       postalCode: block.postalCode,
       radiusKm: block.radiusKm,
-      startTime: block.startTime,
-      endTime: block.endTime,
+      startTime: block.startTime.toISOString(),
+      endTime: block.endTime.toISOString(),
       notes: block.notes,
     })),
   };

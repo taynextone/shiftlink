@@ -370,6 +370,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+  demoLogin: (role: 'NURSE' | 'HOSPITAL_ADMIN') =>
+    request<{ user: AuthUser }>('/auth/demo-login', {
+      method: 'POST',
+      body: JSON.stringify({ role }),
+    }),
   registerNurse: (input: Record<string, unknown>) =>
     request<{ user: AuthUser }>('/auth/register', {
       method: 'POST',
