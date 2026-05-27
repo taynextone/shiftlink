@@ -56,7 +56,7 @@ Checklist:
 - [done] Review / approve / reject UI
 - [done] Verification state transitions visible in UI
 - [done] Nurse dossier review UX for hospital side where allowed
-- [partial] Artifact download / access UX
+- [done] Artifact download / access UX
 - [done] Document / audit history visibility
 
 Definition of done:
