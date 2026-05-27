@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { UserRole } from '@prisma/client';
 import {
   completeOnboardingController,
+  getNurseDashboardSummaryController,
   getOwnVerificationOverviewController,
   getPublicNurseProfileController,
   getSuperadminVerificationOverviewByPublicIdController,
@@ -18,6 +19,12 @@ import { asyncHandler } from '../utils/async-handler';
 const router = Router();
 
 router.get('/public/:publicId', asyncHandler(getPublicNurseProfileController));
+router.get(
+  '/me/dashboard',
+  requireAuth,
+  requireRole(UserRole.NURSE),
+  asyncHandler(getNurseDashboardSummaryController),
+);
 router.get(
   '/me/verification',
   requireAuth,

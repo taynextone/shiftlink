@@ -437,3 +437,88 @@ export async function uploadVerificationDocument(
     uploadUrl: `/api/v1/nurse-profiles/me/documents/${document.id}/upload`,
   };
 }
+
+export async function getNurseDashboardSummary(actor: { userId: string; role: UserRole }) {
+  if (actor.role !== UserRole.NURSE) {
+    throw createHttpError(403, 'Only nurses can access nurse dashboard');
+  }
+
+  const profile = await prisma.nurseProfile.findUnique({
+    where: { userId: actor.userId },
+    include: {
+      verificationDocuments: { orderBy: { createdAt: 'desc' } },
+      matchContracts: {
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        include: {
+          jobShift: { select: { title: true, locationCity: true, startTime: true, endTime: true } },
+          invoices: { select: { status: true, amount: true }, orderBy: { createdAt: 'desc' }, take: 1 },
+        },
+      },
+      availabilityBlocks: {
+        where: { endTime: { gt: new Date() } },
+        orderBy: { startTime: 'asc' },
+        take: 5,
+      },
+    },
+  });
+
+  if (!profile) {
+    throw createHttpError(404, 'Nurse profile not found');
+  }
+
+  // Compute onboarding completion
+  const hasProfile = Boolean(profile.displayName && profile.phoneNumber);
+  const hasAllDocs = REQUIRED_DOCUMENT_TYPES.every((type) =>
+    profile.verificationDocuments.some((d) => d.documentType === type),
+  );
+  const allDocsVerified = profile.verificationDocuments.length > 0 &&
+    profile.verificationDocuments.every((d) => d.status === VerificationDocumentStatus.VERIFIED);
+  const hasAvailability = profile.availabilityBlocks.length > 0;
+
+  const onboardingSteps = [
+    { label: 'Profil vervollständigen', done: hasProfile },
+    { label: 'Verifikationsdokumente hochladen', done: hasAllDocs },
+    { label: 'Verifikation abschließen', done: allDocsVerified },
+    { label: 'Matching-Freigabe erhalten', done: profile.isReleasedForMatching },
+    { label: 'Verfügbarkeit eintragen', done: hasAvailability },
+  ];
+
+  const completedSteps = onboardingSteps.filter((s) => s.done).length;
+
+  return {
+    nurseProfile: {
+      id: profile.id,
+      publicId: profile.publicId,
+      displayName: profile.displayName,
+      isReleasedForMatching: profile.isReleasedForMatching,
+      releasedAt: profile.releasedAt,
+    },
+    onboarding: {
+      steps: onboardingSteps,
+      completedSteps,
+      totalSteps: onboardingSteps.length,
+      isComplete: completedSteps === onboardingSteps.length,
+    },
+    documents: profile.verificationDocuments.map((d) => ({
+      id: d.id,
+      documentType: d.documentType,
+      status: d.status,
+      reviewedAt: d.reviewedAt,
+    })),
+    recentContracts: profile.matchContracts.map((c) => ({
+      id: c.id,
+      status: c.status,
+      jobShift: c.jobShift,
+      latestInvoice: c.invoices[0] ?? null,
+      createdAt: c.createdAt,
+    })),
+    upcomingAvailability: profile.availabilityBlocks.map((b) => ({
+      id: b.id,
+      title: b.title,
+      city: b.city,
+      startTime: b.startTime,
+      endTime: b.endTime,
+    })),
+  };
+}

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import createHttpError from 'http-errors';
 import {
   completeOnboarding,
+  getNurseDashboardSummary,
   getOwnVerificationOverview,
   getPublicNurseProfile,
   getSuperadminVerificationOverviewByPublicId,
@@ -52,6 +53,18 @@ export async function reviewVerificationDocumentController(req: Request, res: Re
 
   res.status(200).json({
     verificationDocument: document,
+  });
+}
+
+export async function getNurseDashboardSummaryController(req: Request, res: Response): Promise<void> {
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const summary = await getNurseDashboardSummary(req.auth);
+
+  res.status(200).json({
+    dashboard: summary,
   });
 }
 

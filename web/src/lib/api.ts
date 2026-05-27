@@ -124,6 +124,37 @@ export type VerificationOverview = {
   documents: VerificationDocumentEntry[];
 };
 
+export type NurseDashboardSummary = {
+  nurseProfile: {
+    id: string;
+    publicId: string;
+    displayName: string;
+    isReleasedForMatching: boolean;
+    releasedAt?: string | null;
+  };
+  onboarding: {
+    steps: Array<{ label: string; done: boolean }>;
+    completedSteps: number;
+    totalSteps: number;
+    isComplete: boolean;
+  };
+  documents: VerificationDocumentEntry[];
+  recentContracts: Array<{
+    id: string;
+    status: string;
+    jobShift: { title: string | null; locationCity: string | null; startTime: string; endTime: string };
+    latestInvoice: { status: string; amount: string } | null;
+    createdAt: string;
+  }>;
+  upcomingAvailability: Array<{
+    id: string;
+    title: string | null;
+    city: string;
+    startTime: string;
+    endTime: string;
+  }>;
+};
+
 export type HospitalJobShift = {
   id: string;
   externalJobShiftId?: string | null;
@@ -391,6 +422,7 @@ export const api = {
   getVisibleJobShifts: () => request<{ jobShifts: VisibleJobShift[] }>('/matches/visible-job-shifts'),
   getOwnMatches: () => request<{ matchContracts: OwnMatchContract[] }>('/matches/me'),
   getVerificationOverview: () => request<{ verification: VerificationOverview }>('/nurse-profile/me/verification'),
+  getNurseDashboardSummary: () => request<{ dashboard: NurseDashboardSummary }>('/nurse-profile/me/dashboard'),
   getAdminVerificationOverview: (publicId: string) => request<{ verification: AdminVerificationOverview }>(`/nurse-profile/verification/admin/${encodeURIComponent(publicId)}`),
   setMatchingRelease: (input: { publicId: string; release: boolean; reason?: string }) =>
     request<{ releaseControl: AdminReleaseControlResult }>('/nurse-profile/verification/release', {
