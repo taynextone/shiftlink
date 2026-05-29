@@ -84,6 +84,7 @@ export function LoginPage() {
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <button
               type="button"
+              className="secondary"
               onClick={() => handleDemoLogin('NURSE')}
               disabled={demoLoading !== null}
             >
@@ -91,6 +92,7 @@ export function LoginPage() {
             </button>
             <button
               type="button"
+              className="secondary"
               onClick={() => handleDemoLogin('HOSPITAL_ADMIN')}
               disabled={demoLoading !== null}
             >

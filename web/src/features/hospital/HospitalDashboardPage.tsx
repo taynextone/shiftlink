@@ -345,7 +345,6 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
         <WebhookAdminPanel />
         <DossierOverview />
         <ActualsImport />
-        <ActualsImport />
         <SectionCard title="Direkte Arbeitswege" description="Schneller Einstieg in die bereits ausgebauten Operations-Flows.">
           <MetricList
             items={[

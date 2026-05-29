@@ -12,9 +12,9 @@ export function RegisterPage() {
   const { setAuthenticatedUser } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('NurseNova');
-  const [firstName, setFirstName] = useState('Nina');
-  const [lastName, setLastName] = useState('Care');
+  const [displayName, setDisplayName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
