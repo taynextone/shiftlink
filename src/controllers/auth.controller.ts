@@ -74,7 +74,12 @@ export async function demoLoginController(req: Request, res: Response): Promise<
     return;
   }
 
-  const { role } = req.body as { role: string };
+  const { role } = req.body as { role?: string };
+
+  if (role !== 'NURSE' && role !== 'HOSPITAL_ADMIN') {
+    res.status(400).json({ message: 'Invalid demo role. Use NURSE or HOSPITAL_ADMIN.' });
+    return;
+  }
 
   type DemoUser = {
     id: string;
