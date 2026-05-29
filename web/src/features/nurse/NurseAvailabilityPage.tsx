@@ -20,13 +20,13 @@ export function NurseAvailabilityPage() {
   const { data, loading, error, reload } = useAsyncData(() => api.listOwnAvailabilityBlocks(), []);
   const blocks = data?.blocks ?? [];
   const [editingBlock, setEditingBlock] = useState<AvailabilityBlock | null>(null);
-  const [title, setTitle] = useState('Frühdienst verfügbar');
-  const [city, setCity] = useState('Berlin');
-  const [postalCode, setPostalCode] = useState('10115');
+  const [title, setTitle] = useState('');
+  const [city, setCity] = useState('');
+  const [postalCode, setPostalCode] = useState('');
   const [radiusKm, setRadiusKm] = useState('25');
-  const [startTime, setStartTime] = useState('2026-06-16T06:00');
-  const [endTime, setEndTime] = useState('2026-06-16T18:00');
-  const [notes, setNotes] = useState('Einsatz in Berlin Mitte oder angrenzend möglich.');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [notes, setNotes] = useState('');
   const [copySourceId, setCopySourceId] = useState('');
   const [copyStartTime, setCopyStartTime] = useState('2026-06-17T06:00');
   const [copyEndTime, setCopyEndTime] = useState('2026-06-17T18:00');
@@ -46,13 +46,13 @@ export function NurseAvailabilityPage() {
 
   function resetForm() {
     setEditingBlock(null);
-    setTitle('Frühdienst verfügbar');
-    setCity('Berlin');
-    setPostalCode('10115');
+    setTitle('');
+    setCity('');
+    setPostalCode('');
     setRadiusKm('25');
-    setStartTime('2026-06-16T06:00');
-    setEndTime('2026-06-16T18:00');
-    setNotes('Einsatz in Berlin Mitte oder angrenzend möglich.');
+    setStartTime('');
+    setEndTime('');
+    setNotes('');
   }
 
   function loadIntoForm(block: AvailabilityBlock) {

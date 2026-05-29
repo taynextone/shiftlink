@@ -31,8 +31,8 @@ export function HospitalShiftsPage() {
   const jobShifts = data?.jobShifts ?? [];
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [lastImportFailure, setLastImportFailure] = useState<string | null>(null);
-  const [externalJobShiftId, setExternalJobShiftId] = useState('ext-demo-1');
-  const [title, setTitle] = useState('ITS Einsatz');
+  const [externalJobShiftId, setExternalJobShiftId] = useState('');
+  const [title, setTitle] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
 
