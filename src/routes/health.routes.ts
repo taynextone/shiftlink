@@ -6,7 +6,7 @@ import { getQueueStatus } from '../workers/status';
 const router = Router();
 
 router.get('/health', async (_req: Request, res: Response) => {
-  const checks: Record<string, { status: string; latencyMs?: number; error?: string }> = {};
+  const checks: Record<string, { status: string; latencyMs?: number; error?: string; details?: string }> = {};
 
   // Database check
   const dbStart = Date.now();
@@ -22,8 +22,7 @@ router.get('/health', async (_req: Request, res: Response) => {
     const queuePromise = getQueueStatus();
     const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Queue check timeout')), 5000));
     const queueStatus = await Promise.race([queuePromise, timeoutPromise]);
-    checks.queue = { status: 'ok', latencyMs: 0 };
-    checks.queueDetails = { status: `${queueStatus.waiting} waiting, ${queueStatus.active} active, ${queueStatus.failed} failed` };
+    checks.queue = { status: 'ok', latencyMs: 0, details: `${queueStatus.waiting} waiting, ${queueStatus.active} active, ${queueStatus.failed} failed` };
   } catch (error) {
     checks.queue = { status: 'degraded', error: error instanceof Error ? error.message : 'Unknown' };
   }
@@ -33,7 +32,7 @@ router.get('/health', async (_req: Request, res: Response) => {
 
   res.status(allOk ? 200 : 503).json({
     status: allOk ? 'healthy' : 'degraded',
-    version: process.env.npm_package_version ?? 'unknown',
+    version: process.env.npm_package_version ?? '0.1.0',
     timestamp: new Date().toISOString(),
     checks,
   });
