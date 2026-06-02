@@ -20,6 +20,13 @@ export type BrowserQaChecklistSummary = {
   viewports: QaViewport[];
 };
 
+export type BrowserQaExecutionBatch = {
+  id: string;
+  ownerRole: QaRegressionScenario['ownerRole'];
+  viewport: QaViewport;
+  items: BrowserQaChecklistItem[];
+};
+
 export type BrowserQaRunStatus = 'pending' | 'passed' | 'failed' | 'blocked';
 
 export type BrowserQaRunResult = {
@@ -61,6 +68,9 @@ function formatOptionalNote(result?: BrowserQaRunResult): string {
   return ` - ${result.note}`;
 }
 
+const roleExecutionOrder: QaRegressionScenario['ownerRole'][] = ['NURSE', 'HOSPITAL_ADMIN', 'SUPER_ADMIN'];
+const viewportExecutionOrder: QaViewport[] = ['desktop', 'mobile'];
+
 export function buildBrowserQaChecklist(scenarios = browserRegressionScenarios): BrowserQaChecklistItem[] {
   return scenarios.flatMap((scenario) =>
     scenario.visualCheckpoints.flatMap((checkpoint) =>
@@ -91,6 +101,24 @@ export function summarizeBrowserQaChecklist(items = buildBrowserQaChecklist()): 
     routes: [...new Set(items.map((item) => item.route))].sort(),
     viewports: [...new Set(items.map((item) => item.viewport))].sort(),
   };
+}
+
+export function buildBrowserQaExecutionBatches(items = buildBrowserQaChecklist()): BrowserQaExecutionBatch[] {
+  return roleExecutionOrder.flatMap((ownerRole) =>
+    viewportExecutionOrder.flatMap((viewport) => {
+      const batchItems = items.filter((item) => item.ownerRole === ownerRole && item.viewport === viewport);
+      if (batchItems.length === 0) {
+        return [];
+      }
+
+      return [{
+        id: `${ownerRole.toLowerCase()}:${viewport}`,
+        ownerRole,
+        viewport,
+        items: batchItems,
+      }];
+    }),
+  );
 }
 
 export function summarizeBrowserQaRun(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): BrowserQaRunSummary {

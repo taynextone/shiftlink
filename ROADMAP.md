@@ -149,6 +149,7 @@ Progress while visual QA is blocked:
 - [done] Browser QA checklist can render a stable Markdown runlist summary for manual screenshot execution.
 - [done] Browser QA run status summaries track pending / passed / failed / blocked checklist items for later screenshot execution.
 - [done] Browser QA run reports now audit duplicate / stale result rows and render open failed / blocked / pending work for resumable screenshot execution.
+- [done] Browser QA execution batches group checklist items by role and viewport in stable run order.
 
 Blocked note:
 - current OpenClaw visual QA path issue is tracked separately in `UNRESOLVED.md`
@@ -242,7 +243,7 @@ Checklist:
 - Form/validation hardening: Complete
 - Navigation cohesion: Complete
 - GAP_ANALYSIS: Complete
-- Test coverage: 143 tests green
+- Test coverage: 145 tests green
 - Remaining: Visual QA (blocked on OpenClaw), server deployment (pending Jurica)
 
 ## Open from GAP_ANALYSIS.md

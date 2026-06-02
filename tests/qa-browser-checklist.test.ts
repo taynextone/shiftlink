@@ -1,6 +1,7 @@
 import {
   auditBrowserQaRunResults,
   buildBrowserQaChecklist,
+  buildBrowserQaExecutionBatches,
   getBrowserQaChecklistForRoute,
   getOpenBrowserQaChecklistItems,
   renderBrowserQaChecklistMarkdown,
@@ -74,6 +75,32 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(markdown).toContain('## hospital-shift-to-billing-ops:hospital-billing:desktop');
     expect(markdown).toContain('- Critical regions: billing summary; invoice detail; HR/payroll handoff');
     expect(markdown).toContain('- Expected signals: pending rows are prioritized; HR handoff is not described as Shiftlink payroll');
+  });
+
+  it('groups browser QA execution into stable role and viewport batches', () => {
+    const batches = buildBrowserQaExecutionBatches();
+
+    expect(batches.map((batch) => batch.id)).toEqual([
+      'nurse:desktop',
+      'nurse:mobile',
+      'hospital_admin:desktop',
+      'hospital_admin:mobile',
+      'super_admin:desktop',
+      'super_admin:mobile',
+    ]);
+    expect(batches.find((batch) => batch.id === 'hospital_admin:mobile')?.items.map((item) => item.route)).toEqual([
+      '/hospital',
+      '/hospital/contracts',
+      '/hospital/billing',
+    ]);
+  });
+
+  it('keeps execution batches lossless against the full checklist', () => {
+    const checklist = buildBrowserQaChecklist();
+    const batchedItems = buildBrowserQaExecutionBatches(checklist).flatMap((batch) => batch.items);
+
+    expect(batchedItems).toHaveLength(checklist.length);
+    expect(new Set(batchedItems.map((item) => item.id))).toEqual(new Set(checklist.map((item) => item.id)));
   });
 
   it('summarizes browser QA run status with pending work by default', () => {
