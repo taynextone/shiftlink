@@ -2,6 +2,7 @@ import {
   auditBrowserQaRunResults,
   buildBrowserQaChecklist,
   buildBrowserQaExecutionBatches,
+  buildBrowserQaRunReport,
   getBrowserQaChecklistForRoute,
   getNextBrowserQaExecutionBatch,
   getOpenBrowserQaChecklistItems,
@@ -287,5 +288,43 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(markdown).toContain(`[failed] ${checklist[1].id}`);
     expect(markdown).toContain('Mobile metric cards overlap');
     expect(markdown).not.toContain(`[passed] ${checklist[0].id}`);
+  });
+
+  it('builds a structured browser QA run report for JSON handoff', () => {
+    const checklist = buildBrowserQaChecklist();
+    const [nurseDesktop] = buildBrowserQaExecutionBatches(checklist);
+    const report = buildBrowserQaRunReport(checklist, [
+      ...nurseDesktop.items.map((item) => ({ itemId: item.id, status: 'passed' as const })),
+      { itemId: checklist[3].id, status: 'blocked' as const, note: 'Screenshot node unavailable' },
+      { itemId: 'legacy-route:removed:desktop', status: 'failed' as const },
+    ]);
+
+    expect(report.summary).toEqual({
+      total: checklist.length,
+      pending: checklist.length - nurseDesktop.items.length - 1,
+      passed: nurseDesktop.items.length,
+      failed: 0,
+      blocked: 1,
+      complete: false,
+      needsAttention: true,
+    });
+    expect(report.nextBatchId).toBe('nurse:mobile');
+    expect(report.audit).toEqual({
+      duplicateItemIds: [],
+      unknownItemIds: ['legacy-route:removed:desktop'],
+    });
+    expect(report.batchSummaries.find((summary) => summary.id === 'nurse:desktop')?.summary.complete).toBe(true);
+    expect(report.openItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: checklist[3].id,
+          status: 'blocked',
+          result: expect.objectContaining({
+            note: 'Screenshot node unavailable',
+          }),
+        }),
+      ]),
+    );
+    expect(report.openItems.some((item) => item.id === nurseDesktop.items[0].id)).toBe(false);
   });
 });

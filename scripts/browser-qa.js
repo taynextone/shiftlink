@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const {
+  buildBrowserQaRunReport,
   renderBrowserQaChecklistMarkdown,
   renderBrowserQaExecutionPlanMarkdown,
   renderBrowserQaRunReportMarkdown,
@@ -12,12 +13,13 @@ const renderers = {
   checklist: renderBrowserQaChecklistMarkdown,
   plan: renderBrowserQaExecutionPlanMarkdown,
   report: renderBrowserQaRunReportMarkdown,
+  'report-json': () => JSON.stringify(buildBrowserQaRunReport(), null, 2),
 };
 
 const render = renderers[command];
 
 if (!render) {
-  console.error('Usage: node scripts/browser-qa.js [checklist|plan|report]');
+  console.error('Usage: node scripts/browser-qa.js [checklist|plan|report|report-json]');
   process.exit(1);
 }
 

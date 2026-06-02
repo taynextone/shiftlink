@@ -14,6 +14,7 @@
     "qa:browser-checklist": "npm run build && node scripts/browser-qa.js checklist",
     "qa:browser-plan": "npm run build && node scripts/browser-qa.js plan",
     "qa:browser-report": "npm run build && node scripts/browser-qa.js report",
+    "qa:browser-report-json": "npm run build && node scripts/browser-qa.js report-json",
     "prisma:generate": "prisma generate --config prisma.config.ts",
     "web:dev": "vite --config web/vite.config.ts",
     "web:build": "npm --prefix web run build"

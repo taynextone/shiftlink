@@ -62,6 +62,19 @@ export type BrowserQaRunAudit = {
   duplicateItemIds: string[];
 };
 
+export type BrowserQaOpenItem = BrowserQaChecklistItem & {
+  status: BrowserQaRunStatus;
+  result?: BrowserQaRunResult;
+};
+
+export type BrowserQaRunReport = {
+  summary: BrowserQaRunSummary;
+  batchSummaries: BrowserQaExecutionBatchSummary[];
+  nextBatchId: string | null;
+  audit: BrowserQaRunAudit;
+  openItems: BrowserQaOpenItem[];
+};
+
 function buildChecklistId(scenarioId: string, checkpoint: QaVisualCheckpoint, viewport: QaViewport): string {
   const routeSlug = checkpoint.route.replace(/^\//, '').replace(/\//g, '-') || 'home';
   return `${scenarioId}:${routeSlug}:${viewport}`;
@@ -215,6 +228,26 @@ export function auditBrowserQaRunResults(items = buildBrowserQaChecklist(), resu
   };
 }
 
+export function buildBrowserQaRunReport(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): BrowserQaRunReport {
+  const resultByItemId = latestResultByItemId(results);
+  const openItems: BrowserQaOpenItem[] = getOpenBrowserQaChecklistItems(items, results).map((item) => {
+    const result = resultByItemId.get(item.id);
+    return {
+      ...item,
+      status: result?.status ?? 'pending',
+      ...(result ? { result } : {}),
+    };
+  });
+
+  return {
+    summary: summarizeBrowserQaRun(items, results),
+    batchSummaries: summarizeBrowserQaExecutionBatches(items, results),
+    nextBatchId: getNextBrowserQaExecutionBatch(items, results)?.id ?? null,
+    audit: auditBrowserQaRunResults(items, results),
+    openItems,
+  };
+}
+
 export function renderBrowserQaChecklistMarkdown(items = buildBrowserQaChecklist()): string {
   const summary = summarizeBrowserQaChecklist(items);
   const lines = [
@@ -280,56 +313,49 @@ export function renderBrowserQaExecutionPlanMarkdown(items = buildBrowserQaCheck
 }
 
 export function renderBrowserQaRunReportMarkdown(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): string {
-  const summary = summarizeBrowserQaRun(items, results);
-  const batchSummaries = summarizeBrowserQaExecutionBatches(items, results);
-  const nextBatch = getNextBrowserQaExecutionBatch(items, results);
-  const audit = auditBrowserQaRunResults(items, results);
-  const resultByItemId = latestResultByItemId(results);
-  const openItems = getOpenBrowserQaChecklistItems(items, results);
+  const report = buildBrowserQaRunReport(items, results);
   const lines = [
     '# Phase 7 Browser QA Run Report',
     '',
-    `Total: ${summary.total}`,
-    `Passed: ${summary.passed}`,
-    `Failed: ${summary.failed}`,
-    `Blocked: ${summary.blocked}`,
-    `Pending: ${summary.pending}`,
-    `Complete: ${summary.complete ? 'yes' : 'no'}`,
-    `Needs attention: ${summary.needsAttention ? 'yes' : 'no'}`,
-    `Next batch: ${nextBatch?.id ?? 'none'}`,
+    `Total: ${report.summary.total}`,
+    `Passed: ${report.summary.passed}`,
+    `Failed: ${report.summary.failed}`,
+    `Blocked: ${report.summary.blocked}`,
+    `Pending: ${report.summary.pending}`,
+    `Complete: ${report.summary.complete ? 'yes' : 'no'}`,
+    `Needs attention: ${report.summary.needsAttention ? 'yes' : 'no'}`,
+    `Next batch: ${report.nextBatchId ?? 'none'}`,
     '',
   ];
 
   lines.push('## Batch summaries', '');
-  for (const batch of batchSummaries) {
+  for (const batch of report.batchSummaries) {
     lines.push(
       `- ${batch.id}: ${batch.summary.passed}/${batch.summary.total} passed, ${batch.summary.failed} failed, ${batch.summary.blocked} blocked, ${batch.summary.pending} pending, attention ${batch.summary.needsAttention ? 'yes' : 'no'}`,
     );
   }
   lines.push('');
 
-  if (audit.duplicateItemIds.length > 0 || audit.unknownItemIds.length > 0) {
+  if (report.audit.duplicateItemIds.length > 0 || report.audit.unknownItemIds.length > 0) {
     lines.push(
       '## Result data audit',
       '',
-      `- Duplicate item ids: ${audit.duplicateItemIds.length > 0 ? audit.duplicateItemIds.join(', ') : 'none'}`,
-      `- Unknown item ids: ${audit.unknownItemIds.length > 0 ? audit.unknownItemIds.join(', ') : 'none'}`,
+      `- Duplicate item ids: ${report.audit.duplicateItemIds.length > 0 ? report.audit.duplicateItemIds.join(', ') : 'none'}`,
+      `- Unknown item ids: ${report.audit.unknownItemIds.length > 0 ? report.audit.unknownItemIds.join(', ') : 'none'}`,
       '',
     );
   }
 
-  if (openItems.length === 0) {
+  if (report.openItems.length === 0) {
     lines.push('## Open items', '', 'None.');
     return lines.join('\n').trimEnd();
   }
 
   lines.push('## Open items', '');
 
-  for (const item of openItems) {
-    const result = resultByItemId.get(item.id);
-    const status = result?.status ?? 'pending';
+  for (const item of report.openItems) {
     lines.push(
-      `- [${status}] ${item.id} (${item.ownerRole}, ${item.route}, ${item.viewport})${formatOptionalNote(result)}`,
+      `- [${item.status}] ${item.id} (${item.ownerRole}, ${item.route}, ${item.viewport})${formatOptionalNote(item.result)}`,
     );
   }
 
