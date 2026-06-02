@@ -143,6 +143,7 @@ Progress while visual QA is blocked:
 - [done] API route-boundary smoke coverage for top nurse / hospital / superadmin workflow entry points (`tests/qa-smoke.test.ts`)
 - [done] Seeded browser-regression scenario manifest for nurse / hospital / superadmin workflows (`src/qa/regression-scenarios.ts`)
 - [done] Regression checklist guard coverage keeps routes, API boundaries, and role scopes from drifting (`tests/qa-regression-scenarios.test.ts`)
+- [done] HR/payroll handoff endpoint is covered as hospital-admin-only in Phase 7 smoke and regression scenarios.
 
 Blocked note:
 - current OpenClaw visual QA path issue is tracked separately in `UNRESOLVED.md`
@@ -236,7 +237,7 @@ Checklist:
 - Form/validation hardening: Complete
 - Navigation cohesion: Complete
 - GAP_ANALYSIS: Complete
-- Test coverage: 126 tests green
+- Test coverage: 130 tests green
 - Remaining: Visual QA (blocked on OpenClaw), server deployment (pending Jurica)
 
 ## Open from GAP_ANALYSIS.md

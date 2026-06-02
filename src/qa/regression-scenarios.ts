@@ -46,6 +46,7 @@ export const unauthenticatedApiBoundaries: QaApiBoundary[] = [
   { method: 'GET', path: '/api/v1/nurse-profile/verification/admin/NUR-AB12CD34' },
   { method: 'GET', path: '/api/v1/admin/audit-logs' },
   { method: 'GET', path: '/api/v1/admin/metrics' },
+  { method: 'GET', path: '/api/v1/admin/payroll-export' },
 ];
 
 export const nurseForbiddenApiPaths = [
@@ -54,6 +55,7 @@ export const nurseForbiddenApiPaths = [
   '/api/v1/job-shifts/dossier-overview',
   '/api/v1/matches/hospital-offers',
   '/api/v1/admin/audit-logs',
+  '/api/v1/admin/payroll-export',
   '/api/v1/nurse-profile/verification/admin/NUR-AB12CD34',
 ] as const;
 
@@ -68,6 +70,10 @@ export const superadminOnlyApiPaths = [
   '/api/v1/admin/audit-logs',
   '/api/v1/admin/metrics',
   '/api/v1/nurse-profile/verification/admin/NUR-AB12CD34',
+] as const;
+
+export const hospitalAdminOnlyApiPaths = [
+  '/api/v1/admin/payroll-export',
 ] as const;
 
 export const browserRegressionScenarios: QaRegressionScenario[] = [
@@ -106,18 +112,21 @@ export const browserRegressionScenarios: QaRegressionScenario[] = [
       'released nurse dossier with verified documents visible to the hospital',
       'contract lifecycle rows covering pending signature, fully executed, voided, and paid-invoice blockers',
       'draft, pending, overdue, paid, and canceled platform invoices',
+      'bounded HR/payroll export rows for signed contracts with no platform payroll or payout ownership',
     ],
     apiBoundaries: [
       { method: 'GET', path: '/api/v1/job-shifts' },
       { method: 'GET', path: '/api/v1/matches/hospital-offers' },
       { method: 'GET', path: '/api/v1/job-shifts/dossier-overview' },
       { method: 'GET', path: '/api/v1/job-shifts/billing/summary' },
+      { method: 'GET', path: '/api/v1/admin/payroll-export' },
     ],
     browserAssertions: [
       'dashboard hotspots route to the first actionable blocked entity',
       'offer list supports direct accept and decline decisions with lifecycle context',
       'dossier view separates released verified evidence from restricted material',
-      'contract and billing pages surface void, invoice, PDF, and export intervention states',
+      'contract and billing pages surface void, invoice, PDF, billing export, and HR handoff states',
+      'HR/payroll export controls stay framed as a clinical-system handoff, not platform payroll',
     ],
   },
   {

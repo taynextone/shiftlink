@@ -22,7 +22,13 @@ import { UserRole } from '@prisma/client';
 import { createApp } from '../src/app';
 import { signAuthToken } from '../src/utils/jwt';
 import { AUTH_COOKIE_NAME } from '../src/utils/cookies';
-import { hospitalForbiddenApiPaths, nurseForbiddenApiPaths, superadminOnlyApiPaths, unauthenticatedApiBoundaries } from '../src/qa/regression-scenarios';
+import {
+  hospitalAdminOnlyApiPaths,
+  hospitalForbiddenApiPaths,
+  nurseForbiddenApiPaths,
+  superadminOnlyApiPaths,
+  unauthenticatedApiBoundaries,
+} from '../src/qa/regression-scenarios';
 
 jest.mock('@prisma/client', () => {
   const actual = jest.requireActual('@prisma/client');
@@ -86,6 +92,23 @@ describe('phase 7 top workflow smoke coverage', () => {
       .set('Cookie', authCookie(UserRole.HOSPITAL_ADMIN));
 
     expect(response.status).toBe(403);
+  });
+
+  it.each(hospitalAdminOnlyApiPaths)('keeps hospital-admin-only workflow out of superadmin scope at %s', async (path) => {
+    const response = await request(app)
+      .get(path)
+      .set('Cookie', authCookie(UserRole.SUPER_ADMIN));
+
+    expect(response.status).toBe(403);
+  });
+
+  it.each(hospitalAdminOnlyApiPaths)('lets hospital admins through the auth gate before scoped data lookup at %s', async (path) => {
+    const response = await request(app)
+      .get(path)
+      .set('Cookie', authCookie(UserRole.HOSPITAL_ADMIN));
+
+    expect(response.status).toBe(404);
+    expect(response.body.message).toBe('Hospital profile not found');
   });
 
   it('keeps authenticated sessions introspectable for browser smoke tests', async () => {
