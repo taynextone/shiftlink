@@ -13,6 +13,7 @@ import { useAsyncData } from '../../hooks/useAsyncData';
 import { api, type HospitalBillingExportRow } from '../../lib/api';
 import { exportRowsAsCsv } from '../../lib/export';
 import { exportPayrollAsCsv } from '../../lib/export';
+import { useAuth } from '../../state/AuthContext';
 import { getLinkedBillingExportStatus, parseBillingStatusFilter, type BillingStatusFilter } from './billing-helpers';
 
 function getBillingRowIntervention(row: HospitalBillingExportRow) {
@@ -26,6 +27,7 @@ function getBillingRowIntervention(row: HospitalBillingExportRow) {
 }
 
 export function HospitalBillingPage() {
+  const { session } = useAuth();
   const { data, loading, error } = useAsyncData(() => api.getHospitalBillingSummary(), []);
   const summary = data?.summary;
   const [searchParams] = useSearchParams();
@@ -43,6 +45,8 @@ export function HospitalBillingPage() {
   const [confirmAction, setConfirmAction] = useState<null | { title: string; message: string; tone: 'danger' | 'warning' | 'neutral'; onConfirm: () => void | Promise<void> }>(null);
   const [payrollExportData, setPayrollExportData] = useState<Array<{ nurseDisplayName: string; nursePublicId: string; contractId: string; jobShiftTitle: string; jobShiftStartDate: string; jobShiftEndDate: string; agreedHours: number; hourlyRate: number; totalAmount: string; invoiceStatus: string; invoiceId: string }>>([]);
   const [payrollLoading, setPayrollLoading] = useState(false);
+  const [payrollFeedback, setPayrollFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
+  const canExportPayroll = session?.role === 'HOSPITAL_ADMIN';
   const pendingRows = useMemo(() => rows.filter((row) => row.invoiceStatus === 'PENDING'), [rows]);
   const paidRows = useMemo(() => rows.filter((row) => row.invoiceStatus === 'PAID'), [rows]);
   const rowsWithArtifacts = useMemo(() => rows.filter((row) => row.signedAt), [rows]);
@@ -107,6 +111,20 @@ export function HospitalBillingPage() {
       },
     });
   }, [invoiceDetail]);
+
+  const handleLoadPayrollExport = useCallback(async () => {
+    setPayrollLoading(true);
+    setPayrollFeedback(null);
+    try {
+      const response = await api.getPayrollExport();
+      setPayrollExportData(response.rows);
+      setPayrollFeedback({ tone: 'success', message: 'HR-/Payroll-Export geladen.' });
+    } catch (error) {
+      setPayrollFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'HR-/Payroll-Export fehlgeschlagen' });
+    } finally {
+      setPayrollLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!focusInvoiceId) return;
@@ -238,6 +256,32 @@ export function HospitalBillingPage() {
             </Link>
             <button type="button" className="secondary" onClick={() => { setSelectedInvoiceId(null); setInvoiceDetail(null); setInvoiceFeedback(null); }}>Schließen</button>
           </ActionBar>
+        </SectionCard>
+      ) : null}
+
+      {canExportPayroll ? (
+        <SectionCard
+          title="HR-/Payroll-Export"
+          description="CSV-Vorstufe für klinikinterne HR- und Abrechnungssysteme; Shiftlink bleibt ohne Arbeitgeber- oder Payroll-Logik."
+        >
+          <MetricList
+            items={[
+              { label: 'Geladene Rows', value: payrollExportData.length },
+              { label: 'Quelle', value: 'signierte Rechnungsdaten' },
+              { label: 'Systemgrenze', value: 'kein Payout, keine Zeiterfassung' },
+            ]}
+          />
+          <ActionBar>
+            <button type="button" className="secondary" disabled={payrollLoading} onClick={() => void handleLoadPayrollExport()}>
+              {payrollLoading ? 'Lädt…' : 'HR-/Payroll-Daten laden'}
+            </button>
+            {payrollExportData.length > 0 ? (
+              <button type="button" className="secondary" onClick={() => exportPayrollAsCsv(payrollExportData, 'hr-payroll-export')}>
+                CSV Export
+              </button>
+            ) : null}
+          </ActionBar>
+          {payrollFeedback ? <FeedbackMessage tone={payrollFeedback.tone} message={payrollFeedback.message} /> : null}
         </SectionCard>
       ) : null}
       {confirmAction ? (

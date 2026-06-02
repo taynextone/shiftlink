@@ -24,6 +24,6 @@ router.get(
 router.get(
   '/admin/payroll-export',
   requireAuth,
-  requireRole(UserRole.SUPER_ADMIN),
+  requireRole(UserRole.HOSPITAL_ADMIN),
   asyncHandler(getPayrollExportController),
 );

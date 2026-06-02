@@ -231,6 +231,73 @@ describe('hospital integration and scalable match flow', () => {
     expect(response.headers['set-cookie']).toBeDefined();
   });
 
+  it('allows hospital admins to load the bounded HR payroll export', async () => {
+    const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
+    (prisma.hospitalProfile.findUnique as jest.Mock).mockResolvedValue({ id: 'hospital_1', userId: 'hospital_owner_1' });
+    (prisma.invoice.findMany as jest.Mock).mockResolvedValue([
+      {
+        id: 'invoice_1',
+        status: InvoiceStatus.PAID,
+        amount: new Prisma.Decimal(150),
+        matchContract: {
+          id: 'contract_1',
+          nurseProfile: {
+            displayName: 'NurseNova',
+            publicId: 'NUR-AB12CD34',
+            minHourlyRate: new Prisma.Decimal(50),
+          },
+          jobShift: {
+            title: 'ITS Einsatz',
+            startTime: new Date('2026-06-16T06:00:00.000Z'),
+            endTime: new Date('2026-06-16T18:00:00.000Z'),
+            totalPlannedHours: new Prisma.Decimal(12),
+          },
+        },
+      },
+    ]);
+
+    const response = await request(app)
+      .get('/api/v1/admin/payroll-export')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.body.rows).toEqual([
+      {
+        nurseDisplayName: 'NurseNova',
+        nursePublicId: 'NUR-AB12CD34',
+        contractId: 'contract_1',
+        jobShiftTitle: 'ITS Einsatz',
+        jobShiftStartDate: '2026-06-16',
+        jobShiftEndDate: '2026-06-16',
+        agreedHours: 12,
+        hourlyRate: 50,
+        totalAmount: '150',
+        invoiceStatus: 'PAID',
+        invoiceId: 'invoice_1',
+      },
+    ]);
+    expect(prisma.invoice.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: {
+        matchContract: {
+          jobShift: {
+            hospitalProfileId: 'hospital_1',
+          },
+        },
+      },
+    }));
+  });
+
+  it('blocks nurses from the HR payroll export', async () => {
+    const token = signAuthToken({ sub: 'nurse_1', role: UserRole.NURSE });
+
+    const response = await request(app)
+      .get('/api/v1/admin/payroll-export')
+      .set('Cookie', [`shiftlink_token=${token}`]);
+
+    expect(response.status).toBe(403);
+    expect(prisma.invoice.findMany).not.toHaveBeenCalled();
+  });
+
   it('imports a hospital job shift and updates it explicitly on repeated import while still open and unoffered', async () => {
     const token = signAuthToken({ sub: 'hospital_owner_1', role: UserRole.HOSPITAL_ADMIN });
     (prisma.hospitalProfile.findUnique as jest.Mock).mockResolvedValue({ id: 'hospital_1', userId: 'hospital_owner_1' });
