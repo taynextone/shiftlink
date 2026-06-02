@@ -13,7 +13,7 @@ import { useAsyncData } from '../../hooks/useAsyncData';
 import { api, type HospitalBillingExportRow } from '../../lib/api';
 import { exportRowsAsCsv } from '../../lib/export';
 import { exportPayrollAsCsv } from '../../lib/export';
-import { parseBillingStatusFilter, type BillingStatusFilter } from './billing-helpers';
+import { getLinkedBillingExportStatus, parseBillingStatusFilter, type BillingStatusFilter } from './billing-helpers';
 
 function getBillingRowIntervention(row: HospitalBillingExportRow) {
   if (row.invoiceStatus === 'PENDING' && row.matchStatus === 'SIGNED') {
@@ -114,10 +114,11 @@ export function HospitalBillingPage() {
   }, [focusInvoiceId, handleSelectInvoice]);
 
   useEffect(() => {
-    if (!linkedStatusFilter) return;
-    setStatusFilter(linkedStatusFilter);
-    void handleLoadExport(linkedStatusFilter);
-  }, [handleLoadExport, linkedStatusFilter]);
+    const linkedExportStatus = getLinkedBillingExportStatus(focusInvoiceId, linkedStatusFilter);
+    if (linkedExportStatus === null) return;
+    setStatusFilter(linkedExportStatus);
+    void handleLoadExport(linkedExportStatus);
+  }, [focusInvoiceId, handleLoadExport, linkedStatusFilter]);
 
   return (
     <section className="stack page-stack">
