@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ActionBar } from '../../components/ActionBar';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { Field } from '../../components/Field';
@@ -12,8 +13,11 @@ import { ConfirmModal } from '../../components/ConfirmModal';
 import { api, type AdminVerificationOverview, type VerificationDocumentReviewResult } from '../../lib/api';
 
 export function AdminVerificationPage() {
-  const [nursePublicId, setNursePublicId] = useState('');
-  const [documentId, setDocumentId] = useState('');
+  const [searchParams] = useSearchParams();
+  const initialNursePublicId = searchParams.get('nursePublicId') ?? searchParams.get('publicId') ?? '';
+  const initialDocumentId = searchParams.get('documentId') ?? '';
+  const [nursePublicId, setNursePublicId] = useState(initialNursePublicId);
+  const [documentId, setDocumentId] = useState(initialDocumentId);
   const [status, setStatus] = useState<'VERIFIED' | 'REJECTED'>('VERIFIED');
   const [rejectionReason, setRejectionReason] = useState('');
   const [overview, setOverview] = useState<AdminVerificationOverview | null>(null);
@@ -104,7 +108,7 @@ export function AdminVerificationPage() {
   }
 
 
-  async function refreshOverviewContext(publicId: string) {
+  async function refreshOverviewContext(publicId: string, preferredDocumentId = '') {
     const response = await api.getAdminVerificationOverview(publicId);
     setOverview(response.verification);
     setDocumentId((current) => {
@@ -112,9 +116,29 @@ export function AdminVerificationPage() {
       if (documents.length === 0) {
         return '';
       }
+      if (preferredDocumentId && documents.some((document) => document.id === preferredDocumentId)) {
+        return preferredDocumentId;
+      }
       return documents.some((document) => document.id === current) ? current : documents[0].id;
     });
   }
+
+  useEffect(() => {
+    if (!initialNursePublicId) {
+      return;
+    }
+
+    setNursePublicId(initialNursePublicId);
+    setDocumentId(initialDocumentId);
+    setSubmitting(true);
+    setFeedback(null);
+    void refreshOverviewContext(initialNursePublicId, initialDocumentId)
+      .then(() => setFeedback({ tone: 'success', message: 'Verification-Kontext aus Link geladen.' }))
+      .catch((error) => {
+        setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Lookup fehlgeschlagen' });
+      })
+      .finally(() => setSubmitting(false));
+  }, [initialDocumentId, initialNursePublicId]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -161,6 +185,7 @@ export function AdminVerificationPage() {
             </ActionBar>
             {overview ? (
               <>
+                {initialDocumentId ? <p className="hint">Geöffnet aus Dokument-Kontext: {initialDocumentId}</p> : null}
                 <InfoList
                   items={[
                     { label: 'Pflegekraft', value: `${overview.nurseProfile.displayName} (${overview.nurseProfile.publicId})` },
