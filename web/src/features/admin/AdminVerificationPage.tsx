@@ -3,6 +3,7 @@ import { ActionBar } from '../../components/ActionBar';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { Field } from '../../components/Field';
 import { FormSection } from '../../components/FormSection';
+import { EmptyState } from '../../components/EmptyState';
 import { InfoList } from '../../components/InfoList';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
@@ -25,7 +26,8 @@ export function AdminVerificationPage() {
   const nursePublicIdError = !nursePublicId.trim() && feedback?.tone === 'error' && feedback.message.includes('Nurse Public ID') ? 'Pflichtfeld' : null;
   const documentIdError = !documentId.trim() && feedback?.tone === 'error' && feedback.message.includes('Dokument') ? 'Pflichtfeld' : null;
   const rejectionReasonError = rejectionRequired && rejectionReason.trim().length > 0 && rejectionReason.trim().length < 3 ? 'Mindestens 3 Zeichen' : null;
-  const canSubmit = documentId.trim().length > 0 && (!rejectionRequired || rejectionReason.trim().length >= 3);
+  const hasSelectableDocument = overview ? overview.documents.some((document) => document.id === documentId.trim()) : documentId.trim().length > 0;
+  const canSubmit = hasSelectableDocument && (!rejectionRequired || rejectionReason.trim().length >= 3);
   const releaseStatusHint = overview?.nurseProfile.isReleasedForMatching
     ? `Freigegeben${overview.nurseProfile.releasedAt ? ` seit ${new Date(overview.nurseProfile.releasedAt).toLocaleString('de-DE')}` : ''}`
     : 'Noch nicht für Matching freigegeben';
@@ -105,9 +107,13 @@ export function AdminVerificationPage() {
   async function refreshOverviewContext(publicId: string) {
     const response = await api.getAdminVerificationOverview(publicId);
     setOverview(response.verification);
-    if (response.verification.documents.length > 0) {
-      setDocumentId((current) => current || response.verification.documents[0].id);
-    }
+    setDocumentId((current) => {
+      const documents = response.verification.documents;
+      if (documents.length === 0) {
+        return '';
+      }
+      return documents.some((document) => document.id === current) ? current : documents[0].id;
+    });
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -175,33 +181,42 @@ export function AdminVerificationPage() {
                     {submitting ? 'Bitte warten…' : 'Freigabe zurückziehen'}
                   </button>
                 </ActionBar>
-                <Field label="Dokument auswählen" helpText="Vorausgewählt ist das neueste Dokument.">
-                  <select value={documentId} onChange={(event) => setDocumentId(event.target.value)}>
-                    {overview.documents.map((document) => (
-                      <option key={document.id} value={document.id}>
-                        {document.documentType} · {document.status} · {new Date(document.createdAt).toLocaleDateString('de-DE')}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <div className="record-list compact-list">
-                  {overview.documents.map((document) => (
-                    <button
-                      key={document.id}
-                      type="button"
-                      className={documentId === document.id ? 'selection-card active' : 'selection-card'}
-                      onClick={() => setDocumentId(document.id)}
-                    >
-                      <div>
-                        <strong>{document.documentType}</strong>
-                        <p>{new Date(document.createdAt).toLocaleDateString('de-DE')} · {document.id}</p>
-                        <p>Reviewed: {document.reviewedAt ? new Date(document.reviewedAt).toLocaleString('de-DE') : 'noch nicht geprüft'}</p>
-                        <p>{document.rejectionReason ?? 'Keine dokumentierte Ablehnungsbegründung.'}</p>
-                      </div>
-                      <StatusBadge value={document.status} />
-                    </button>
-                  ))}
-                </div>
+                {overview.documents.length > 0 ? (
+                  <>
+                    <Field label="Dokument auswählen" helpText="Vorausgewählt ist das neueste verfügbare Dokument.">
+                      <select value={documentId} onChange={(event) => setDocumentId(event.target.value)}>
+                        {overview.documents.map((document) => (
+                          <option key={document.id} value={document.id}>
+                            {document.documentType} · {document.status} · {new Date(document.createdAt).toLocaleDateString('de-DE')}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                    <div className="record-list compact-list">
+                      {overview.documents.map((document) => (
+                        <button
+                          key={document.id}
+                          type="button"
+                          className={documentId === document.id ? 'selection-card active' : 'selection-card'}
+                          onClick={() => setDocumentId(document.id)}
+                        >
+                          <div>
+                            <strong>{document.documentType}</strong>
+                            <p>{new Date(document.createdAt).toLocaleDateString('de-DE')} · {document.id}</p>
+                            <p>Reviewed: {document.reviewedAt ? new Date(document.reviewedAt).toLocaleString('de-DE') : 'noch nicht geprüft'}</p>
+                            <p>{document.rejectionReason ?? 'Keine dokumentierte Ablehnungsbegründung.'}</p>
+                          </div>
+                          <StatusBadge value={document.status} />
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <EmptyState
+                    title="Keine Dokumente im Verifikationskontext"
+                    description="Für diese Pflegekraft liegt aktuell nichts zur Review-Entscheidung vor. Release-Entscheidungen bleiben oben separat steuerbar."
+                  />
+                )}
               </>
             ) : (
               <Field label="Document ID" error={documentIdError} helpText="Fallback, falls du direkt mit einer Dokument-ID arbeitest.">
