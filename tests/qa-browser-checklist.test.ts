@@ -502,6 +502,33 @@ describe('phase 7 browser QA checklist builder', () => {
     ]);
   });
 
+  it('parses wrapped browser QA artifact batches for resumable report generation', () => {
+    const checklist = buildBrowserQaChecklist();
+
+    expect(parseBrowserQaRunResults({
+      artifacts: [
+        [
+          { itemId: checklist[0].id, status: 'passed' },
+        ],
+        {
+          results: [
+            { itemId: checklist[1].id, status: 'blocked', note: 'Canvas node unavailable' },
+          ],
+        },
+        {
+          items: [
+            { id: checklist[2].id, status: 'failed', note: 'Mobile toolbar wraps' },
+            { id: checklist[3].id, status: null, note: '' },
+          ],
+        },
+      ],
+    })).toEqual([
+      { itemId: checklist[0].id, status: 'passed' },
+      { itemId: checklist[1].id, status: 'blocked', note: 'Canvas node unavailable' },
+      { itemId: checklist[2].id, status: 'failed', note: 'Mobile toolbar wraps' },
+    ]);
+  });
+
   it('rejects malformed browser QA template result artifacts before report generation', () => {
     expect(() => parseBrowserQaRunResults({ items: [{ id: '', status: 'passed' }] })).toThrow('non-empty id');
     expect(() => parseBrowserQaRunResults({ items: [{ id: 'x', status: 'pending' }] })).toThrow('passed, failed, blocked, or null');
@@ -510,6 +537,7 @@ describe('phase 7 browser QA checklist builder', () => {
 
   it('rejects malformed browser QA result artifacts before report generation', () => {
     expect(() => parseBrowserQaRunResults({ artifact: [] })).toThrow('results array');
+    expect(() => parseBrowserQaRunResults({ artifacts: [{ artifact: [] }] })).toThrow('artifact at index 0 is invalid');
     expect(() => parseBrowserQaRunResults([{ itemId: 'x', status: 'pending' }])).toThrow('passed, failed, or blocked');
     expect(() => parseBrowserQaRunResults([{ itemId: '', status: 'passed' }])).toThrow('non-empty itemId');
     expect(() => parseBrowserQaRunResults([{ itemId: 'x', status: 'blocked', note: 42 }])).toThrow('note must be a string');

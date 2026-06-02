@@ -17,15 +17,17 @@ const {
 } = require('../dist/qa/browser-checklist');
 
 const command = process.argv[2] ?? 'plan';
-const resultPath = process.argv[3];
+const resultPaths = process.argv.slice(3);
 
 function loadResults() {
-  if (!resultPath) {
+  if (resultPaths.length === 0) {
     return [];
   }
 
-  const rawJson = fs.readFileSync(resultPath, 'utf8');
-  return parseBrowserQaRunResults(JSON.parse(rawJson));
+  return resultPaths.flatMap((resultPath) => {
+    const rawJson = fs.readFileSync(resultPath, 'utf8');
+    return parseBrowserQaRunResults(JSON.parse(rawJson));
+  });
 }
 
 const renderers = {
@@ -44,7 +46,7 @@ const renderers = {
 const render = renderers[command];
 
 if (!render) {
-  console.error('Usage: node scripts/browser-qa.js [checklist|checklist-json|plan|plan-json|next-batch|next-batch-json|result-template|result-template-json|report|report-json] [results.json]');
+  console.error('Usage: node scripts/browser-qa.js [checklist|checklist-json|plan|plan-json|next-batch|next-batch-json|result-template|result-template-json|report|report-json] [results.json ...]');
   process.exit(1);
 }
 

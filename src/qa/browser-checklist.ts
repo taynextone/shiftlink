@@ -375,6 +375,17 @@ function parseBrowserQaTemplateResult(value: unknown, index: number): BrowserQaR
 }
 
 export function parseBrowserQaRunResults(value: unknown): BrowserQaRunResult[] {
+  if (isRecord(value) && Array.isArray(value.artifacts)) {
+    return value.artifacts.flatMap((artifact, index) => {
+      try {
+        return parseBrowserQaRunResults(artifact);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`Browser QA artifact at index ${index} is invalid: ${message}`);
+      }
+    });
+  }
+
   if (isRecord(value) && Array.isArray(value.items)) {
     return value.items.flatMap((item, index) => {
       const result = parseBrowserQaTemplateResult(item, index);
