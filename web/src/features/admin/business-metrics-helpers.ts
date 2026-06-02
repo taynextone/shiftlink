@@ -30,6 +30,6 @@ export function getInvoiceMetricInterventions(metrics: BusinessMetrics): MetricI
 
 export function getNotificationMetricInterventions(metrics: BusinessMetrics): MetricInterventionLink[] {
   return metrics.notifications.failed > 0
-    ? [{ label: 'Delivery Failures pruefen', to: '/admin/ops' }]
+    ? [{ label: 'Delivery Failures pruefen', to: '/admin/ops?failureQueue=whatsapp' }]
     : [];
 }

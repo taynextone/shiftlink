@@ -1,6 +1,17 @@
-import { buildInterventionHotspots, getAsyncFailureActionLabel, getAsyncFailureDestination, getImportBlockedShifts, getPendingOfferShifts, rankAsyncFailures } from '../web/src/features/hospital/dashboard-helpers';
+import { buildInterventionHotspots, getAsyncFailureActionLabel, getAsyncFailureDestination, getImportBlockedShifts, getPendingOfferShifts, parseFailureQueueFilter, rankAsyncFailures } from '../web/src/features/hospital/dashboard-helpers';
 
 describe('dashboard ops helpers', () => {
+  it.each([
+    ['billing', 'billing'],
+    ['webhook', 'webhook'],
+    ['whatsapp', 'whatsapp'],
+    ['redis', 'ALL'],
+    ['', 'ALL'],
+    [null, 'ALL'],
+  ] as const)('parses failureQueue=%s as %s', (input, expected) => {
+    expect(parseFailureQueueFilter(input)).toBe(expected);
+  });
+
   it('deep-links shift import blockers to the first blocked shift', () => {
     const shifts = [
       { id: 'shift_open', status: 'OPEN', offerCounts: { total: 0, pending: 0, signed: 0 } },

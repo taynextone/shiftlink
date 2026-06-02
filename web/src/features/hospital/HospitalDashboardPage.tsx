@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import { useCallback, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { KpiCard } from '../../components/KpiCard';
 import { MetricList } from '../../components/MetricList';
 import { PageHeader } from '../../components/PageHeader';
@@ -9,7 +9,7 @@ import { SectionCard } from '../../components/SectionCard';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { useAuth } from '../../state/AuthContext';
 import { api } from '../../lib/api';
-import { buildInterventionHotspots, describeAsyncFailure, describeWebhookStatus, getAsyncFailureActionLabel, getAsyncFailureDestination, getCriticalAsyncFailures, getFailedWebhookEvents, getImportBlockedShifts, getPendingOfferShifts, rankAsyncFailures } from './dashboard-helpers';
+import { buildInterventionHotspots, describeAsyncFailure, describeWebhookStatus, getAsyncFailureActionLabel, getAsyncFailureDestination, getCriticalAsyncFailures, getFailedWebhookEvents, getImportBlockedShifts, getPendingOfferShifts, parseFailureQueueFilter, rankAsyncFailures, type FailureQueueFilter } from './dashboard-helpers';
 import { NotificationCenter } from './NotificationCenter';
 import { WebhookAdminPanel } from './WebhookAdminPanel';
 import { DossierOverview } from './DossierOverview';
@@ -17,7 +17,9 @@ import { ActualsImport } from './ActualsImport';
 
 export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital' | 'superadmin' }) {
   const { session } = useAuth();
-  const [failureQueueFilter, setFailureQueueFilter] = useState<'ALL' | 'billing' | 'webhook' | 'whatsapp'>('ALL');
+  const [searchParams] = useSearchParams();
+  const linkedFailureQueueFilter = parseFailureQueueFilter(searchParams.get('failureQueue'));
+  const [failureQueueFilter, setFailureQueueFilter] = useState<FailureQueueFilter>(linkedFailureQueueFilter);
   const isSuperAdmin = session?.role === 'SUPER_ADMIN';
 
   const { data: shiftData } = useAsyncData(() => api.listHospitalJobShifts(), []);
@@ -139,6 +141,10 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
     }
   }, [reloadAsyncFailureData]);
 
+  useEffect(() => {
+    setFailureQueueFilter(linkedFailureQueueFilter);
+  }, [linkedFailureQueueFilter]);
+
   return (
     <section className="stack page-stack">
       <PageHeader
@@ -250,7 +256,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
               <div className="form-grid two">
                 <label>
                   <span>Queue-Filter</span>
-                  <select value={failureQueueFilter} onChange={(event) => setFailureQueueFilter(event.target.value as 'ALL' | 'billing' | 'webhook' | 'whatsapp')}>
+                  <select value={failureQueueFilter} onChange={(event) => setFailureQueueFilter(event.target.value as FailureQueueFilter)}>
                     <option value="ALL">Alle</option>
                     <option value="billing">billing</option>
                     <option value="webhook">webhook</option>

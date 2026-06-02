@@ -1,5 +1,11 @@
 import type { AsyncProcessFailureRow, HospitalBillingSummary, HospitalJobShift, HospitalWebhookEventRow } from '../../lib/api';
 
+export type FailureQueueFilter = 'ALL' | 'billing' | 'webhook' | 'whatsapp';
+
+export function parseFailureQueueFilter(value: string | null): FailureQueueFilter {
+  return value === 'billing' || value === 'webhook' || value === 'whatsapp' ? value : 'ALL';
+}
+
 export function describeWebhookStatus(event: HospitalWebhookEventRow) {
   if (event.status === 'FAILED_OR_PENDING_RETRY') {
     return {

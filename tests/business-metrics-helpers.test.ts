@@ -37,7 +37,7 @@ describe('business metrics helper interventions', () => {
   it('routes failed delivery metrics into the superadmin control plane', () => {
     expect(getNotificationMetricInterventions(metrics({
       notifications: { total: 5, delivered: 3, failed: 2, deliveryRate: 60 },
-    }))).toEqual([{ label: 'Delivery Failures pruefen', to: '/admin/ops' }]);
+    }))).toEqual([{ label: 'Delivery Failures pruefen', to: '/admin/ops?failureQueue=whatsapp' }]);
   });
 
   it('keeps healthy metrics free of intervention links', () => {
