@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 
 const {
+  buildBrowserQaExecutionPlan,
   buildBrowserQaRunReport,
   getNextBrowserQaExecutionBatch,
   parseBrowserQaRunResults,
@@ -27,6 +28,7 @@ function loadResults() {
 const renderers = {
   checklist: renderBrowserQaChecklistMarkdown,
   plan: renderBrowserQaExecutionPlanMarkdown,
+  'plan-json': () => JSON.stringify(buildBrowserQaExecutionPlan(), null, 2),
   'next-batch': () => renderNextBrowserQaExecutionBatchMarkdown(undefined, loadResults()),
   'next-batch-json': () => JSON.stringify(getNextBrowserQaExecutionBatch(undefined, loadResults()), null, 2),
   report: () => renderBrowserQaRunReportMarkdown(undefined, loadResults()),
@@ -36,7 +38,7 @@ const renderers = {
 const render = renderers[command];
 
 if (!render) {
-  console.error('Usage: node scripts/browser-qa.js [checklist|plan|next-batch|next-batch-json|report|report-json] [results.json]');
+  console.error('Usage: node scripts/browser-qa.js [checklist|plan|plan-json|next-batch|next-batch-json|report|report-json] [results.json]');
   process.exit(1);
 }
 

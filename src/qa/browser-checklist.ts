@@ -34,6 +34,13 @@ export type BrowserQaExecutionBatchSummary = {
   summary: BrowserQaRunSummary;
 };
 
+export type BrowserQaExecutionPlan = {
+  batchCount: number;
+  itemCount: number;
+  nextBatchId: string | null;
+  batches: BrowserQaExecutionBatch[];
+};
+
 export type BrowserQaNextExecutionBatch = BrowserQaExecutionBatch & {
   summary: BrowserQaRunSummary;
 };
@@ -200,6 +207,16 @@ export function getNextBrowserQaExecutionBatch(
   return null;
 }
 
+export function buildBrowserQaExecutionPlan(items = buildBrowserQaChecklist()): BrowserQaExecutionPlan {
+  const batches = buildBrowserQaExecutionBatches(items);
+  return {
+    batchCount: batches.length,
+    itemCount: items.length,
+    nextBatchId: getNextBrowserQaExecutionBatch(items)?.id ?? null,
+    batches,
+  };
+}
+
 export function getOpenBrowserQaChecklistItems(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): BrowserQaChecklistItem[] {
   const resultByItemId = latestResultByItemId(results);
   return items.filter((item) => resultByItemId.get(item.id)?.status !== 'passed');
@@ -335,18 +352,17 @@ export function renderBrowserQaChecklistMarkdown(items = buildBrowserQaChecklist
 }
 
 export function renderBrowserQaExecutionPlanMarkdown(items = buildBrowserQaChecklist()): string {
-  const batches = buildBrowserQaExecutionBatches(items);
-  const nextBatch = getNextBrowserQaExecutionBatch(items);
+  const plan = buildBrowserQaExecutionPlan(items);
   const lines = [
     '# Phase 7 Browser QA Execution Plan',
     '',
-    `Batches: ${batches.length}`,
-    `Items: ${items.length}`,
-    `Next batch: ${nextBatch?.id ?? 'none'}`,
+    `Batches: ${plan.batchCount}`,
+    `Items: ${plan.itemCount}`,
+    `Next batch: ${plan.nextBatchId ?? 'none'}`,
     '',
   ];
 
-  for (const batch of batches) {
+  for (const batch of plan.batches) {
     lines.push(
       `## ${batch.id}`,
       '',

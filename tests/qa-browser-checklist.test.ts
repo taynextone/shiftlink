@@ -2,6 +2,7 @@ import {
   auditBrowserQaRunResults,
   buildBrowserQaChecklist,
   buildBrowserQaExecutionBatches,
+  buildBrowserQaExecutionPlan,
   buildBrowserQaRunReport,
   getBrowserQaChecklistForRoute,
   getNextBrowserQaExecutionBatch,
@@ -121,6 +122,26 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(markdown).toContain('- Viewport: desktop');
     expect(markdown).toContain('- Routes: /hospital, /hospital/contracts, /hospital/billing');
     expect(markdown).toContain('- hospital-shift-to-billing-ops:hospital-billing:desktop: billing summary; invoice detail; HR/payroll handoff');
+  });
+
+  it('builds a structured browser QA execution plan for automation handoff', () => {
+    const plan = buildBrowserQaExecutionPlan();
+
+    expect(plan.batchCount).toBe(6);
+    expect(plan.itemCount).toBe(17);
+    expect(plan.nextBatchId).toBe('nurse:desktop');
+    expect(plan.batches.map((batch) => batch.id)).toEqual([
+      'nurse:desktop',
+      'nurse:mobile',
+      'hospital_admin:desktop',
+      'hospital_admin:mobile',
+      'super_admin:desktop',
+      'super_admin:mobile',
+    ]);
+    expect(plan.batches.find((batch) => batch.id === 'super_admin:mobile')?.items.map((item) => item.route)).toEqual([
+      '/admin/verification',
+      '/admin/ops',
+    ]);
   });
 
   it('summarizes browser QA execution status per role and viewport batch', () => {
