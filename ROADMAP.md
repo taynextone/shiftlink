@@ -234,7 +234,7 @@ Checklist:
 - Form/validation hardening: Complete
 - Navigation cohesion: Complete
 - GAP_ANALYSIS: Complete
-- Test coverage: 94 tests green
+- Test coverage: 98 tests green
 - Remaining: Visual QA (blocked on OpenClaw), server deployment (pending Jurica)
 
 ## Open from GAP_ANALYSIS.md

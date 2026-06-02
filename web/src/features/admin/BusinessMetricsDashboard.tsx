@@ -1,9 +1,16 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { ActionBar } from '../../components/ActionBar';
 import { SectionCard } from '../../components/SectionCard';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { MetricList } from '../../components/MetricList';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { api } from '../../lib/api';
+import {
+  getContractMetricInterventions,
+  getInvoiceMetricInterventions,
+  getNotificationMetricInterventions,
+} from './business-metrics-helpers';
 
 export function BusinessMetricsDashboard() {
   const { data, loading, error, reload } = useAsyncData(() => api.getBusinessMetrics(), []);
@@ -41,6 +48,9 @@ export function BusinessMetricsDashboard() {
       { label: 'Delivery Rate', value: `${metrics.notifications.deliveryRate}%` },
     ];
   }, [metrics]);
+  const contractInterventions = useMemo(() => (metrics ? getContractMetricInterventions(metrics) : []), [metrics]);
+  const invoiceInterventions = useMemo(() => (metrics ? getInvoiceMetricInterventions(metrics) : []), [metrics]);
+  const notificationInterventions = useMemo(() => (metrics ? getNotificationMetricInterventions(metrics) : []), [metrics]);
 
   return (
     <div className="stack">
@@ -64,19 +74,54 @@ export function BusinessMetricsDashboard() {
                 { label: 'Schichten', value: metrics.shifts.total },
               ]}
             />
-            <MetricList items={contractFunnel} />
+            <div className="stack">
+              <MetricList items={contractFunnel} />
+              {contractInterventions.length > 0 ? (
+                <ActionBar>
+                  {contractInterventions.map((link) => (
+                    <Link key={link.label} to={link.to}>
+                      <button type="button" className="secondary">{link.label}</button>
+                    </Link>
+                  ))}
+                </ActionBar>
+              ) : null}
+            </div>
           </div>
         ) : null}
       </SectionCard>
 
       {metrics && metrics.invoices.total > 0 ? (
-        <SectionCard title="Invoice Pipeline" description="Aktuelle Rechnungs- und Zahlungslage.">
+        <SectionCard
+          title="Invoice Pipeline"
+          description="Aktuelle Rechnungs- und Zahlungslage."
+          actions={invoiceInterventions.length > 0 ? (
+            <ActionBar>
+              {invoiceInterventions.map((link) => (
+                <Link key={link.label} to={link.to}>
+                  <button type="button" className="secondary">{link.label}</button>
+                </Link>
+              ))}
+            </ActionBar>
+          ) : undefined}
+        >
           <MetricList items={invoicePipeline} />
         </SectionCard>
       ) : null}
 
       {metrics && metrics.notifications.total > 0 ? (
-        <SectionCard title="Kommunikations-Statistik" description="WhatsApp-Nachrichten Zustellungsübersicht.">
+        <SectionCard
+          title="Kommunikations-Statistik"
+          description="WhatsApp-Nachrichten Zustellungsübersicht."
+          actions={notificationInterventions.length > 0 ? (
+            <ActionBar>
+              {notificationInterventions.map((link) => (
+                <Link key={link.label} to={link.to}>
+                  <button type="button" className="secondary">{link.label}</button>
+                </Link>
+              ))}
+            </ActionBar>
+          ) : undefined}
+        >
           <MetricList items={notificationStats} />
         </SectionCard>
       ) : null}
