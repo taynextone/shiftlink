@@ -525,6 +525,50 @@ export function renderNextBrowserQaExecutionBatchMarkdown(
   return lines.join('\n').trimEnd();
 }
 
+export function renderBrowserQaResultTemplateMarkdown(
+  items = buildBrowserQaChecklist(),
+  results: BrowserQaRunResult[] = [],
+): string {
+  const template = buildBrowserQaResultTemplate(items, results);
+
+  if (!template.batchId) {
+    return [
+      '# Phase 7 Browser QA Result Template',
+      '',
+      'Batch: none',
+      'All browser QA batches are complete without attention flags.',
+    ].join('\n');
+  }
+
+  const lines = [
+    '# Phase 7 Browser QA Result Template',
+    '',
+    `Batch: ${template.batchId}`,
+    `Status options: ${template.statusOptions.join(', ')}`,
+    `Items: ${template.items.length}`,
+    '',
+  ];
+
+  for (const item of template.items) {
+    lines.push(
+      `## ${item.id}`,
+      '',
+      `- Role: ${item.ownerRole}`,
+      `- Route: ${item.route}`,
+      `- Viewport: ${item.viewport}`,
+      `- Scenario: ${item.title}`,
+      `- Critical regions: ${item.criticalRegions.join('; ')}`,
+      `- Expected signals: ${item.expectedSignals.join('; ')}`,
+      `- Browser assertions: ${item.browserAssertions.join('; ')}`,
+      '- Status: ',
+      '- Note: ',
+      '',
+    );
+  }
+
+  return lines.join('\n').trimEnd();
+}
+
 export function renderBrowserQaRunReportMarkdown(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): string {
   const report = buildBrowserQaRunReport(items, results);
   const lines = [

@@ -11,6 +11,7 @@ const {
   parseBrowserQaRunResults,
   renderBrowserQaChecklistMarkdown,
   renderBrowserQaExecutionPlanMarkdown,
+  renderBrowserQaResultTemplateMarkdown,
   renderBrowserQaRunReportMarkdown,
   renderNextBrowserQaExecutionBatchMarkdown,
 } = require('../dist/qa/browser-checklist');
@@ -34,6 +35,7 @@ const renderers = {
   'plan-json': () => JSON.stringify(buildBrowserQaExecutionPlan(), null, 2),
   'next-batch': () => renderNextBrowserQaExecutionBatchMarkdown(undefined, loadResults()),
   'next-batch-json': () => JSON.stringify(getNextBrowserQaExecutionBatch(undefined, loadResults()), null, 2),
+  'result-template': () => renderBrowserQaResultTemplateMarkdown(undefined, loadResults()),
   'result-template-json': () => JSON.stringify(buildBrowserQaResultTemplate(undefined, loadResults()), null, 2),
   report: () => renderBrowserQaRunReportMarkdown(undefined, loadResults()),
   'report-json': () => JSON.stringify(buildBrowserQaRunReport(undefined, loadResults()), null, 2),
@@ -42,7 +44,7 @@ const renderers = {
 const render = renderers[command];
 
 if (!render) {
-  console.error('Usage: node scripts/browser-qa.js [checklist|checklist-json|plan|plan-json|next-batch|next-batch-json|result-template-json|report|report-json] [results.json]');
+  console.error('Usage: node scripts/browser-qa.js [checklist|checklist-json|plan|plan-json|next-batch|next-batch-json|result-template|result-template-json|report|report-json] [results.json]');
   process.exit(1);
 }
 

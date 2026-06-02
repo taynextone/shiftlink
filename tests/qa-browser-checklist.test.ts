@@ -12,6 +12,7 @@ import {
   parseBrowserQaRunResults,
   renderBrowserQaChecklistMarkdown,
   renderBrowserQaExecutionPlanMarkdown,
+  renderBrowserQaResultTemplateMarkdown,
   renderBrowserQaRunReportMarkdown,
   renderNextBrowserQaExecutionBatchMarkdown,
   summarizeBrowserQaChecklist,
@@ -295,6 +296,39 @@ describe('phase 7 browser QA checklist builder', () => {
       statusOptions: ['passed', 'failed', 'blocked'],
       items: [],
     });
+  });
+
+  it('renders a fillable browser QA result template as markdown', () => {
+    const checklist = buildBrowserQaChecklist();
+    const [nurseDesktop] = buildBrowserQaExecutionBatches(checklist);
+    const markdown = renderBrowserQaResultTemplateMarkdown(
+      checklist,
+      nurseDesktop.items.map((item) => ({ itemId: item.id, status: 'passed' as const })),
+    );
+
+    expect(markdown).toContain('# Phase 7 Browser QA Result Template');
+    expect(markdown).toContain('Batch: nurse:mobile');
+    expect(markdown).toContain('Status options: passed, failed, blocked');
+    expect(markdown).toContain('Items: 3');
+    expect(markdown).toContain('## nurse-activation-to-offer:nurse:mobile');
+    expect(markdown).toContain('- Role: NURSE');
+    expect(markdown).toContain('- Route: /nurse');
+    expect(markdown).toContain('- Viewport: mobile');
+    expect(markdown).toContain('- Critical regions: activation progress; recent contracts; upcoming availability');
+    expect(markdown).toContain('- Status: ');
+    expect(markdown).toContain('- Note: ');
+    expect(markdown).not.toContain('## nurse-activation-to-offer:nurse:desktop');
+  });
+
+  it('renders an empty browser QA result template once every batch passed', () => {
+    const checklist = buildBrowserQaChecklist();
+    const markdown = renderBrowserQaResultTemplateMarkdown(
+      checklist,
+      checklist.map((item) => ({ itemId: item.id, status: 'passed' as const })),
+    );
+
+    expect(markdown).toContain('Batch: none');
+    expect(markdown).toContain('All browser QA batches are complete without attention flags.');
   });
 
   it('summarizes browser QA run status with pending work by default', () => {

@@ -162,6 +162,7 @@ Progress while visual QA is blocked:
 - [done] Browser QA run tooling selects the next incomplete or attention-needed role / viewport batch for resumable screenshot execution.
 - [done] Browser QA next-batch tooling exports the current role / viewport screenshot slice as Markdown or JSON.
 - [done] Browser QA tooling exports a fillable result template for the current role / viewport screenshot slice.
+- [done] Browser QA result templates can render as Markdown for manual screenshot passes and as JSON for automation handoff.
 
 Blocked note:
 - current OpenClaw visual QA path issue is tracked separately in `UNRESOLVED.md`
@@ -255,7 +256,7 @@ Checklist:
 - Form/validation hardening: Complete
 - Navigation cohesion: Complete
 - GAP_ANALYSIS: Complete
-- Test coverage: 160 tests green
+- Test coverage: 162 tests green
 - Remaining: Visual QA (blocked on OpenClaw), server deployment (pending Jurica)
 
 ## Open from GAP_ANALYSIS.md
