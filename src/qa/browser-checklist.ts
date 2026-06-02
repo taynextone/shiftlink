@@ -335,7 +335,53 @@ function parseBrowserQaRunResult(value: unknown, index: number): BrowserQaRunRes
   return result;
 }
 
+function parseBrowserQaTemplateResult(value: unknown, index: number): BrowserQaRunResult | null {
+  if (!isRecord(value)) {
+    throw new Error(`Browser QA template item at index ${index} must be an object.`);
+  }
+
+  if (typeof value.id !== 'string' || value.id.length === 0) {
+    throw new Error(`Browser QA template item at index ${index} must include a non-empty id.`);
+  }
+
+  if (value.status === null) {
+    return null;
+  }
+
+  if (typeof value.status !== 'string' || !browserQaResultStatuses.has(value.status as BrowserQaRunResult['status'])) {
+    throw new Error(`Browser QA template item at index ${index} must use status passed, failed, blocked, or null.`);
+  }
+
+  const result: BrowserQaRunResult = {
+    itemId: value.id,
+    status: value.status as BrowserQaRunResult['status'],
+  };
+
+  if (value.note !== undefined && value.note !== '') {
+    if (typeof value.note !== 'string') {
+      throw new Error(`Browser QA template item at index ${index} note must be a string when provided.`);
+    }
+    result.note = value.note;
+  }
+
+  if (value.checkedAt !== undefined) {
+    if (typeof value.checkedAt !== 'string') {
+      throw new Error(`Browser QA template item at index ${index} checkedAt must be a string when provided.`);
+    }
+    result.checkedAt = value.checkedAt;
+  }
+
+  return result;
+}
+
 export function parseBrowserQaRunResults(value: unknown): BrowserQaRunResult[] {
+  if (isRecord(value) && Array.isArray(value.items)) {
+    return value.items.flatMap((item, index) => {
+      const result = parseBrowserQaTemplateResult(item, index);
+      return result ? [result] : [];
+    });
+  }
+
   const rawResults = Array.isArray(value)
     ? value
     : isRecord(value) && Array.isArray(value.results)
@@ -343,7 +389,7 @@ export function parseBrowserQaRunResults(value: unknown): BrowserQaRunResult[] {
       : null;
 
   if (!rawResults) {
-    throw new Error('Browser QA results JSON must be an array or an object with a results array.');
+    throw new Error('Browser QA results JSON must be an array, an object with a results array, or a result template object with an items array.');
   }
 
   return rawResults.map(parseBrowserQaRunResult);

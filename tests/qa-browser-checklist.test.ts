@@ -453,8 +453,29 @@ describe('phase 7 browser QA checklist builder', () => {
     ]);
   });
 
+  it('parses filled browser QA result templates into run results', () => {
+    const checklist = buildBrowserQaChecklist();
+
+    expect(parseBrowserQaRunResults({
+      items: [
+        { id: checklist[0].id, status: 'passed', note: '' },
+        { id: checklist[1].id, status: 'failed', note: 'Mobile action row overlaps', checkedAt: '2026-06-02T18:30:00.000Z' },
+        { id: checklist[2].id, status: null, note: '' },
+      ],
+    })).toEqual([
+      { itemId: checklist[0].id, status: 'passed' },
+      { itemId: checklist[1].id, status: 'failed', note: 'Mobile action row overlaps', checkedAt: '2026-06-02T18:30:00.000Z' },
+    ]);
+  });
+
+  it('rejects malformed browser QA template result artifacts before report generation', () => {
+    expect(() => parseBrowserQaRunResults({ items: [{ id: '', status: 'passed' }] })).toThrow('non-empty id');
+    expect(() => parseBrowserQaRunResults({ items: [{ id: 'x', status: 'pending' }] })).toThrow('passed, failed, blocked, or null');
+    expect(() => parseBrowserQaRunResults({ items: [{ id: 'x', status: 'blocked', note: 42 }] })).toThrow('note must be a string');
+  });
+
   it('rejects malformed browser QA result artifacts before report generation', () => {
-    expect(() => parseBrowserQaRunResults({ items: [] })).toThrow('results array');
+    expect(() => parseBrowserQaRunResults({ artifact: [] })).toThrow('results array');
     expect(() => parseBrowserQaRunResults([{ itemId: 'x', status: 'pending' }])).toThrow('passed, failed, or blocked');
     expect(() => parseBrowserQaRunResults([{ itemId: '', status: 'passed' }])).toThrow('non-empty itemId');
     expect(() => parseBrowserQaRunResults([{ itemId: 'x', status: 'blocked', note: 42 }])).toThrow('note must be a string');
