@@ -12,6 +12,7 @@
     "start": "node dist/server.js",
     "test": "jest --runInBand",
     "qa:browser-checklist": "npm run build && node scripts/browser-qa.js checklist",
+    "qa:browser-checklist-json": "npm run build && node scripts/browser-qa.js checklist-json",
     "qa:browser-plan": "npm run build && node scripts/browser-qa.js plan",
     "qa:browser-plan-json": "npm run build && node scripts/browser-qa.js plan-json",
     "qa:browser-next": "npm run build && node scripts/browser-qa.js next-batch",

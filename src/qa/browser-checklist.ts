@@ -20,6 +20,11 @@ export type BrowserQaChecklistSummary = {
   viewports: QaViewport[];
 };
 
+export type BrowserQaChecklistDocument = {
+  summary: BrowserQaChecklistSummary;
+  items: BrowserQaChecklistItem[];
+};
+
 export type BrowserQaExecutionBatch = {
   id: string;
   ownerRole: QaRegressionScenario['ownerRole'];
@@ -133,6 +138,13 @@ export function summarizeBrowserQaChecklist(items = buildBrowserQaChecklist()): 
     roles: [...new Set(items.map((item) => item.ownerRole))].sort(),
     routes: [...new Set(items.map((item) => item.route))].sort(),
     viewports: [...new Set(items.map((item) => item.viewport))].sort(),
+  };
+}
+
+export function buildBrowserQaChecklistDocument(items = buildBrowserQaChecklist()): BrowserQaChecklistDocument {
+  return {
+    summary: summarizeBrowserQaChecklist(items),
+    items,
   };
 }
 

@@ -1,6 +1,7 @@
 import {
   auditBrowserQaRunResults,
   buildBrowserQaChecklist,
+  buildBrowserQaChecklistDocument,
   buildBrowserQaExecutionBatches,
   buildBrowserQaExecutionPlan,
   buildBrowserQaRunReport,
@@ -72,6 +73,22 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(summary.routes).toContain('/admin/ops');
     expect(summary.routes).toContain('/hospital/billing');
     expect(summary.routes).toContain('/nurse/contracts');
+  });
+
+  it('builds a structured browser QA checklist document for automation handoff', () => {
+    const document = buildBrowserQaChecklistDocument();
+
+    expect(document.summary).toEqual(summarizeBrowserQaChecklist(document.items));
+    expect(document.summary.itemCount).toBe(17);
+    expect(document.items[0]).toEqual(
+      expect.objectContaining({
+        id: 'nurse-activation-to-offer:nurse:desktop',
+        ownerRole: 'NURSE',
+        route: '/nurse',
+        viewport: 'desktop',
+      }),
+    );
+    expect(document.items.some((item) => item.id === 'superadmin-control-plane:admin-ops:mobile')).toBe(true);
   });
 
   it('renders a stable markdown runlist for later browser execution', () => {
