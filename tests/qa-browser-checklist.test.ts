@@ -224,21 +224,24 @@ describe('phase 7 browser QA checklist builder', () => {
 
   it('renders a browser QA run report with open items and result data audit', () => {
     const checklist = buildBrowserQaChecklist();
+    const nurseDesktopItems = buildBrowserQaExecutionBatches(checklist).find((batch) => batch.id === 'nurse:desktop')!.items;
     const markdown = renderBrowserQaRunReportMarkdown(checklist, [
-      { itemId: checklist[0].id, status: 'passed' },
+      ...nurseDesktopItems.map((item) => ({ itemId: item.id, status: 'passed' as const })),
       { itemId: checklist[1].id, status: 'failed', note: 'Mobile metric cards overlap' },
-      { itemId: checklist[2].id, status: 'blocked', note: 'Screenshot node disconnected' },
-      { itemId: checklist[2].id, status: 'blocked', note: 'Screenshot node disconnected' },
+      { itemId: checklist[3].id, status: 'blocked', note: 'Screenshot node disconnected' },
+      { itemId: checklist[3].id, status: 'blocked', note: 'Screenshot node disconnected' },
       { itemId: 'legacy-route:removed:mobile', status: 'failed' },
     ]);
 
     expect(markdown).toContain('# Phase 7 Browser QA Run Report');
     expect(markdown).toContain(`Total: ${checklist.length}`);
-    expect(markdown).toContain('Passed: 1');
+    expect(markdown).toContain(`Passed: ${nurseDesktopItems.length}`);
     expect(markdown).toContain('Failed: 1');
     expect(markdown).toContain('Blocked: 1');
-    expect(markdown).toContain(`Pending: ${checklist.length - 3}`);
-    expect(markdown).toContain(`- Duplicate item ids: ${checklist[2].id}`);
+    expect(markdown).toContain(`Pending: ${checklist.length - nurseDesktopItems.length - 2}`);
+    expect(markdown).toContain(`- nurse:desktop: ${nurseDesktopItems.length}/${nurseDesktopItems.length} passed, 0 failed, 0 blocked, 0 pending, attention no`);
+    expect(markdown).toContain('- nurse:mobile: 0/3 passed, 1 failed, 1 blocked, 1 pending, attention yes');
+    expect(markdown).toContain(`- Duplicate item ids: ${checklist[3].id}`);
     expect(markdown).toContain('- Unknown item ids: legacy-route:removed:mobile');
     expect(markdown).toContain(`[failed] ${checklist[1].id}`);
     expect(markdown).toContain('Mobile metric cards overlap');

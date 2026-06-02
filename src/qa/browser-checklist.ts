@@ -256,6 +256,7 @@ export function renderBrowserQaExecutionPlanMarkdown(items = buildBrowserQaCheck
 
 export function renderBrowserQaRunReportMarkdown(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): string {
   const summary = summarizeBrowserQaRun(items, results);
+  const batchSummaries = summarizeBrowserQaExecutionBatches(items, results);
   const audit = auditBrowserQaRunResults(items, results);
   const resultByItemId = latestResultByItemId(results);
   const openItems = getOpenBrowserQaChecklistItems(items, results);
@@ -271,6 +272,14 @@ export function renderBrowserQaRunReportMarkdown(items = buildBrowserQaChecklist
     `Needs attention: ${summary.needsAttention ? 'yes' : 'no'}`,
     '',
   ];
+
+  lines.push('## Batch summaries', '');
+  for (const batch of batchSummaries) {
+    lines.push(
+      `- ${batch.id}: ${batch.summary.passed}/${batch.summary.total} passed, ${batch.summary.failed} failed, ${batch.summary.blocked} blocked, ${batch.summary.pending} pending, attention ${batch.summary.needsAttention ? 'yes' : 'no'}`,
+    );
+  }
+  lines.push('');
 
   if (audit.duplicateItemIds.length > 0 || audit.unknownItemIds.length > 0) {
     lines.push(

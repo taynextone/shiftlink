@@ -152,6 +152,7 @@ Progress while visual QA is blocked:
 - [done] Browser QA execution batches group checklist items by role and viewport in stable run order.
 - [done] Browser QA execution batches can render a stable Markdown execution plan for manual or Canvas-backed screenshot runs.
 - [done] Browser QA batch summaries show completion and attention status per role / viewport run.
+- [done] Browser QA run reports include batch summaries so completed and attention-needed role / viewport runs are visible at report level.
 
 Blocked note:
 - current OpenClaw visual QA path issue is tracked separately in `UNRESOLVED.md`
