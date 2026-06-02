@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import createHttpError from 'http-errors';
 import { UserRole } from '@prisma/client';
-import { getAuditLogs, type AuditAction } from '../services/audit.service';
+import { getAuditLogs, recordAuditLog, type AuditAction } from '../services/audit.service';
 import { getBusinessMetrics } from '../services/metrics.service';
 import { getPayrollExport } from '../services/payroll-export.service';
 import { prisma } from '../config/prisma';
@@ -41,6 +41,15 @@ export async function getPayrollExportController(req: Request, res: Response): P
   }
 
   const result = await getPayrollExport(hospitalProfile.id);
+  void recordAuditLog({
+    action: 'PAYROLL_EXPORT',
+    actorUserId: req.auth.userId,
+    actorRole: req.auth.role,
+    targetEntityType: 'HospitalProfile',
+    targetEntityId: hospitalProfile.id,
+    metadata: { rowCount: result.rows.length },
+  });
+
   res.status(200).json(result);
 }
 

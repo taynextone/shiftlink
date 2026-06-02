@@ -73,6 +73,7 @@ jest.mock('../src/config/prisma', () => ({
     contractVoidEvent: { create: jest.fn() },
     invoice: { create: jest.fn(), findMany: jest.fn() },
     webhookEvent: { create: jest.fn() },
+    auditLog: { create: jest.fn() },
   },
 }));
 
@@ -285,6 +286,16 @@ describe('hospital integration and scalable match flow', () => {
         },
       },
     }));
+    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: 'PAYROLL_EXPORT',
+        actorUserId: 'hospital_owner_1',
+        actorRole: UserRole.HOSPITAL_ADMIN,
+        targetEntityType: 'HospitalProfile',
+        targetEntityId: 'hospital_1',
+        metadataJson: JSON.stringify({ rowCount: 1 }),
+      }),
+    });
   });
 
   it('blocks nurses from the HR payroll export', async () => {

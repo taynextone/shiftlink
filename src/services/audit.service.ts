@@ -14,6 +14,7 @@ export type AuditAction =
   | 'CONTRACT_VOID'
   | 'EXECUTION_SIGN'
   | 'INVOICE_MARK_PAID'
+  | 'PAYROLL_EXPORT'
   | 'WHATSAPP_RETRY'
   | 'WEBHOOK_RETRY'
   | 'FAILURE_RESOLVE'

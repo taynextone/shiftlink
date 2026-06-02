@@ -62,6 +62,7 @@ export function AuditLogViewer() {
             <option value="OFFER_DECLINE">Offer Decline</option>
             <option value="CONTRACT_VOID">Contract Void</option>
             <option value="INVOICE_MARK_PAID">Invoice Mark Paid</option>
+            <option value="PAYROLL_EXPORT">Payroll Export</option>
             <option value="WHATSAPP_RETRY">WhatsApp Retry</option>
             <option value="WEBHOOK_RETRY">Webhook Retry</option>
             <option value="FAILURE_RESOLVE">Failure Resolve</option>
