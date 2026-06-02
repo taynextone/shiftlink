@@ -9,7 +9,7 @@ import { SectionCard } from '../../components/SectionCard';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { useAuth } from '../../state/AuthContext';
 import { api } from '../../lib/api';
-import { buildInterventionHotspots, describeAsyncFailure, describeWebhookStatus, getCriticalAsyncFailures, getFailedWebhookEvents, getImportBlockedShifts, rankAsyncFailures } from './dashboard-helpers';
+import { buildInterventionHotspots, describeAsyncFailure, describeWebhookStatus, getCriticalAsyncFailures, getFailedWebhookEvents, getImportBlockedShifts, getPendingOfferShifts, rankAsyncFailures } from './dashboard-helpers';
 import { NotificationCenter } from './NotificationCenter';
 import { WebhookAdminPanel } from './WebhookAdminPanel';
 import { DossierOverview } from './DossierOverview';
@@ -35,6 +35,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
   const totalSignedOffers = shifts.reduce((sum, shift) => sum + (shift.offerCounts?.signed ?? 0), 0);
   const totalPendingOffers = shifts.reduce((sum, shift) => sum + (shift.offerCounts?.pending ?? 0), 0);
   const totalInvoiced = shifts.reduce((sum, shift) => sum + (shift.offerCounts?.invoiced ?? 0), 0);
+  const pendingOfferShifts = getPendingOfferShifts(shifts);
   const importBlockedShifts = getImportBlockedShifts(shifts);
   const failedWebhookEvents = getFailedWebhookEvents(webhookEvents);
   const rankedWebhookEvents = useMemo(
@@ -60,6 +61,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
     failedWebhookEvents,
     criticalAsyncFailures,
     totalPendingOffers,
+    pendingOfferShifts,
     importBlockedShifts,
     billing,
   });

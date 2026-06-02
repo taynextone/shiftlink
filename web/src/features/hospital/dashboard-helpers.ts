@@ -56,6 +56,10 @@ export function getImportBlockedShifts(shifts: HospitalJobShift[]) {
   return shifts.filter((shift) => shift.status !== 'OPEN' || (shift.offerCounts?.signed ?? 0) > 0 || (shift.offerCounts?.pending ?? 0) > 0);
 }
 
+export function getPendingOfferShifts(shifts: HospitalJobShift[]) {
+  return shifts.filter((shift) => (shift.offerCounts?.pending ?? 0) > 0);
+}
+
 export function getFailedWebhookEvents(webhookEvents: HospitalWebhookEventRow[]) {
   return webhookEvents.filter((event) => event.status === 'FAILED_OR_PENDING_RETRY');
 }
@@ -78,10 +82,12 @@ export function buildInterventionHotspots(input: {
   failedWebhookEvents: HospitalWebhookEventRow[];
   criticalAsyncFailures: AsyncProcessFailureRow[];
   totalPendingOffers: number;
+  pendingOfferShifts: HospitalJobShift[];
   importBlockedShifts: HospitalJobShift[];
   billing?: HospitalBillingSummary;
 }) {
-  const { isSuperAdmin, failedWebhookEvents, criticalAsyncFailures, totalPendingOffers, importBlockedShifts, billing } = input;
+  const { isSuperAdmin, failedWebhookEvents, criticalAsyncFailures, totalPendingOffers, pendingOfferShifts, importBlockedShifts, billing } = input;
+  const firstPendingOfferShift = pendingOfferShifts[0];
   const firstBlockedShift = importBlockedShifts[0];
 
   const hotspots = [
@@ -92,7 +98,7 @@ export function buildInterventionHotspots(input: {
       ? { label: 'Async Worker Failures', value: `${criticalAsyncFailures.length} kritisch`, action: isSuperAdmin ? '/admin/ops' : '/hospital', hint: isSuperAdmin ? 'kritische Worker-Fehler aus der Superadmin-Control-Plane priorisieren' : 'kritische Worker-Fehler erfordern Superadmin-Einbezug', priority: 1 }
       : null,
     totalPendingOffers > 0
-      ? { label: 'Pending Offers', value: `${totalPendingOffers} offen`, action: '/hospital/offers', hint: 'Antwortlage und Blocker im Offer-Flow prüfen', priority: 3 }
+      ? { label: 'Pending Offers', value: `${totalPendingOffers} offen`, action: firstPendingOfferShift ? `/hospital/offers?jobShiftId=${encodeURIComponent(firstPendingOfferShift.id)}` : '/hospital/offers', hint: 'Antwortlage und Blocker im Offer-Flow prüfen', priority: 3 }
       : null,
     importBlockedShifts.length > 0
       ? { label: 'Shift Import Blockers', value: `${importBlockedShifts.length} betroffen`, action: firstBlockedShift ? `/hospital/shifts?focusShiftId=${encodeURIComponent(firstBlockedShift.id)}` : '/hospital/shifts', hint: 'offene/pending/signed Lagen blockieren Re-Imports', priority: 4 }

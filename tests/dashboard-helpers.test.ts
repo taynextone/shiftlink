@@ -1,4 +1,4 @@
-import { buildInterventionHotspots, getImportBlockedShifts, rankAsyncFailures } from '../web/src/features/hospital/dashboard-helpers';
+import { buildInterventionHotspots, getImportBlockedShifts, getPendingOfferShifts, rankAsyncFailures } from '../web/src/features/hospital/dashboard-helpers';
 
 describe('dashboard ops helpers', () => {
   it('deep-links shift import blockers to the first blocked shift', () => {
@@ -13,6 +13,7 @@ describe('dashboard ops helpers', () => {
       failedWebhookEvents: [],
       criticalAsyncFailures: [],
       totalPendingOffers: 0,
+      pendingOfferShifts: [],
       importBlockedShifts: getImportBlockedShifts(shifts),
     });
 
@@ -20,6 +21,29 @@ describe('dashboard ops helpers', () => {
       expect.objectContaining({
         label: 'Shift Import Blockers',
         action: '/hospital/shifts?focusShiftId=shift_pending',
+      }),
+    ]);
+  });
+
+  it('deep-links pending offer hotspots to the first shift with pending offers', () => {
+    const shifts = [
+      { id: 'shift_open', status: 'OPEN', offerCounts: { total: 0, pending: 0, signed: 0 } },
+      { id: 'shift_pending', status: 'OPEN', offerCounts: { total: 3, pending: 2, signed: 1 } },
+    ] as any;
+
+    const hotspots = buildInterventionHotspots({
+      isSuperAdmin: true,
+      failedWebhookEvents: [],
+      criticalAsyncFailures: [],
+      totalPendingOffers: 2,
+      pendingOfferShifts: getPendingOfferShifts(shifts),
+      importBlockedShifts: [],
+    });
+
+    expect(hotspots).toEqual([
+      expect.objectContaining({
+        label: 'Pending Offers',
+        action: '/hospital/offers?jobShiftId=shift_pending',
       }),
     ]);
   });
