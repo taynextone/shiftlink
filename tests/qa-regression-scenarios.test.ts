@@ -46,6 +46,32 @@ describe('phase 7 browser regression scenario manifest', () => {
     }
   });
 
+  it('keeps every scenario backed by actionable visual checkpoints', () => {
+    for (const scenario of browserRegressionScenarios) {
+      expect(scenario.visualCheckpoints.length).toBeGreaterThanOrEqual(2);
+      for (const checkpoint of scenario.visualCheckpoints) {
+        expect(scenario.entryRoutes).toContain(checkpoint.route);
+        expect(checkpoint.viewports.length).toBeGreaterThan(0);
+        expect(checkpoint.criticalRegions.length).toBeGreaterThanOrEqual(2);
+        expect(checkpoint.expectedSignals.length).toBeGreaterThanOrEqual(1);
+      }
+    }
+  });
+
+  it('keeps core visual routes covered across desktop and mobile while node QA is blocked', () => {
+    const responsiveCheckpointRoutes = new Set(
+      browserRegressionScenarios.flatMap((scenario) =>
+        scenario.visualCheckpoints
+          .filter((checkpoint) => checkpoint.viewports.includes('desktop') && checkpoint.viewports.includes('mobile'))
+          .map((checkpoint) => checkpoint.route),
+      ),
+    );
+
+    for (const route of ['/nurse', '/nurse/contracts', '/hospital', '/hospital/contracts', '/hospital/billing', '/admin/verification', '/admin/ops']) {
+      expect(responsiveCheckpointRoutes).toContain(route);
+    }
+  });
+
   it('keeps role-forbidden boundary groups non-empty and disjoint by actor intent', () => {
     expect(nurseForbiddenApiPaths.length).toBeGreaterThan(0);
     expect(hospitalForbiddenApiPaths.length).toBeGreaterThan(0);

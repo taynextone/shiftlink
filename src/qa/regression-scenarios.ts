@@ -13,6 +13,16 @@ export type QaRegressionScenario = {
   seededRecords: string[];
   apiBoundaries: QaApiBoundary[];
   browserAssertions: string[];
+  visualCheckpoints: QaVisualCheckpoint[];
+};
+
+export type QaViewport = 'desktop' | 'mobile';
+
+export type QaVisualCheckpoint = {
+  route: string;
+  viewports: QaViewport[];
+  criticalRegions: string[];
+  expectedSignals: string[];
 };
 
 export const publicBrowserRoutes = ['/', '/login', '/register'] as const;
@@ -100,6 +110,26 @@ export const browserRegressionScenarios: QaRegressionScenario[] = [
       'job and match pages show direct next actions without raw ids',
       'contract page exposes signature, PDF, invoice, and terminal-state context',
     ],
+    visualCheckpoints: [
+      {
+        route: '/nurse',
+        viewports: ['desktop', 'mobile'],
+        criticalRegions: ['activation progress', 'recent contracts', 'upcoming availability'],
+        expectedSignals: ['role-specific dashboard shell', 'no raw database ids as primary labels'],
+      },
+      {
+        route: '/nurse/jobs',
+        viewports: ['desktop', 'mobile'],
+        criticalRegions: ['visible shift list', 'requirements', 'match action area'],
+        expectedSignals: ['open shifts are scannable', 'requirements stay attached to the shift row'],
+      },
+      {
+        route: '/nurse/contracts',
+        viewports: ['desktop', 'mobile'],
+        criticalRegions: ['contract state list', 'signature status', 'invoice/PDF context'],
+        expectedSignals: ['terminal state copy is visible', 'linked artifacts are discoverable'],
+      },
+    ],
   },
   {
     id: 'hospital-shift-to-billing-ops',
@@ -128,6 +158,26 @@ export const browserRegressionScenarios: QaRegressionScenario[] = [
       'contract and billing pages surface void, invoice, PDF, billing export, and HR handoff states',
       'HR/payroll export controls stay framed as a clinical-system handoff, not platform payroll',
     ],
+    visualCheckpoints: [
+      {
+        route: '/hospital',
+        viewports: ['desktop', 'mobile'],
+        criticalRegions: ['hotspot metrics', 'recent shifts', 'delivery status'],
+        expectedSignals: ['priority issues are above routine history', 'links preserve workflow context'],
+      },
+      {
+        route: '/hospital/contracts',
+        viewports: ['desktop', 'mobile'],
+        criticalRegions: ['contract filters', 'void blockers', 'PDF/signature panels'],
+        expectedSignals: ['billing conflicts are visibly distinguished', 'destructive actions keep confirmation context'],
+      },
+      {
+        route: '/hospital/billing',
+        viewports: ['desktop', 'mobile'],
+        criticalRegions: ['billing summary', 'invoice detail', 'HR/payroll handoff'],
+        expectedSignals: ['pending rows are prioritized', 'HR handoff is not described as Shiftlink payroll'],
+      },
+    ],
   },
   {
     id: 'superadmin-control-plane',
@@ -152,6 +202,26 @@ export const browserRegressionScenarios: QaRegressionScenario[] = [
       'ops control plane ranks billing and webhook failures ahead of lower-severity queues',
       'retry and resolve-style actions preserve confirmations and status feedback',
       'audit and metrics surfaces provide enough context for operator follow-up',
+    ],
+    visualCheckpoints: [
+      {
+        route: '/admin/verification',
+        viewports: ['desktop', 'mobile'],
+        criticalRegions: ['document review state', 'release controls', 'rejection context'],
+        expectedSignals: ['operator can see why a profile is blocked', 'release state is not hidden below history'],
+      },
+      {
+        route: '/admin/ops',
+        viewports: ['desktop', 'mobile'],
+        criticalRegions: ['async failure queue', 'webhook retry controls', 'audit log'],
+        expectedSignals: ['highest severity queue is visible first', 'retry/resolve controls show feedback affordances'],
+      },
+      {
+        route: '/hospital/contracts',
+        viewports: ['desktop'],
+        criticalRegions: ['manual governance context', 'billing conflict state', 'void overview'],
+        expectedSignals: ['superadmin context remains operational without nurse-owned controls'],
+      },
     ],
   },
 ];
