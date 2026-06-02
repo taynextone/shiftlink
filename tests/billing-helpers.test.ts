@@ -1,4 +1,4 @@
-import { getLinkedBillingExportStatus, parseBillingStatusFilter } from '../web/src/features/hospital/billing-helpers';
+import { getInvoiceBillingPath, getLinkedBillingExportStatus, parseBillingStatusFilter } from '../web/src/features/hospital/billing-helpers';
 
 describe('billing helpers', () => {
   it.each([
@@ -19,5 +19,9 @@ describe('billing helpers', () => {
     ['', '', null],
   ] as const)('derives linked export status from invoice=%s status=%s', (invoiceId, status, expected) => {
     expect(getLinkedBillingExportStatus(invoiceId, status)).toBe(expected);
+  });
+
+  it('builds encoded invoice billing deep links', () => {
+    expect(getInvoiceBillingPath('invoice 1/2')).toBe('/hospital/billing?invoiceId=invoice%201%2F2');
   });
 });

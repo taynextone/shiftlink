@@ -14,6 +14,7 @@ import { useAsyncData } from '../../hooks/useAsyncData';
 import { api, type Candidate, type HospitalJobShift, type HospitalOffer } from '../../lib/api';
 
 import { computeOfferHealth } from './ops-helpers';
+import { getInvoiceBillingPath } from './billing-helpers';
 
 export function HospitalOffersPage() {
   const [searchParams] = useSearchParams();
@@ -400,6 +401,7 @@ export function HospitalOffersPage() {
                     <ActionBar>
                       {offer.nurseProfileId ? <Link to={`/hospital/dossier?nurseProfileId=${encodeURIComponent(offer.nurseProfileId)}&contractId=${encodeURIComponent(offer.id)}`}>Dossier öffnen</Link> : null}
                       <Link to={`/hospital/contracts?contractId=${encodeURIComponent(offer.id)}`}>Contract öffnen</Link>
+                      {offer.invoiceId ? <Link to={getInvoiceBillingPath(offer.invoiceId)}>Invoice öffnen</Link> : null}
                       {offer.status === 'PENDING' ? (
                         <>
                           <button disabled={submitting} onClick={() => void handleRespondToOffer(offer.id, 'ACCEPT')}>

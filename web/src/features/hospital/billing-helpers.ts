@@ -10,3 +10,7 @@ export function getLinkedBillingExportStatus(invoiceId: string, status: BillingS
   }
   return invoiceId.trim() ? '' : null;
 }
+
+export function getInvoiceBillingPath(invoiceId: string) {
+  return `/hospital/billing?invoiceId=${encodeURIComponent(invoiceId)}`;
+}
