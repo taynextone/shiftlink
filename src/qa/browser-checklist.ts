@@ -20,6 +20,25 @@ export type BrowserQaChecklistSummary = {
   viewports: QaViewport[];
 };
 
+export type BrowserQaRunStatus = 'pending' | 'passed' | 'failed' | 'blocked';
+
+export type BrowserQaRunResult = {
+  itemId: string;
+  status: Exclude<BrowserQaRunStatus, 'pending'>;
+  note?: string;
+  checkedAt?: string;
+};
+
+export type BrowserQaRunSummary = {
+  total: number;
+  pending: number;
+  passed: number;
+  failed: number;
+  blocked: number;
+  complete: boolean;
+  needsAttention: boolean;
+};
+
 function buildChecklistId(scenarioId: string, checkpoint: QaVisualCheckpoint, viewport: QaViewport): string {
   const routeSlug = checkpoint.route.replace(/^\//, '').replace(/\//g, '-') || 'home';
   return `${scenarioId}:${routeSlug}:${viewport}`;
@@ -55,6 +74,33 @@ export function summarizeBrowserQaChecklist(items = buildBrowserQaChecklist()): 
     routes: [...new Set(items.map((item) => item.route))].sort(),
     viewports: [...new Set(items.map((item) => item.viewport))].sort(),
   };
+}
+
+export function summarizeBrowserQaRun(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): BrowserQaRunSummary {
+  const resultByItemId = new Map(results.map((result) => [result.itemId, result]));
+  const counts = items.reduce(
+    (summary, item) => {
+      const status = resultByItemId.get(item.id)?.status ?? 'pending';
+      summary[status] += 1;
+      return summary;
+    },
+    { pending: 0, passed: 0, failed: 0, blocked: 0 } as Record<BrowserQaRunStatus, number>,
+  );
+
+  return {
+    total: items.length,
+    pending: counts.pending,
+    passed: counts.passed,
+    failed: counts.failed,
+    blocked: counts.blocked,
+    complete: counts.pending === 0,
+    needsAttention: counts.failed > 0 || counts.blocked > 0,
+  };
+}
+
+export function getOpenBrowserQaChecklistItems(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): BrowserQaChecklistItem[] {
+  const resultByItemId = new Map(results.map((result) => [result.itemId, result]));
+  return items.filter((item) => resultByItemId.get(item.id)?.status !== 'passed');
 }
 
 export function renderBrowserQaChecklistMarkdown(items = buildBrowserQaChecklist()): string {

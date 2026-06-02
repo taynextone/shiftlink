@@ -1,8 +1,10 @@
 import {
   buildBrowserQaChecklist,
   getBrowserQaChecklistForRoute,
+  getOpenBrowserQaChecklistItems,
   renderBrowserQaChecklistMarkdown,
   summarizeBrowserQaChecklist,
+  summarizeBrowserQaRun,
 } from '../src/qa/browser-checklist';
 import { browserRegressionScenarios } from '../src/qa/regression-scenarios';
 
@@ -70,5 +72,53 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(markdown).toContain('## hospital-shift-to-billing-ops:hospital-billing:desktop');
     expect(markdown).toContain('- Critical regions: billing summary; invoice detail; HR/payroll handoff');
     expect(markdown).toContain('- Expected signals: pending rows are prioritized; HR handoff is not described as Shiftlink payroll');
+  });
+
+  it('summarizes browser QA run status with pending work by default', () => {
+    const checklist = buildBrowserQaChecklist();
+    const summary = summarizeBrowserQaRun(checklist, [
+      { itemId: checklist[0].id, status: 'passed' },
+      { itemId: checklist[1].id, status: 'failed', note: 'Mobile layout overlaps action row' },
+      { itemId: checklist[2].id, status: 'blocked', note: 'Seed record missing' },
+    ]);
+
+    expect(summary).toEqual({
+      total: checklist.length,
+      pending: checklist.length - 3,
+      passed: 1,
+      failed: 1,
+      blocked: 1,
+      complete: false,
+      needsAttention: true,
+    });
+  });
+
+  it('treats a fully passed browser QA run as complete without attention flags', () => {
+    const checklist = buildBrowserQaChecklist();
+    const results = checklist.map((item) => ({ itemId: item.id, status: 'passed' as const }));
+
+    expect(summarizeBrowserQaRun(checklist, results)).toEqual({
+      total: checklist.length,
+      pending: 0,
+      passed: checklist.length,
+      failed: 0,
+      blocked: 0,
+      complete: true,
+      needsAttention: false,
+    });
+  });
+
+  it('keeps failed, blocked, and pending browser QA items open', () => {
+    const checklist = buildBrowserQaChecklist();
+    const openItems = getOpenBrowserQaChecklistItems(checklist, [
+      { itemId: checklist[0].id, status: 'passed' },
+      { itemId: checklist[1].id, status: 'failed' },
+      { itemId: checklist[2].id, status: 'blocked' },
+    ]);
+
+    expect(openItems).not.toContainEqual(checklist[0]);
+    expect(openItems).toContainEqual(checklist[1]);
+    expect(openItems).toContainEqual(checklist[2]);
+    expect(openItems).toContainEqual(checklist[3]);
   });
 });

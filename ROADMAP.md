@@ -147,6 +147,7 @@ Progress while visual QA is blocked:
 - [done] Visual QA checkpoints are codified for critical nurse / hospital / superadmin routes across desktop and mobile while node screenshots are blocked.
 - [done] Browser QA checklist builder expands scenario checkpoints into per-route, per-viewport run items (`src/qa/browser-checklist.ts`).
 - [done] Browser QA checklist can render a stable Markdown runlist summary for manual screenshot execution.
+- [done] Browser QA run status summaries track pending / passed / failed / blocked checklist items for later screenshot execution.
 
 Blocked note:
 - current OpenClaw visual QA path issue is tracked separately in `UNRESOLVED.md`
@@ -240,7 +241,7 @@ Checklist:
 - Form/validation hardening: Complete
 - Navigation cohesion: Complete
 - GAP_ANALYSIS: Complete
-- Test coverage: 138 tests green
+- Test coverage: 141 tests green
 - Remaining: Visual QA (blocked on OpenClaw), server deployment (pending Jurica)
 
 ## Open from GAP_ANALYSIS.md
