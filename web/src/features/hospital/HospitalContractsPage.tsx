@@ -34,9 +34,11 @@ function toFeedbackTone(tone: 'success' | 'warning' | 'error' | 'info') {
 
 export function HospitalContractsPage() {
   const [searchParams] = useSearchParams();
-  const initialJobShiftId = searchParams.get('jobShiftId') ?? '';
+  const linkedJobShiftId = searchParams.get('jobShiftId') ?? '';
+  const linkedContractId = searchParams.get('contractId') ?? '';
+  const initialJobShiftId = linkedJobShiftId;
   const [jobShiftId, setJobShiftId] = useState(initialJobShiftId);
-  const [contractId, setContractId] = useState(searchParams.get('contractId') ?? '');
+  const [contractId, setContractId] = useState(linkedContractId);
   const [voidReason, setVoidReason] = useState('Pflegekraft kann den Einsatz in diesem Zeitraum doch nicht wahrnehmen.');
   const [lifecycle, setLifecycle] = useState<ContractLifecycle | null>(null);
   const [offers, setOffers] = useState<HospitalOffer[]>([]);
@@ -52,15 +54,20 @@ export function HospitalContractsPage() {
   const availableShifts = shiftData?.jobShifts ?? [];
 
   useEffect(() => {
-    const linkedJobShiftId = searchParams.get('jobShiftId');
     if (linkedJobShiftId) {
       setJobShiftId(linkedJobShiftId);
     }
-    const linkedContractId = searchParams.get('contractId');
     if (linkedContractId) {
       setContractId(linkedContractId);
+      setSubmitting(true);
+      setStatus(null);
+      void Promise.all([loadLifecycle(linkedContractId), loadExecution(linkedContractId), loadVoiding(linkedContractId)])
+        .catch((error) => {
+          setStatus({ tone: 'error', message: error instanceof Error ? error.message : 'Contract-Kontext konnte nicht geladen werden' });
+        })
+        .finally(() => setSubmitting(false));
     }
-  }, [searchParams]);
+  }, [linkedContractId, linkedJobShiftId]);
 
   const selectedShift = useMemo(
     () => availableShifts.find((shift) => shift.id === jobShiftId) ?? null,
