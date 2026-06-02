@@ -59,6 +59,20 @@ export type BrowserQaRunResult = {
   checkedAt?: string;
 };
 
+export type BrowserQaResultTemplateItem = Pick<
+  BrowserQaChecklistItem,
+  'id' | 'ownerRole' | 'route' | 'viewport' | 'title' | 'criticalRegions' | 'expectedSignals' | 'browserAssertions'
+> & {
+  status: null;
+  note: string;
+};
+
+export type BrowserQaResultTemplate = {
+  batchId: string | null;
+  statusOptions: BrowserQaRunResult['status'][];
+  items: BrowserQaResultTemplateItem[];
+};
+
 export type BrowserQaRunSummary = {
   total: number;
   pending: number;
@@ -226,6 +240,29 @@ export function buildBrowserQaExecutionPlan(items = buildBrowserQaChecklist()): 
     itemCount: items.length,
     nextBatchId: getNextBrowserQaExecutionBatch(items)?.id ?? null,
     batches,
+  };
+}
+
+export function buildBrowserQaResultTemplate(
+  items = buildBrowserQaChecklist(),
+  results: BrowserQaRunResult[] = [],
+): BrowserQaResultTemplate {
+  const nextBatch = getNextBrowserQaExecutionBatch(items, results);
+  return {
+    batchId: nextBatch?.id ?? null,
+    statusOptions: ['passed', 'failed', 'blocked'],
+    items: nextBatch?.items.map((item) => ({
+      id: item.id,
+      ownerRole: item.ownerRole,
+      route: item.route,
+      viewport: item.viewport,
+      title: item.title,
+      criticalRegions: item.criticalRegions,
+      expectedSignals: item.expectedSignals,
+      browserAssertions: item.browserAssertions,
+      status: null,
+      note: '',
+    })) ?? [],
   };
 }
 

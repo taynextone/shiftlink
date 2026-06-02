@@ -4,6 +4,7 @@ import {
   buildBrowserQaChecklistDocument,
   buildBrowserQaExecutionBatches,
   buildBrowserQaExecutionPlan,
+  buildBrowserQaResultTemplate,
   buildBrowserQaRunReport,
   getBrowserQaChecklistForRoute,
   getNextBrowserQaExecutionBatch,
@@ -257,6 +258,43 @@ describe('phase 7 browser QA checklist builder', () => {
 
     expect(markdown).toContain('Next batch: none');
     expect(markdown).toContain('All browser QA batches are complete without attention flags.');
+  });
+
+  it('builds a fillable result template for the next browser QA batch', () => {
+    const checklist = buildBrowserQaChecklist();
+    const [nurseDesktop] = buildBrowserQaExecutionBatches(checklist);
+    const template = buildBrowserQaResultTemplate(
+      checklist,
+      nurseDesktop.items.map((item) => ({ itemId: item.id, status: 'passed' as const })),
+    );
+
+    expect(template.batchId).toBe('nurse:mobile');
+    expect(template.statusOptions).toEqual(['passed', 'failed', 'blocked']);
+    expect(template.items).toHaveLength(3);
+    expect(template.items[0]).toEqual(
+      expect.objectContaining({
+        id: 'nurse-activation-to-offer:nurse:mobile',
+        status: null,
+        note: '',
+        route: '/nurse',
+        viewport: 'mobile',
+      }),
+    );
+    expect(template.items[0].criticalRegions).toContain('activation progress');
+  });
+
+  it('builds an empty result template once every browser QA batch passed', () => {
+    const checklist = buildBrowserQaChecklist();
+    const template = buildBrowserQaResultTemplate(
+      checklist,
+      checklist.map((item) => ({ itemId: item.id, status: 'passed' as const })),
+    );
+
+    expect(template).toEqual({
+      batchId: null,
+      statusOptions: ['passed', 'failed', 'blocked'],
+      items: [],
+    });
   });
 
   it('summarizes browser QA run status with pending work by default', () => {

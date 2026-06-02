@@ -17,6 +17,7 @@
     "qa:browser-plan-json": "npm run build && node scripts/browser-qa.js plan-json",
     "qa:browser-next": "npm run build && node scripts/browser-qa.js next-batch",
     "qa:browser-next-json": "npm run build && node scripts/browser-qa.js next-batch-json",
+    "qa:browser-result-template-json": "npm run build && node scripts/browser-qa.js result-template-json",
     "qa:browser-report": "npm run build && node scripts/browser-qa.js report",
     "qa:browser-report-json": "npm run build && node scripts/browser-qa.js report-json",
     "prisma:generate": "prisma generate --config prisma.config.ts",
