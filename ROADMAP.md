@@ -139,6 +139,9 @@ Needed:
 - seeded realistic test scenarios
 - regression checklist
 
+Progress while visual QA is blocked:
+- [done] API route-boundary smoke coverage for top nurse / hospital / superadmin workflow entry points (`tests/qa-smoke.test.ts`)
+
 Blocked note:
 - current OpenClaw visual QA path issue is tracked separately in `UNRESOLVED.md`
 
@@ -231,7 +234,7 @@ Checklist:
 - Form/validation hardening: Complete
 - Navigation cohesion: Complete
 - GAP_ANALYSIS: Complete
-- Test coverage: 69 tests green
+- Test coverage: 93 tests green
 - Remaining: Visual QA (blocked on OpenClaw), server deployment (pending Jurica)
 
 ## Open from GAP_ANALYSIS.md
