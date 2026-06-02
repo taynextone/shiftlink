@@ -34,7 +34,8 @@ function toFeedbackTone(tone: 'success' | 'warning' | 'error' | 'info') {
 
 export function HospitalContractsPage() {
   const [searchParams] = useSearchParams();
-  const [jobShiftId, setJobShiftId] = useState('');
+  const initialJobShiftId = searchParams.get('jobShiftId') ?? '';
+  const [jobShiftId, setJobShiftId] = useState(initialJobShiftId);
   const [contractId, setContractId] = useState(searchParams.get('contractId') ?? '');
   const [voidReason, setVoidReason] = useState('Pflegekraft kann den Einsatz in diesem Zeitraum doch nicht wahrnehmen.');
   const [lifecycle, setLifecycle] = useState<ContractLifecycle | null>(null);
@@ -51,6 +52,10 @@ export function HospitalContractsPage() {
   const availableShifts = shiftData?.jobShifts ?? [];
 
   useEffect(() => {
+    const linkedJobShiftId = searchParams.get('jobShiftId');
+    if (linkedJobShiftId) {
+      setJobShiftId(linkedJobShiftId);
+    }
     const linkedContractId = searchParams.get('contractId');
     if (linkedContractId) {
       setContractId(linkedContractId);
