@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import { useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 import { ActionBar } from '../../components/ActionBar';
 import { AsyncState } from '../../components/AsyncState';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
@@ -27,6 +27,8 @@ function computeShiftImportState(shift: { status: string; offerCounts?: { pendin
 }
 
 export function HospitalShiftsPage() {
+  const [searchParams] = useSearchParams();
+  const focusedShiftId = searchParams.get('focusShiftId') ?? searchParams.get('shiftId') ?? '';
   const { data, loading, error, reload } = useAsyncData(() => api.listHospitalJobShifts(), []);
   const jobShifts = data?.jobShifts ?? [];
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
@@ -44,6 +46,13 @@ export function HospitalShiftsPage() {
   const canSubmit = Boolean(externalJobShiftId.trim()) && Boolean(title.trim());
 
   const selectedShift = useMemo(() => jobShifts.find((s) => s.id === selectedShiftId) ?? null, [jobShifts, selectedShiftId]);
+
+  useEffect(() => {
+    if (!focusedShiftId || selectedShiftId === focusedShiftId || !jobShifts.some((shift) => shift.id === focusedShiftId)) {
+      return;
+    }
+    setSelectedShiftId(focusedShiftId);
+  }, [focusedShiftId, jobShifts, selectedShiftId]);
 
   async function handleImport(event: React.FormEvent) {
     event.preventDefault();

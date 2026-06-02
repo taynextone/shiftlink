@@ -82,6 +82,7 @@ export function buildInterventionHotspots(input: {
   billing?: HospitalBillingSummary;
 }) {
   const { isSuperAdmin, failedWebhookEvents, criticalAsyncFailures, totalPendingOffers, importBlockedShifts, billing } = input;
+  const firstBlockedShift = importBlockedShifts[0];
 
   const hotspots = [
     failedWebhookEvents.length > 0
@@ -94,7 +95,7 @@ export function buildInterventionHotspots(input: {
       ? { label: 'Pending Offers', value: `${totalPendingOffers} offen`, action: '/hospital/offers', hint: 'Antwortlage und Blocker im Offer-Flow prüfen', priority: 3 }
       : null,
     importBlockedShifts.length > 0
-      ? { label: 'Shift Import Blockers', value: `${importBlockedShifts.length} betroffen`, action: '/hospital/shifts', hint: 'offene/pending/signed Lagen blockieren Re-Imports', priority: 4 }
+      ? { label: 'Shift Import Blockers', value: `${importBlockedShifts.length} betroffen`, action: firstBlockedShift ? `/hospital/shifts?focusShiftId=${encodeURIComponent(firstBlockedShift.id)}` : '/hospital/shifts', hint: 'offene/pending/signed Lagen blockieren Re-Imports', priority: 4 }
       : null,
     billing && billing.pendingInvoiceAmount > 0
       ? { label: 'Pending Fees', value: `${billing.pendingInvoiceAmount} €`, action: '/hospital/billing', hint: 'offene Gebühren und Rechnungsfälle operativ nachhalten', priority: 5 }
