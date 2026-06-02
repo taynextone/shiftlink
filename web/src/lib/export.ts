@@ -1,6 +1,28 @@
 import type { HospitalBillingExportRow } from './api';
 
-export function exportPayrollAsCsv(rows: Array<{ nurseDisplayName: string; nursePublicId: string; contractId: string; jobShiftTitle: string; jobShiftStartDate: string; jobShiftEndDate: string; agreedHours: number; hourlyRate: number; totalAmount: string; invoiceStatus: string; invoiceId: string }>, filename = 'payroll-export') {
+export type PayrollExportCsvRow = {
+  nurseDisplayName: string;
+  nursePublicId: string;
+  contractId: string;
+  jobShiftTitle: string;
+  jobShiftStartDate: string;
+  jobShiftEndDate: string;
+  agreedHours: number;
+  hourlyRate: number;
+  totalAmount: string;
+  invoiceStatus: string;
+  invoiceId: string;
+};
+
+function csvEscape(value: unknown): string {
+  const text = String(value ?? '');
+  if (!/[;"\n\r]/.test(text)) {
+    return text;
+  }
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+export function buildPayrollExportCsv(rows: PayrollExportCsvRow[]): string {
   const headers = [
     'Pflegekraft',
     'Public ID',
@@ -15,8 +37,8 @@ export function exportPayrollAsCsv(rows: Array<{ nurseDisplayName: string; nurse
     'Invoice ID',
   ];
 
-  const csvRows = [
-    headers.join(';'),
+  return [
+    headers.map(csvEscape).join(';'),
     ...rows.map((row) => [
       row.nurseDisplayName,
       row.nursePublicId,
@@ -29,10 +51,12 @@ export function exportPayrollAsCsv(rows: Array<{ nurseDisplayName: string; nurse
       row.totalAmount,
       row.invoiceStatus,
       row.invoiceId,
-    ].join(';')),
-  ];
+    ].map(csvEscape).join(';')),
+  ].join('\n');
+}
 
-  const csv = csvRows.join('\n');
+export function exportPayrollAsCsv(rows: PayrollExportCsvRow[], filename = 'payroll-export') {
+  const csv = buildPayrollExportCsv(rows);
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
