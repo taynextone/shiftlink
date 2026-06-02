@@ -31,7 +31,7 @@ describe('business metrics helper interventions', () => {
   it('routes pending invoices into billing operations', () => {
     expect(getInvoiceMetricInterventions(metrics({
       invoices: { total: 4, paid: 2, pending: 2, paymentRate: 50 },
-    }))).toEqual([{ label: 'Pending Invoices pruefen', to: '/hospital/billing' }]);
+    }))).toEqual([{ label: 'Pending Invoices pruefen', to: '/hospital/billing?status=PENDING' }]);
   });
 
   it('routes failed delivery metrics into the superadmin control plane', () => {

@@ -24,7 +24,7 @@ export function getContractMetricInterventions(metrics: BusinessMetrics): Metric
 
 export function getInvoiceMetricInterventions(metrics: BusinessMetrics): MetricInterventionLink[] {
   return metrics.invoices.pending > 0
-    ? [{ label: 'Pending Invoices pruefen', to: '/hospital/billing' }]
+    ? [{ label: 'Pending Invoices pruefen', to: '/hospital/billing?status=PENDING' }]
     : [];
 }
 

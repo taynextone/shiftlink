@@ -13,6 +13,7 @@ import { useAsyncData } from '../../hooks/useAsyncData';
 import { api, type HospitalBillingExportRow } from '../../lib/api';
 import { exportRowsAsCsv } from '../../lib/export';
 import { exportPayrollAsCsv } from '../../lib/export';
+import { parseBillingStatusFilter, type BillingStatusFilter } from './billing-helpers';
 
 function getBillingRowIntervention(row: HospitalBillingExportRow) {
   if (row.invoiceStatus === 'PENDING' && row.matchStatus === 'SIGNED') {
@@ -29,7 +30,8 @@ export function HospitalBillingPage() {
   const summary = data?.summary;
   const [searchParams] = useSearchParams();
   const focusInvoiceId = searchParams.get('invoiceId') ?? '';
-  const [statusFilter, setStatusFilter] = useState<'PENDING' | 'PAID' | ''>('');
+  const linkedStatusFilter = parseBillingStatusFilter(searchParams.get('status'));
+  const [statusFilter, setStatusFilter] = useState<BillingStatusFilter>(linkedStatusFilter);
   const [rows, setRows] = useState<HospitalBillingExportRow[]>([]);
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -56,11 +58,11 @@ export function HospitalBillingPage() {
     [rows],
   );
 
-  async function handleLoadExport() {
+  const handleLoadExport = useCallback(async (targetStatus: BillingStatusFilter = statusFilter) => {
     setSubmitting(true);
     setFeedback(null);
     try {
-      const response = await api.exportHospitalBilling({ status: statusFilter || undefined, format: 'json', limit: 50 });
+      const response = await api.exportHospitalBilling({ status: targetStatus || undefined, format: 'json', limit: 50 });
       setRows(response.rows);
       setFeedback({ tone: 'success', message: 'Billing export geladen.' });
     } catch (error) {
@@ -68,7 +70,7 @@ export function HospitalBillingPage() {
     } finally {
       setSubmitting(false);
     }
-  }
+  }, [statusFilter]);
 
   const handleSelectInvoice = useCallback(async (invoiceId: string) => {
     setSelectedInvoiceId(invoiceId);
@@ -110,6 +112,12 @@ export function HospitalBillingPage() {
     if (!focusInvoiceId) return;
     void handleSelectInvoice(focusInvoiceId);
   }, [focusInvoiceId, handleSelectInvoice]);
+
+  useEffect(() => {
+    if (!linkedStatusFilter) return;
+    setStatusFilter(linkedStatusFilter);
+    void handleLoadExport(linkedStatusFilter);
+  }, [handleLoadExport, linkedStatusFilter]);
 
   return (
     <section className="stack page-stack">
@@ -159,7 +167,7 @@ export function HospitalBillingPage() {
         />
         <div className="form-grid two">
           <Field label="Statusfilter">
-            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as 'PENDING' | 'PAID' | '')}>
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as BillingStatusFilter)}>
               <option value="">Alle</option>
               <option value="PENDING">PENDING</option>
               <option value="PAID">PAID</option>
