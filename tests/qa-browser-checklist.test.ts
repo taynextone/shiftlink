@@ -5,6 +5,7 @@ import {
   getBrowserQaChecklistForRoute,
   getOpenBrowserQaChecklistItems,
   renderBrowserQaChecklistMarkdown,
+  renderBrowserQaExecutionPlanMarkdown,
   renderBrowserQaRunReportMarkdown,
   summarizeBrowserQaChecklist,
   summarizeBrowserQaRun,
@@ -101,6 +102,19 @@ describe('phase 7 browser QA checklist builder', () => {
 
     expect(batchedItems).toHaveLength(checklist.length);
     expect(new Set(batchedItems.map((item) => item.id))).toEqual(new Set(checklist.map((item) => item.id)));
+  });
+
+  it('renders browser QA execution batches as a stable markdown plan', () => {
+    const markdown = renderBrowserQaExecutionPlanMarkdown();
+
+    expect(markdown).toContain('# Phase 7 Browser QA Execution Plan');
+    expect(markdown).toContain('Batches: 6');
+    expect(markdown).toContain('Items: 17');
+    expect(markdown).toContain('## hospital_admin:desktop');
+    expect(markdown).toContain('- Role: HOSPITAL_ADMIN');
+    expect(markdown).toContain('- Viewport: desktop');
+    expect(markdown).toContain('- Routes: /hospital, /hospital/contracts, /hospital/billing');
+    expect(markdown).toContain('- hospital-shift-to-billing-ops:hospital-billing:desktop: billing summary; invoice detail; HR/payroll handoff');
   });
 
   it('summarizes browser QA run status with pending work by default', () => {

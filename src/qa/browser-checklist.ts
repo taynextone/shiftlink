@@ -204,6 +204,37 @@ export function renderBrowserQaChecklistMarkdown(items = buildBrowserQaChecklist
   return lines.join('\n').trimEnd();
 }
 
+export function renderBrowserQaExecutionPlanMarkdown(items = buildBrowserQaChecklist()): string {
+  const batches = buildBrowserQaExecutionBatches(items);
+  const lines = [
+    '# Phase 7 Browser QA Execution Plan',
+    '',
+    `Batches: ${batches.length}`,
+    `Items: ${items.length}`,
+    '',
+  ];
+
+  for (const batch of batches) {
+    lines.push(
+      `## ${batch.id}`,
+      '',
+      `- Role: ${batch.ownerRole}`,
+      `- Viewport: ${batch.viewport}`,
+      `- Items: ${batch.items.length}`,
+      `- Routes: ${[...new Set(batch.items.map((item) => item.route))].join(', ')}`,
+      '',
+    );
+
+    for (const item of batch.items) {
+      lines.push(`- ${item.id}: ${item.criticalRegions.join('; ')}`);
+    }
+
+    lines.push('');
+  }
+
+  return lines.join('\n').trimEnd();
+}
+
 export function renderBrowserQaRunReportMarkdown(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): string {
   const summary = summarizeBrowserQaRun(items, results);
   const audit = auditBrowserQaRunResults(items, results);
