@@ -34,6 +34,10 @@ export type BrowserQaExecutionBatchSummary = {
   summary: BrowserQaRunSummary;
 };
 
+export type BrowserQaNextExecutionBatch = BrowserQaExecutionBatch & {
+  summary: BrowserQaRunSummary;
+};
+
 export type BrowserQaRunStatus = 'pending' | 'passed' | 'failed' | 'blocked';
 
 export type BrowserQaRunResult = {
@@ -162,6 +166,25 @@ export function summarizeBrowserQaExecutionBatches(
   }));
 }
 
+export function getNextBrowserQaExecutionBatch(
+  items = buildBrowserQaChecklist(),
+  results: BrowserQaRunResult[] = [],
+): BrowserQaNextExecutionBatch | null {
+  const batches = buildBrowserQaExecutionBatches(items);
+
+  for (const batch of batches) {
+    const summary = summarizeBrowserQaRun(batch.items, results);
+    if (!summary.complete || summary.needsAttention) {
+      return {
+        ...batch,
+        summary,
+      };
+    }
+  }
+
+  return null;
+}
+
 export function getOpenBrowserQaChecklistItems(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): BrowserQaChecklistItem[] {
   const resultByItemId = latestResultByItemId(results);
   return items.filter((item) => resultByItemId.get(item.id)?.status !== 'passed');
@@ -225,11 +248,13 @@ export function renderBrowserQaChecklistMarkdown(items = buildBrowserQaChecklist
 
 export function renderBrowserQaExecutionPlanMarkdown(items = buildBrowserQaChecklist()): string {
   const batches = buildBrowserQaExecutionBatches(items);
+  const nextBatch = getNextBrowserQaExecutionBatch(items);
   const lines = [
     '# Phase 7 Browser QA Execution Plan',
     '',
     `Batches: ${batches.length}`,
     `Items: ${items.length}`,
+    `Next batch: ${nextBatch?.id ?? 'none'}`,
     '',
   ];
 
@@ -257,6 +282,7 @@ export function renderBrowserQaExecutionPlanMarkdown(items = buildBrowserQaCheck
 export function renderBrowserQaRunReportMarkdown(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): string {
   const summary = summarizeBrowserQaRun(items, results);
   const batchSummaries = summarizeBrowserQaExecutionBatches(items, results);
+  const nextBatch = getNextBrowserQaExecutionBatch(items, results);
   const audit = auditBrowserQaRunResults(items, results);
   const resultByItemId = latestResultByItemId(results);
   const openItems = getOpenBrowserQaChecklistItems(items, results);
@@ -270,6 +296,7 @@ export function renderBrowserQaRunReportMarkdown(items = buildBrowserQaChecklist
     `Pending: ${summary.pending}`,
     `Complete: ${summary.complete ? 'yes' : 'no'}`,
     `Needs attention: ${summary.needsAttention ? 'yes' : 'no'}`,
+    `Next batch: ${nextBatch?.id ?? 'none'}`,
     '',
   ];
 

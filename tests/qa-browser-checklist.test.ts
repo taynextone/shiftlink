@@ -3,6 +3,7 @@ import {
   buildBrowserQaChecklist,
   buildBrowserQaExecutionBatches,
   getBrowserQaChecklistForRoute,
+  getNextBrowserQaExecutionBatch,
   getOpenBrowserQaChecklistItems,
   renderBrowserQaChecklistMarkdown,
   renderBrowserQaExecutionPlanMarkdown,
@@ -111,6 +112,7 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(markdown).toContain('# Phase 7 Browser QA Execution Plan');
     expect(markdown).toContain('Batches: 6');
     expect(markdown).toContain('Items: 17');
+    expect(markdown).toContain('Next batch: nurse:desktop');
     expect(markdown).toContain('## hospital_admin:desktop');
     expect(markdown).toContain('- Role: HOSPITAL_ADMIN');
     expect(markdown).toContain('- Viewport: desktop');
@@ -146,6 +148,44 @@ describe('phase 7 browser QA checklist builder', () => {
       complete: false,
       needsAttention: true,
     });
+  });
+
+  it('selects the next incomplete browser QA execution batch in stable order', () => {
+    const checklist = buildBrowserQaChecklist();
+    const batches = buildBrowserQaExecutionBatches(checklist);
+    const [nurseDesktop, nurseMobile] = batches;
+    const results = nurseDesktop.items.map((item) => ({ itemId: item.id, status: 'passed' as const }));
+
+    expect(getNextBrowserQaExecutionBatch(checklist, results)).toEqual(
+      expect.objectContaining({
+        id: 'nurse:mobile',
+        summary: expect.objectContaining({
+          pending: nurseMobile.items.length,
+          complete: false,
+          needsAttention: false,
+        }),
+      }),
+    );
+  });
+
+  it('keeps failed completed batches as the next browser QA attention target', () => {
+    const checklist = buildBrowserQaChecklist();
+    const [nurseDesktop] = buildBrowserQaExecutionBatches(checklist);
+    const failedResults = nurseDesktop.items.map((item, index) => ({
+      itemId: item.id,
+      status: index === 0 ? 'failed' as const : 'passed' as const,
+    }));
+
+    expect(getNextBrowserQaExecutionBatch(checklist, failedResults)).toEqual(
+      expect.objectContaining({
+        id: 'nurse:desktop',
+        summary: expect.objectContaining({
+          pending: 0,
+          complete: true,
+          needsAttention: true,
+        }),
+      }),
+    );
   });
 
   it('summarizes browser QA run status with pending work by default', () => {
@@ -239,6 +279,7 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(markdown).toContain('Failed: 1');
     expect(markdown).toContain('Blocked: 1');
     expect(markdown).toContain(`Pending: ${checklist.length - nurseDesktopItems.length - 2}`);
+    expect(markdown).toContain('Next batch: nurse:mobile');
     expect(markdown).toContain(`- nurse:desktop: ${nurseDesktopItems.length}/${nurseDesktopItems.length} passed, 0 failed, 0 blocked, 0 pending, attention no`);
     expect(markdown).toContain('- nurse:mobile: 0/3 passed, 1 failed, 1 blocked, 1 pending, attention yes');
     expect(markdown).toContain(`- Duplicate item ids: ${checklist[3].id}`);
