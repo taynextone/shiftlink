@@ -1,8 +1,10 @@
 import {
+  auditBrowserQaRunResults,
   buildBrowserQaChecklist,
   getBrowserQaChecklistForRoute,
   getOpenBrowserQaChecklistItems,
   renderBrowserQaChecklistMarkdown,
+  renderBrowserQaRunReportMarkdown,
   summarizeBrowserQaChecklist,
   summarizeBrowserQaRun,
 } from '../src/qa/browser-checklist';
@@ -120,5 +122,54 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(openItems).toContainEqual(checklist[1]);
     expect(openItems).toContainEqual(checklist[2]);
     expect(openItems).toContainEqual(checklist[3]);
+  });
+
+  it('audits duplicate and unknown browser QA result rows before report handoff', () => {
+    const checklist = buildBrowserQaChecklist();
+    const audit = auditBrowserQaRunResults(checklist, [
+      { itemId: checklist[0].id, status: 'failed', note: 'Old result before recheck' },
+      { itemId: checklist[0].id, status: 'passed', note: 'Latest result should win' },
+      { itemId: 'legacy-route:removed:desktop', status: 'blocked', note: 'Stale local artifact' },
+    ]);
+
+    expect(audit).toEqual({
+      duplicateItemIds: [checklist[0].id],
+      unknownItemIds: ['legacy-route:removed:desktop'],
+    });
+    expect(summarizeBrowserQaRun(checklist, [
+      { itemId: checklist[0].id, status: 'failed' },
+      { itemId: checklist[0].id, status: 'passed' },
+    ])).toEqual({
+      total: checklist.length,
+      pending: checklist.length - 1,
+      passed: 1,
+      failed: 0,
+      blocked: 0,
+      complete: false,
+      needsAttention: false,
+    });
+  });
+
+  it('renders a browser QA run report with open items and result data audit', () => {
+    const checklist = buildBrowserQaChecklist();
+    const markdown = renderBrowserQaRunReportMarkdown(checklist, [
+      { itemId: checklist[0].id, status: 'passed' },
+      { itemId: checklist[1].id, status: 'failed', note: 'Mobile metric cards overlap' },
+      { itemId: checklist[2].id, status: 'blocked', note: 'Screenshot node disconnected' },
+      { itemId: checklist[2].id, status: 'blocked', note: 'Screenshot node disconnected' },
+      { itemId: 'legacy-route:removed:mobile', status: 'failed' },
+    ]);
+
+    expect(markdown).toContain('# Phase 7 Browser QA Run Report');
+    expect(markdown).toContain(`Total: ${checklist.length}`);
+    expect(markdown).toContain('Passed: 1');
+    expect(markdown).toContain('Failed: 1');
+    expect(markdown).toContain('Blocked: 1');
+    expect(markdown).toContain(`Pending: ${checklist.length - 3}`);
+    expect(markdown).toContain(`- Duplicate item ids: ${checklist[2].id}`);
+    expect(markdown).toContain('- Unknown item ids: legacy-route:removed:mobile');
+    expect(markdown).toContain(`[failed] ${checklist[1].id}`);
+    expect(markdown).toContain('Mobile metric cards overlap');
+    expect(markdown).not.toContain(`[passed] ${checklist[0].id}`);
   });
 });

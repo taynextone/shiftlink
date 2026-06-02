@@ -39,9 +39,26 @@ export type BrowserQaRunSummary = {
   needsAttention: boolean;
 };
 
+export type BrowserQaRunAudit = {
+  unknownItemIds: string[];
+  duplicateItemIds: string[];
+};
+
 function buildChecklistId(scenarioId: string, checkpoint: QaVisualCheckpoint, viewport: QaViewport): string {
   const routeSlug = checkpoint.route.replace(/^\//, '').replace(/\//g, '-') || 'home';
   return `${scenarioId}:${routeSlug}:${viewport}`;
+}
+
+function latestResultByItemId(results: BrowserQaRunResult[]): Map<string, BrowserQaRunResult> {
+  return new Map(results.map((result) => [result.itemId, result]));
+}
+
+function formatOptionalNote(result?: BrowserQaRunResult): string {
+  if (!result?.note) {
+    return '';
+  }
+
+  return ` - ${result.note}`;
 }
 
 export function buildBrowserQaChecklist(scenarios = browserRegressionScenarios): BrowserQaChecklistItem[] {
@@ -77,7 +94,7 @@ export function summarizeBrowserQaChecklist(items = buildBrowserQaChecklist()): 
 }
 
 export function summarizeBrowserQaRun(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): BrowserQaRunSummary {
-  const resultByItemId = new Map(results.map((result) => [result.itemId, result]));
+  const resultByItemId = latestResultByItemId(results);
   const counts = items.reduce(
     (summary, item) => {
       const status = resultByItemId.get(item.id)?.status ?? 'pending';
@@ -99,8 +116,33 @@ export function summarizeBrowserQaRun(items = buildBrowserQaChecklist(), results
 }
 
 export function getOpenBrowserQaChecklistItems(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): BrowserQaChecklistItem[] {
-  const resultByItemId = new Map(results.map((result) => [result.itemId, result]));
+  const resultByItemId = latestResultByItemId(results);
   return items.filter((item) => resultByItemId.get(item.id)?.status !== 'passed');
+}
+
+export function auditBrowserQaRunResults(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): BrowserQaRunAudit {
+  const knownItemIds = new Set(items.map((item) => item.id));
+  const seenItemIds = new Set<string>();
+  const duplicateItemIds = new Set<string>();
+  const unknownItemIds = new Set<string>();
+
+  for (const result of results) {
+    if (!knownItemIds.has(result.itemId)) {
+      unknownItemIds.add(result.itemId);
+      continue;
+    }
+
+    if (seenItemIds.has(result.itemId)) {
+      duplicateItemIds.add(result.itemId);
+    }
+
+    seenItemIds.add(result.itemId);
+  }
+
+  return {
+    unknownItemIds: [...unknownItemIds].sort(),
+    duplicateItemIds: [...duplicateItemIds].sort(),
+  };
 }
 
 export function renderBrowserQaChecklistMarkdown(items = buildBrowserQaChecklist()): string {
@@ -128,6 +170,52 @@ export function renderBrowserQaChecklistMarkdown(items = buildBrowserQaChecklist
       `- Expected signals: ${item.expectedSignals.join('; ')}`,
       `- Browser assertions: ${item.browserAssertions.join('; ')}`,
       '',
+    );
+  }
+
+  return lines.join('\n').trimEnd();
+}
+
+export function renderBrowserQaRunReportMarkdown(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): string {
+  const summary = summarizeBrowserQaRun(items, results);
+  const audit = auditBrowserQaRunResults(items, results);
+  const resultByItemId = latestResultByItemId(results);
+  const openItems = getOpenBrowserQaChecklistItems(items, results);
+  const lines = [
+    '# Phase 7 Browser QA Run Report',
+    '',
+    `Total: ${summary.total}`,
+    `Passed: ${summary.passed}`,
+    `Failed: ${summary.failed}`,
+    `Blocked: ${summary.blocked}`,
+    `Pending: ${summary.pending}`,
+    `Complete: ${summary.complete ? 'yes' : 'no'}`,
+    `Needs attention: ${summary.needsAttention ? 'yes' : 'no'}`,
+    '',
+  ];
+
+  if (audit.duplicateItemIds.length > 0 || audit.unknownItemIds.length > 0) {
+    lines.push(
+      '## Result data audit',
+      '',
+      `- Duplicate item ids: ${audit.duplicateItemIds.length > 0 ? audit.duplicateItemIds.join(', ') : 'none'}`,
+      `- Unknown item ids: ${audit.unknownItemIds.length > 0 ? audit.unknownItemIds.join(', ') : 'none'}`,
+      '',
+    );
+  }
+
+  if (openItems.length === 0) {
+    lines.push('## Open items', '', 'None.');
+    return lines.join('\n').trimEnd();
+  }
+
+  lines.push('## Open items', '');
+
+  for (const item of openItems) {
+    const result = resultByItemId.get(item.id);
+    const status = result?.status ?? 'pending';
+    lines.push(
+      `- [${status}] ${item.id} (${item.ownerRole}, ${item.route}, ${item.viewport})${formatOptionalNote(result)}`,
     );
   }
 
