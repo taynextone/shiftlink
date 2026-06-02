@@ -10,6 +10,7 @@ import {
   renderBrowserQaChecklistMarkdown,
   renderBrowserQaExecutionPlanMarkdown,
   renderBrowserQaRunReportMarkdown,
+  renderNextBrowserQaExecutionBatchMarkdown,
   summarizeBrowserQaChecklist,
   summarizeBrowserQaExecutionBatches,
   summarizeBrowserQaRun,
@@ -188,6 +189,36 @@ describe('phase 7 browser QA checklist builder', () => {
         }),
       }),
     );
+  });
+
+  it('renders the next browser QA execution batch for focused screenshot handoff', () => {
+    const checklist = buildBrowserQaChecklist();
+    const [nurseDesktop] = buildBrowserQaExecutionBatches(checklist);
+    const markdown = renderNextBrowserQaExecutionBatchMarkdown(
+      checklist,
+      nurseDesktop.items.map((item) => ({ itemId: item.id, status: 'passed' as const })),
+    );
+
+    expect(markdown).toContain('# Phase 7 Browser QA Next Batch');
+    expect(markdown).toContain('Batch: nurse:mobile');
+    expect(markdown).toContain('Role: NURSE');
+    expect(markdown).toContain('Viewport: mobile');
+    expect(markdown).toContain('Items: 3');
+    expect(markdown).toContain('Pending: 3');
+    expect(markdown).toContain('## nurse-activation-to-offer:nurse:mobile');
+    expect(markdown).toContain('- Critical regions: activation progress; recent contracts; upcoming availability');
+    expect(markdown).not.toContain('## nurse-activation-to-offer:nurse:desktop');
+  });
+
+  it('renders no next browser QA batch once every item passed', () => {
+    const checklist = buildBrowserQaChecklist();
+    const markdown = renderNextBrowserQaExecutionBatchMarkdown(
+      checklist,
+      checklist.map((item) => ({ itemId: item.id, status: 'passed' as const })),
+    );
+
+    expect(markdown).toContain('Next batch: none');
+    expect(markdown).toContain('All browser QA batches are complete without attention flags.');
   });
 
   it('summarizes browser QA run status with pending work by default', () => {

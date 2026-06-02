@@ -13,6 +13,8 @@
     "test": "jest --runInBand",
     "qa:browser-checklist": "npm run build && node scripts/browser-qa.js checklist",
     "qa:browser-plan": "npm run build && node scripts/browser-qa.js plan",
+    "qa:browser-next": "npm run build && node scripts/browser-qa.js next-batch",
+    "qa:browser-next-json": "npm run build && node scripts/browser-qa.js next-batch-json",
     "qa:browser-report": "npm run build && node scripts/browser-qa.js report",
     "qa:browser-report-json": "npm run build && node scripts/browser-qa.js report-json",
     "prisma:generate": "prisma generate --config prisma.config.ts",

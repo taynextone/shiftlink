@@ -367,6 +367,53 @@ export function renderBrowserQaExecutionPlanMarkdown(items = buildBrowserQaCheck
   return lines.join('\n').trimEnd();
 }
 
+export function renderNextBrowserQaExecutionBatchMarkdown(
+  items = buildBrowserQaChecklist(),
+  results: BrowserQaRunResult[] = [],
+): string {
+  const nextBatch = getNextBrowserQaExecutionBatch(items, results);
+
+  if (!nextBatch) {
+    return [
+      '# Phase 7 Browser QA Next Batch',
+      '',
+      'Next batch: none',
+      'All browser QA batches are complete without attention flags.',
+    ].join('\n');
+  }
+
+  const lines = [
+    '# Phase 7 Browser QA Next Batch',
+    '',
+    `Batch: ${nextBatch.id}`,
+    `Role: ${nextBatch.ownerRole}`,
+    `Viewport: ${nextBatch.viewport}`,
+    `Items: ${nextBatch.items.length}`,
+    `Passed: ${nextBatch.summary.passed}`,
+    `Failed: ${nextBatch.summary.failed}`,
+    `Blocked: ${nextBatch.summary.blocked}`,
+    `Pending: ${nextBatch.summary.pending}`,
+    `Needs attention: ${nextBatch.summary.needsAttention ? 'yes' : 'no'}`,
+    '',
+  ];
+
+  for (const item of nextBatch.items) {
+    lines.push(
+      `## ${item.id}`,
+      '',
+      `- Route: ${item.route}`,
+      `- Scenario: ${item.title}`,
+      `- Seeded records: ${item.seededRecords.join('; ')}`,
+      `- Critical regions: ${item.criticalRegions.join('; ')}`,
+      `- Expected signals: ${item.expectedSignals.join('; ')}`,
+      `- Browser assertions: ${item.browserAssertions.join('; ')}`,
+      '',
+    );
+  }
+
+  return lines.join('\n').trimEnd();
+}
+
 export function renderBrowserQaRunReportMarkdown(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): string {
   const report = buildBrowserQaRunReport(items, results);
   const lines = [
