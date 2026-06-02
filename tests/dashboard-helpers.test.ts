@@ -1,4 +1,4 @@
-import { buildInterventionHotspots, getImportBlockedShifts, getPendingOfferShifts, rankAsyncFailures } from '../web/src/features/hospital/dashboard-helpers';
+import { buildInterventionHotspots, getAsyncFailureActionLabel, getAsyncFailureDestination, getImportBlockedShifts, getPendingOfferShifts, rankAsyncFailures } from '../web/src/features/hospital/dashboard-helpers';
 
 describe('dashboard ops helpers', () => {
   it('deep-links shift import blockers to the first blocked shift', () => {
@@ -56,5 +56,26 @@ describe('dashboard ops helpers', () => {
     ] as any;
 
     expect(rankAsyncFailures(failures).map((failure) => failure.id)).toEqual(['billing_1', 'webhook_1', 'whatsapp_1']);
+  });
+
+  it('routes billing worker failures with contract context to the affected contract', () => {
+    const failure = { queueName: 'billing', relatedEntityId: 'contract_1' } as any;
+
+    expect(getAsyncFailureDestination(failure, 'superadmin')).toBe('/hospital/contracts?contractId=contract_1');
+    expect(getAsyncFailureActionLabel(failure)).toBe('Zum betroffenen Contract');
+  });
+
+  it('keeps billing worker failures without entity context in billing ops', () => {
+    const failure = { queueName: 'billing', relatedEntityId: null } as any;
+
+    expect(getAsyncFailureDestination(failure, 'superadmin')).toBe('/hospital/billing');
+    expect(getAsyncFailureActionLabel(failure)).toBe('Zu Billing-Intervention');
+  });
+
+  it('keeps webhook failures in the superadmin control plane', () => {
+    const failure = { queueName: 'webhook', relatedEntityId: 'event_1' } as any;
+
+    expect(getAsyncFailureDestination(failure, 'superadmin')).toBe('/admin/ops');
+    expect(getAsyncFailureActionLabel(failure)).toBe('Zu Webhook-Ops');
   });
 });

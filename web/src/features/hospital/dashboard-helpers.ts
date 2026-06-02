@@ -77,6 +77,38 @@ export function rankAsyncFailures(asyncFailures: AsyncProcessFailureRow[]) {
   });
 }
 
+export function getAsyncFailureDestination(failure: AsyncProcessFailureRow, mode: 'hospital' | 'superadmin') {
+  if (failure.queueName === 'billing') {
+    return failure.relatedEntityId ? `/hospital/contracts?contractId=${encodeURIComponent(failure.relatedEntityId)}` : '/hospital/billing';
+  }
+
+  if (failure.queueName === 'webhook') {
+    return mode === 'superadmin' ? '/admin/ops' : '/hospital';
+  }
+
+  if (failure.queueName === 'whatsapp') {
+    return failure.relatedEntityId ? `/hospital/contracts?contractId=${encodeURIComponent(failure.relatedEntityId)}` : '/hospital/contracts';
+  }
+
+  return mode === 'superadmin' ? '/admin/ops' : '/hospital';
+}
+
+export function getAsyncFailureActionLabel(failure: AsyncProcessFailureRow) {
+  if (failure.queueName === 'billing') {
+    return failure.relatedEntityId ? 'Zum betroffenen Contract' : 'Zu Billing-Intervention';
+  }
+
+  if (failure.queueName === 'webhook') {
+    return 'Zu Webhook-Ops';
+  }
+
+  if (failure.queueName === 'whatsapp') {
+    return failure.relatedEntityId ? 'Zum betroffenen Contract' : 'Zu Contract-Kommunikation';
+  }
+
+  return 'Zu Ops-Übersicht';
+}
+
 export function buildInterventionHotspots(input: {
   isSuperAdmin: boolean;
   failedWebhookEvents: HospitalWebhookEventRow[];

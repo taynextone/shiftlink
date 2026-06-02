@@ -9,7 +9,7 @@ import { SectionCard } from '../../components/SectionCard';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { useAuth } from '../../state/AuthContext';
 import { api } from '../../lib/api';
-import { buildInterventionHotspots, describeAsyncFailure, describeWebhookStatus, getCriticalAsyncFailures, getFailedWebhookEvents, getImportBlockedShifts, getPendingOfferShifts, rankAsyncFailures } from './dashboard-helpers';
+import { buildInterventionHotspots, describeAsyncFailure, describeWebhookStatus, getAsyncFailureActionLabel, getAsyncFailureDestination, getCriticalAsyncFailures, getFailedWebhookEvents, getImportBlockedShifts, getPendingOfferShifts, rankAsyncFailures } from './dashboard-helpers';
 import { NotificationCenter } from './NotificationCenter';
 import { WebhookAdminPanel } from './WebhookAdminPanel';
 import { DossierOverview } from './DossierOverview';
@@ -264,28 +264,8 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
           <div className="record-list compact-list">
             {visibleAsyncFailures.slice(0, 5).map((failure) => {
               const status = describeAsyncFailure(failure);
-              const destination = failure.queueName === 'billing'
-                ? '/hospital/billing'
-                : failure.queueName === 'webhook'
-                  ? mode === 'superadmin'
-                    ? '/admin/ops'
-                    : '/hospital'
-                  : failure.queueName === 'whatsapp'
-                    ? failure.relatedEntityId
-                      ? `/hospital/contracts?contractId=${encodeURIComponent(failure.relatedEntityId)}`
-                      : '/hospital/contracts'
-                    : mode === 'superadmin'
-                      ? '/admin/ops'
-                      : '/hospital';
-              const nextActionLabel = failure.queueName === 'billing'
-                ? 'Zu Billing-Intervention'
-                : failure.queueName === 'webhook'
-                  ? 'Zu Webhook-Ops'
-                  : failure.queueName === 'whatsapp'
-                    ? failure.relatedEntityId
-                      ? 'Zum betroffenen Contract'
-                      : 'Zu Contract-Kommunikation'
-                    : 'Zu Ops-Übersicht';
+              const destination = getAsyncFailureDestination(failure, mode);
+              const nextActionLabel = getAsyncFailureActionLabel(failure);
               const canResolve = mode === 'superadmin';
               const canRetryWebhookFailure = mode === 'superadmin' && failure.queueName === 'webhook' && Boolean(failure.relatedEntityId);
               const canRetryWhatsappFailure = mode === 'superadmin' && failure.queueName === 'whatsapp' && Boolean(failure.relatedEntityId);
