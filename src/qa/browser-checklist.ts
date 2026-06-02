@@ -27,6 +27,13 @@ export type BrowserQaExecutionBatch = {
   items: BrowserQaChecklistItem[];
 };
 
+export type BrowserQaExecutionBatchSummary = {
+  id: string;
+  ownerRole: QaRegressionScenario['ownerRole'];
+  viewport: QaViewport;
+  summary: BrowserQaRunSummary;
+};
+
 export type BrowserQaRunStatus = 'pending' | 'passed' | 'failed' | 'blocked';
 
 export type BrowserQaRunResult = {
@@ -141,6 +148,18 @@ export function summarizeBrowserQaRun(items = buildBrowserQaChecklist(), results
     complete: counts.pending === 0,
     needsAttention: counts.failed > 0 || counts.blocked > 0,
   };
+}
+
+export function summarizeBrowserQaExecutionBatches(
+  items = buildBrowserQaChecklist(),
+  results: BrowserQaRunResult[] = [],
+): BrowserQaExecutionBatchSummary[] {
+  return buildBrowserQaExecutionBatches(items).map((batch) => ({
+    id: batch.id,
+    ownerRole: batch.ownerRole,
+    viewport: batch.viewport,
+    summary: summarizeBrowserQaRun(batch.items, results),
+  }));
 }
 
 export function getOpenBrowserQaChecklistItems(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): BrowserQaChecklistItem[] {

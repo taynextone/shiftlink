@@ -8,6 +8,7 @@ import {
   renderBrowserQaExecutionPlanMarkdown,
   renderBrowserQaRunReportMarkdown,
   summarizeBrowserQaChecklist,
+  summarizeBrowserQaExecutionBatches,
   summarizeBrowserQaRun,
 } from '../src/qa/browser-checklist';
 import { browserRegressionScenarios } from '../src/qa/regression-scenarios';
@@ -115,6 +116,36 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(markdown).toContain('- Viewport: desktop');
     expect(markdown).toContain('- Routes: /hospital, /hospital/contracts, /hospital/billing');
     expect(markdown).toContain('- hospital-shift-to-billing-ops:hospital-billing:desktop: billing summary; invoice detail; HR/payroll handoff');
+  });
+
+  it('summarizes browser QA execution status per role and viewport batch', () => {
+    const checklist = buildBrowserQaChecklist();
+    const batches = buildBrowserQaExecutionBatches(checklist);
+    const [nurseDesktop] = batches;
+    const hospitalMobile = batches.find((batch) => batch.id === 'hospital_admin:mobile')!;
+    const summaries = summarizeBrowserQaExecutionBatches(checklist, [
+      ...nurseDesktop.items.map((item) => ({ itemId: item.id, status: 'passed' as const })),
+      { itemId: hospitalMobile.items[0].id, status: 'failed' as const, note: 'Dashboard hotspot overflow' },
+    ]);
+
+    expect(summaries.find((summary) => summary.id === 'nurse:desktop')?.summary).toEqual({
+      total: nurseDesktop.items.length,
+      pending: 0,
+      passed: nurseDesktop.items.length,
+      failed: 0,
+      blocked: 0,
+      complete: true,
+      needsAttention: false,
+    });
+    expect(summaries.find((summary) => summary.id === 'hospital_admin:mobile')?.summary).toEqual({
+      total: hospitalMobile.items.length,
+      pending: hospitalMobile.items.length - 1,
+      passed: 0,
+      failed: 1,
+      blocked: 0,
+      complete: false,
+      needsAttention: true,
+    });
   });
 
   it('summarizes browser QA run status with pending work by default', () => {
