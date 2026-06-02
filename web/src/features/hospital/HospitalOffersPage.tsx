@@ -207,6 +207,13 @@ export function HospitalOffersPage() {
       return;
     }
     setJobShiftId(initialJobShiftId);
+    setSubmitting(true);
+    setStatus(null);
+    void loadOffers(initialJobShiftId)
+      .catch((err) => {
+        setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Offers konnten nicht geladen werden' });
+      })
+      .finally(() => setSubmitting(false));
   }, [initialJobShiftId]);
 
   useEffect(() => {
