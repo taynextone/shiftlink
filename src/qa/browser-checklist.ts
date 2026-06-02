@@ -75,6 +75,8 @@ export type BrowserQaRunReport = {
   openItems: BrowserQaOpenItem[];
 };
 
+const browserQaResultStatuses = new Set<BrowserQaRunResult['status']>(['passed', 'failed', 'blocked']);
+
 function buildChecklistId(scenarioId: string, checkpoint: QaVisualCheckpoint, viewport: QaViewport): string {
   const routeSlug = checkpoint.route.replace(/^\//, '').replace(/\//g, '-') || 'home';
   return `${scenarioId}:${routeSlug}:${viewport}`;
@@ -226,6 +228,59 @@ export function auditBrowserQaRunResults(items = buildBrowserQaChecklist(), resu
     unknownItemIds: [...unknownItemIds].sort(),
     duplicateItemIds: [...duplicateItemIds].sort(),
   };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function parseBrowserQaRunResult(value: unknown, index: number): BrowserQaRunResult {
+  if (!isRecord(value)) {
+    throw new Error(`Browser QA result at index ${index} must be an object.`);
+  }
+
+  if (typeof value.itemId !== 'string' || value.itemId.length === 0) {
+    throw new Error(`Browser QA result at index ${index} must include a non-empty itemId.`);
+  }
+
+  if (typeof value.status !== 'string' || !browserQaResultStatuses.has(value.status as BrowserQaRunResult['status'])) {
+    throw new Error(`Browser QA result at index ${index} must use status passed, failed, or blocked.`);
+  }
+
+  const result: BrowserQaRunResult = {
+    itemId: value.itemId,
+    status: value.status as BrowserQaRunResult['status'],
+  };
+
+  if (value.note !== undefined) {
+    if (typeof value.note !== 'string') {
+      throw new Error(`Browser QA result at index ${index} note must be a string when provided.`);
+    }
+    result.note = value.note;
+  }
+
+  if (value.checkedAt !== undefined) {
+    if (typeof value.checkedAt !== 'string') {
+      throw new Error(`Browser QA result at index ${index} checkedAt must be a string when provided.`);
+    }
+    result.checkedAt = value.checkedAt;
+  }
+
+  return result;
+}
+
+export function parseBrowserQaRunResults(value: unknown): BrowserQaRunResult[] {
+  const rawResults = Array.isArray(value)
+    ? value
+    : isRecord(value) && Array.isArray(value.results)
+      ? value.results
+      : null;
+
+  if (!rawResults) {
+    throw new Error('Browser QA results JSON must be an array or an object with a results array.');
+  }
+
+  return rawResults.map(parseBrowserQaRunResult);
 }
 
 export function buildBrowserQaRunReport(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): BrowserQaRunReport {

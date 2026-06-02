@@ -154,6 +154,7 @@ Progress while visual QA is blocked:
 - [done] Browser QA batch summaries show completion and attention status per role / viewport run.
 - [done] Browser QA checklist, plan, and report renderers are exposed through npm scripts for direct Markdown output.
 - [done] Browser QA run reports can be exported as structured JSON for automation handoff.
+- [done] Browser QA report CLI can parse result artifact JSON for resumable report generation.
 - [done] Browser QA run reports include batch summaries so completed and attention-needed role / viewport runs are visible at report level.
 - [done] Browser QA run tooling selects the next incomplete or attention-needed role / viewport batch for resumable screenshot execution.
 
@@ -249,7 +250,7 @@ Checklist:
 - Form/validation hardening: Complete
 - Navigation cohesion: Complete
 - GAP_ANALYSIS: Complete
-- Test coverage: 150 tests green
+- Test coverage: 152 tests green
 - Remaining: Visual QA (blocked on OpenClaw), server deployment (pending Jurica)
 
 ## Open from GAP_ANALYSIS.md

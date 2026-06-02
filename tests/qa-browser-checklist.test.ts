@@ -6,6 +6,7 @@ import {
   getBrowserQaChecklistForRoute,
   getNextBrowserQaExecutionBatch,
   getOpenBrowserQaChecklistItems,
+  parseBrowserQaRunResults,
   renderBrowserQaChecklistMarkdown,
   renderBrowserQaExecutionPlanMarkdown,
   renderBrowserQaRunReportMarkdown,
@@ -326,5 +327,29 @@ describe('phase 7 browser QA checklist builder', () => {
       ]),
     );
     expect(report.openItems.some((item) => item.id === nurseDesktop.items[0].id)).toBe(false);
+  });
+
+  it('parses browser QA result artifacts from arrays or wrapped result payloads', () => {
+    const checklist = buildBrowserQaChecklist();
+
+    expect(parseBrowserQaRunResults([
+      { itemId: checklist[0].id, status: 'passed', checkedAt: '2026-06-02T17:00:00.000Z' },
+    ])).toEqual([
+      { itemId: checklist[0].id, status: 'passed', checkedAt: '2026-06-02T17:00:00.000Z' },
+    ]);
+    expect(parseBrowserQaRunResults({
+      results: [
+        { itemId: checklist[1].id, status: 'blocked', note: 'Canvas node unavailable' },
+      ],
+    })).toEqual([
+      { itemId: checklist[1].id, status: 'blocked', note: 'Canvas node unavailable' },
+    ]);
+  });
+
+  it('rejects malformed browser QA result artifacts before report generation', () => {
+    expect(() => parseBrowserQaRunResults({ items: [] })).toThrow('results array');
+    expect(() => parseBrowserQaRunResults([{ itemId: 'x', status: 'pending' }])).toThrow('passed, failed, or blocked');
+    expect(() => parseBrowserQaRunResults([{ itemId: '', status: 'passed' }])).toThrow('non-empty itemId');
+    expect(() => parseBrowserQaRunResults([{ itemId: 'x', status: 'blocked', note: 42 }])).toThrow('note must be a string');
   });
 });
