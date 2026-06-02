@@ -59,6 +59,64 @@ describe('dashboard ops helpers', () => {
     ]);
   });
 
+  it('deep-links superadmin webhook hotspots to the webhook failure queue', () => {
+    const hotspots = buildInterventionHotspots({
+      isSuperAdmin: true,
+      failedWebhookEvents: [{ id: 'event_1', status: 'FAILED_OR_PENDING_RETRY' }],
+      criticalAsyncFailures: [],
+      totalPendingOffers: 0,
+      pendingOfferShifts: [],
+      importBlockedShifts: [],
+    } as any);
+
+    expect(hotspots).toEqual([
+      expect.objectContaining({
+        label: 'Webhook Delivery',
+        action: '/admin/ops?failureQueue=webhook',
+      }),
+    ]);
+  });
+
+  it('deep-links critical async hotspots to the highest-priority queue', () => {
+    const hotspots = buildInterventionHotspots({
+      isSuperAdmin: true,
+      failedWebhookEvents: [],
+      criticalAsyncFailures: [
+        { id: 'webhook_1', queueName: 'webhook', createdAt: '2026-06-02T09:00:00.000Z' },
+        { id: 'billing_1', queueName: 'billing', createdAt: '2026-06-02T08:00:00.000Z' },
+      ],
+      totalPendingOffers: 0,
+      pendingOfferShifts: [],
+      importBlockedShifts: [],
+    } as any);
+
+    expect(hotspots).toEqual([
+      expect.objectContaining({
+        label: 'Async Worker Failures',
+        action: '/admin/ops?failureQueue=billing',
+      }),
+    ]);
+  });
+
+  it('deep-links pending fee hotspots to the pending billing export', () => {
+    const hotspots = buildInterventionHotspots({
+      isSuperAdmin: true,
+      failedWebhookEvents: [],
+      criticalAsyncFailures: [],
+      totalPendingOffers: 0,
+      pendingOfferShifts: [],
+      importBlockedShifts: [],
+      billing: { pendingInvoiceAmount: 125 },
+    } as any);
+
+    expect(hotspots).toEqual([
+      expect.objectContaining({
+        label: 'Pending Fees',
+        action: '/hospital/billing?status=PENDING',
+      }),
+    ]);
+  });
+
   it('keeps critical async failures ahead of lower-severity queue failures', () => {
     const failures = [
       { id: 'whatsapp_1', queueName: 'whatsapp', createdAt: '2026-06-02T10:00:00.000Z' },

@@ -6,6 +6,10 @@ export function parseFailureQueueFilter(value: string | null): FailureQueueFilte
   return value === 'billing' || value === 'webhook' || value === 'whatsapp' ? value : 'ALL';
 }
 
+function getSuperadminFailureBoardPath(queue: FailureQueueFilter) {
+  return queue === 'ALL' ? '/admin/ops' : `/admin/ops?failureQueue=${queue}`;
+}
+
 export function describeWebhookStatus(event: HospitalWebhookEventRow) {
   if (event.status === 'FAILED_OR_PENDING_RETRY') {
     return {
@@ -127,13 +131,15 @@ export function buildInterventionHotspots(input: {
   const { isSuperAdmin, failedWebhookEvents, criticalAsyncFailures, totalPendingOffers, pendingOfferShifts, importBlockedShifts, billing } = input;
   const firstPendingOfferShift = pendingOfferShifts[0];
   const firstBlockedShift = importBlockedShifts[0];
+  const firstCriticalAsyncFailure = rankAsyncFailures(criticalAsyncFailures)[0];
+  const criticalFailureQueue = parseFailureQueueFilter(firstCriticalAsyncFailure?.queueName ?? null);
 
   const hotspots = [
     failedWebhookEvents.length > 0
-      ? { label: 'Webhook Delivery', value: `${failedWebhookEvents.length} Probleme`, action: isSuperAdmin ? '/admin/ops' : '/hospital', hint: 'fehlgeschlagene oder hängende Webhook-Zustellungen im Processing-Bereich prüfen', priority: 2 }
+      ? { label: 'Webhook Delivery', value: `${failedWebhookEvents.length} Probleme`, action: isSuperAdmin ? getSuperadminFailureBoardPath('webhook') : '/hospital', hint: 'fehlgeschlagene oder hängende Webhook-Zustellungen im Processing-Bereich prüfen', priority: 2 }
       : null,
     criticalAsyncFailures.length > 0
-      ? { label: 'Async Worker Failures', value: `${criticalAsyncFailures.length} kritisch`, action: isSuperAdmin ? '/admin/ops' : '/hospital', hint: isSuperAdmin ? 'kritische Worker-Fehler aus der Superadmin-Control-Plane priorisieren' : 'kritische Worker-Fehler erfordern Superadmin-Einbezug', priority: 1 }
+      ? { label: 'Async Worker Failures', value: `${criticalAsyncFailures.length} kritisch`, action: isSuperAdmin ? getSuperadminFailureBoardPath(criticalFailureQueue) : '/hospital', hint: isSuperAdmin ? 'kritische Worker-Fehler aus der Superadmin-Control-Plane priorisieren' : 'kritische Worker-Fehler erfordern Superadmin-Einbezug', priority: 1 }
       : null,
     totalPendingOffers > 0
       ? { label: 'Pending Offers', value: `${totalPendingOffers} offen`, action: firstPendingOfferShift ? `/hospital/offers?jobShiftId=${encodeURIComponent(firstPendingOfferShift.id)}` : '/hospital/offers', hint: 'Antwortlage und Blocker im Offer-Flow prüfen', priority: 3 }
@@ -142,7 +148,7 @@ export function buildInterventionHotspots(input: {
       ? { label: 'Shift Import Blockers', value: `${importBlockedShifts.length} betroffen`, action: firstBlockedShift ? `/hospital/shifts?focusShiftId=${encodeURIComponent(firstBlockedShift.id)}` : '/hospital/shifts', hint: 'offene/pending/signed Lagen blockieren Re-Imports', priority: 4 }
       : null,
     billing && billing.pendingInvoiceAmount > 0
-      ? { label: 'Pending Fees', value: `${billing.pendingInvoiceAmount} €`, action: '/hospital/billing', hint: 'offene Gebühren und Rechnungsfälle operativ nachhalten', priority: 5 }
+      ? { label: 'Pending Fees', value: `${billing.pendingInvoiceAmount} €`, action: '/hospital/billing?status=PENDING', hint: 'offene Gebühren und Rechnungsfälle operativ nachhalten', priority: 5 }
       : null,
   ].filter((item): item is { label: string; value: string; action: string; hint: string; priority: number } => Boolean(item));
 
