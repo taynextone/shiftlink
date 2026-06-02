@@ -5,6 +5,7 @@ import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { MetricList } from '../../components/MetricList';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { api } from '../../lib/api';
+import { buildAuditLogCsv } from './audit-log-export';
 
 export function AuditLogViewer() {
   const [actionFilter, setActionFilter] = useState<string>('');
@@ -28,10 +29,7 @@ export function AuditLogViewer() {
   }, [logs, total]);
 
   const handleExport = useCallback(() => {
-    const csv = [
-      'ID,Action,ActorUserId,ActorRole,TargetEntityType,TargetEntityId,CreatedAt',
-      ...logs.map((l) => `${l.id},${l.action},${l.actorUserId},${l.actorRole},${l.targetEntityType ?? ''},${l.targetEntityId ?? ''},${l.createdAt}`),
-    ].join('\n');
+    const csv = buildAuditLogCsv(logs);
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
