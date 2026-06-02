@@ -8,6 +8,7 @@ import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
 import { StatusBadge } from '../../components/StatusBadge';
 import { api, type HospitalNurseDossier } from '../../lib/api';
+import { DossierOverview } from './DossierOverview';
 
 export function HospitalDossierPage() {
   const [searchParams] = useSearchParams();
@@ -28,6 +29,7 @@ export function HospitalDossierPage() {
     if (!initialNurseProfileId) {
       return;
     }
+    setNurseProfileId(initialNurseProfileId);
     setSubmitting(true);
     setFeedback(null);
     void loadDossier(initialNurseProfileId)
@@ -72,6 +74,7 @@ export function HospitalDossierPage() {
         </ActionBar>
       </form>
       {feedback ? <FeedbackMessage tone={feedback.tone} message={feedback.message} /> : null}
+      {!dossier ? <DossierOverview /> : null}
       {dossier ? (
         <div className="content-grid two-columns-equal">
           <SectionCard
