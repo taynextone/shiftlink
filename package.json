@@ -11,6 +11,9 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "test": "jest --runInBand",
+    "qa:browser-checklist": "npm run build && node scripts/browser-qa.js checklist",
+    "qa:browser-plan": "npm run build && node scripts/browser-qa.js plan",
+    "qa:browser-report": "npm run build && node scripts/browser-qa.js report",
     "prisma:generate": "prisma generate --config prisma.config.ts",
     "web:dev": "vite --config web/vite.config.ts",
     "web:build": "npm --prefix web run build"

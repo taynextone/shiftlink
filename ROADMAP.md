@@ -152,6 +152,7 @@ Progress while visual QA is blocked:
 - [done] Browser QA execution batches group checklist items by role and viewport in stable run order.
 - [done] Browser QA execution batches can render a stable Markdown execution plan for manual or Canvas-backed screenshot runs.
 - [done] Browser QA batch summaries show completion and attention status per role / viewport run.
+- [done] Browser QA checklist, plan, and report renderers are exposed through npm scripts for direct Markdown output.
 - [done] Browser QA run reports include batch summaries so completed and attention-needed role / viewport runs are visible at report level.
 - [done] Browser QA run tooling selects the next incomplete or attention-needed role / viewport batch for resumable screenshot execution.
 
