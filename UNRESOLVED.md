@@ -12,6 +12,8 @@ Blocker:
 
 Evidence:
 - Repeated `nodes status` checks during Phase 7 heartbeats returned no connected nodes.
+- Local Chromium is installed, but the repo has no Playwright/Puppeteer dependency or local screenshot harness wired into Phase 7.
+- Docker access is unavailable from the heartbeat runtime, so the local app/database stack cannot be started for an authenticated browser pass from here.
 - Code-side QA coverage and browser QA handoff tooling are present, including checklist, execution plan, next-batch selection, result templates, and resumable reports.
 
 Current next batch when visual QA is available:
