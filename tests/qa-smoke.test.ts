@@ -22,6 +22,7 @@ import { UserRole } from '@prisma/client';
 import { createApp } from '../src/app';
 import { signAuthToken } from '../src/utils/jwt';
 import { AUTH_COOKIE_NAME } from '../src/utils/cookies';
+import { hospitalForbiddenApiPaths, nurseForbiddenApiPaths, superadminOnlyApiPaths, unauthenticatedApiBoundaries } from '../src/qa/regression-scenarios';
 
 jest.mock('@prisma/client', () => {
   const actual = jest.requireActual('@prisma/client');
@@ -57,31 +58,13 @@ function authCookie(role: UserRole): string {
 describe('phase 7 top workflow smoke coverage', () => {
   const app = createApp();
 
-  it.each([
-    ['GET', '/api/v1/auth/me'],
-    ['GET', '/api/v1/job-shifts'],
-    ['GET', '/api/v1/job-shifts/billing/summary'],
-    ['GET', '/api/v1/job-shifts/dossier-overview'],
-    ['GET', '/api/v1/matches/hospital-offers'],
-    ['GET', '/api/v1/matches/visible-job-shifts'],
-    ['GET', '/api/v1/nurse-profile/me/dashboard'],
-    ['GET', '/api/v1/nurse-profile/verification/admin/NUR-AB12CD34'],
-    ['GET', '/api/v1/admin/audit-logs'],
-    ['GET', '/api/v1/admin/metrics'],
-  ])('keeps %s %s behind authentication', async (method, path) => {
+  it.each(unauthenticatedApiBoundaries)('keeps $method $path behind authentication', async ({ method, path }) => {
     const response = await request(app)[method.toLowerCase() as 'get'](path);
 
     expect(response.status).toBe(401);
   });
 
-  it.each([
-    '/api/v1/job-shifts',
-    '/api/v1/job-shifts/billing/summary',
-    '/api/v1/job-shifts/dossier-overview',
-    '/api/v1/matches/hospital-offers',
-    '/api/v1/admin/audit-logs',
-    '/api/v1/nurse-profile/verification/admin/NUR-AB12CD34',
-  ])('blocks nurses from hospital and superadmin operations at %s', async (path) => {
+  it.each(nurseForbiddenApiPaths)('blocks nurses from hospital and superadmin operations at %s', async (path) => {
     const response = await request(app)
       .get(path)
       .set('Cookie', authCookie(UserRole.NURSE));
@@ -89,11 +72,7 @@ describe('phase 7 top workflow smoke coverage', () => {
     expect(response.status).toBe(403);
   });
 
-  it.each([
-    '/api/v1/matches/visible-job-shifts',
-    '/api/v1/nurse-profile/me/dashboard',
-    '/api/v1/nurse-profile/me/verification',
-  ])('blocks hospital admins from nurse-owned workflow at %s', async (path) => {
+  it.each(hospitalForbiddenApiPaths)('blocks hospital admins from nurse-owned workflow at %s', async (path) => {
     const response = await request(app)
       .get(path)
       .set('Cookie', authCookie(UserRole.HOSPITAL_ADMIN));
@@ -101,12 +80,7 @@ describe('phase 7 top workflow smoke coverage', () => {
     expect(response.status).toBe(403);
   });
 
-  it.each([
-    '/api/v1/job-shifts/async-failures',
-    '/api/v1/admin/audit-logs',
-    '/api/v1/admin/metrics',
-    '/api/v1/nurse-profile/verification/admin/NUR-AB12CD34',
-  ])('keeps superadmin-only workflow out of hospital-admin scope at %s', async (path) => {
+  it.each(superadminOnlyApiPaths)('keeps superadmin-only workflow out of hospital-admin scope at %s', async (path) => {
     const response = await request(app)
       .get(path)
       .set('Cookie', authCookie(UserRole.HOSPITAL_ADMIN));
