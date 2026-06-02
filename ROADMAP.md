@@ -146,6 +146,7 @@ Progress while visual QA is blocked:
 - [done] HR/payroll handoff endpoint is covered as hospital-admin-only in Phase 7 smoke and regression scenarios.
 - [done] Visual QA checkpoints are codified for critical nurse / hospital / superadmin routes across desktop and mobile while node screenshots are blocked.
 - [done] Browser QA checklist builder expands scenario checkpoints into per-route, per-viewport run items (`src/qa/browser-checklist.ts`).
+- [done] Browser QA checklist can render a stable Markdown runlist summary for manual screenshot execution.
 
 Blocked note:
 - current OpenClaw visual QA path issue is tracked separately in `UNRESOLVED.md`
@@ -239,7 +240,7 @@ Checklist:
 - Form/validation hardening: Complete
 - Navigation cohesion: Complete
 - GAP_ANALYSIS: Complete
-- Test coverage: 136 tests green
+- Test coverage: 138 tests green
 - Remaining: Visual QA (blocked on OpenClaw), server deployment (pending Jurica)
 
 ## Open from GAP_ANALYSIS.md

@@ -1,4 +1,9 @@
-import { buildBrowserQaChecklist, getBrowserQaChecklistForRoute } from '../src/qa/browser-checklist';
+import {
+  buildBrowserQaChecklist,
+  getBrowserQaChecklistForRoute,
+  renderBrowserQaChecklistMarkdown,
+  summarizeBrowserQaChecklist,
+} from '../src/qa/browser-checklist';
 import { browserRegressionScenarios } from '../src/qa/regression-scenarios';
 
 describe('phase 7 browser QA checklist builder', () => {
@@ -44,5 +49,26 @@ describe('phase 7 browser QA checklist builder', () => {
 
     expect(billingItems.map((item) => item.viewport).sort()).toEqual(['desktop', 'mobile']);
     expect(billingItems.every((item) => item.route === '/hospital/billing')).toBe(true);
+  });
+
+  it('summarizes checklist role, route, and viewport coverage', () => {
+    const summary = summarizeBrowserQaChecklist();
+
+    expect(summary.itemCount).toBe(buildBrowserQaChecklist().length);
+    expect(summary.roles).toEqual(['HOSPITAL_ADMIN', 'NURSE', 'SUPER_ADMIN']);
+    expect(summary.viewports).toEqual(['desktop', 'mobile']);
+    expect(summary.routes).toContain('/admin/ops');
+    expect(summary.routes).toContain('/hospital/billing');
+    expect(summary.routes).toContain('/nurse/contracts');
+  });
+
+  it('renders a stable markdown runlist for later browser execution', () => {
+    const markdown = renderBrowserQaChecklistMarkdown();
+
+    expect(markdown).toContain('# Phase 7 Browser QA Checklist');
+    expect(markdown).toContain('Items: 17');
+    expect(markdown).toContain('## hospital-shift-to-billing-ops:hospital-billing:desktop');
+    expect(markdown).toContain('- Critical regions: billing summary; invoice detail; HR/payroll handoff');
+    expect(markdown).toContain('- Expected signals: pending rows are prioritized; HR handoff is not described as Shiftlink payroll');
   });
 });
