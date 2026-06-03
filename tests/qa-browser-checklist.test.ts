@@ -14,10 +14,12 @@ import {
   renderBrowserQaExecutionPlanMarkdown,
   renderBrowserQaResultTemplateMarkdown,
   renderBrowserQaRunReportMarkdown,
+  renderBrowserQaRunValidationMarkdown,
   renderNextBrowserQaExecutionBatchMarkdown,
   summarizeBrowserQaChecklist,
   summarizeBrowserQaExecutionBatches,
   summarizeBrowserQaRun,
+  validateBrowserQaRunResults,
 } from '../src/qa/browser-checklist';
 import { browserRegressionScenarios } from '../src/qa/regression-scenarios';
 
@@ -478,6 +480,58 @@ describe('phase 7 browser QA checklist builder', () => {
       complete: false,
       needsAttention: false,
     });
+  });
+
+  it('validates browser QA result artifacts before screenshot report handoff', () => {
+    const checklist = buildBrowserQaChecklist();
+    const validation = validateBrowserQaRunResults(checklist, [
+      { itemId: checklist[0].id, status: 'passed' },
+      { itemId: checklist[1].id, status: 'blocked', note: 'Canvas node unavailable' },
+    ]);
+
+    expect(validation).toEqual({
+      valid: true,
+      resultCount: 2,
+      audit: {
+        duplicateItemIds: [],
+        unknownItemIds: [],
+      },
+      warnings: [],
+    });
+    expect(renderBrowserQaRunValidationMarkdown(checklist, [
+      { itemId: checklist[0].id, status: 'passed' },
+    ])).toContain('Warnings: none');
+  });
+
+  it('surfaces stale and duplicate browser QA result artifact warnings', () => {
+    const checklist = buildBrowserQaChecklist();
+    const validation = validateBrowserQaRunResults(checklist, [
+      { itemId: checklist[0].id, status: 'failed', note: 'Old overflow finding' },
+      { itemId: checklist[0].id, status: 'passed', note: 'Latest recheck' },
+      { itemId: 'legacy-route:removed:desktop', status: 'blocked' },
+    ]);
+    const markdown = renderBrowserQaRunValidationMarkdown(checklist, [
+      { itemId: checklist[0].id, status: 'failed' },
+      { itemId: checklist[0].id, status: 'passed' },
+      { itemId: 'legacy-route:removed:desktop', status: 'blocked' },
+    ]);
+
+    expect(validation).toEqual({
+      valid: false,
+      resultCount: 3,
+      audit: {
+        duplicateItemIds: [checklist[0].id],
+        unknownItemIds: ['legacy-route:removed:desktop'],
+      },
+      warnings: [
+        'Unknown item ids: legacy-route:removed:desktop',
+        `Duplicate item ids: ${checklist[0].id}`,
+      ],
+    });
+    expect(markdown).toContain('# Phase 7 Browser QA Result Validation');
+    expect(markdown).toContain('Valid: no');
+    expect(markdown).toContain(`Duplicate item ids: ${checklist[0].id}`);
+    expect(markdown).toContain('Unknown item ids: legacy-route:removed:desktop');
   });
 
   it('renders a browser QA run report with open items and result data audit', () => {

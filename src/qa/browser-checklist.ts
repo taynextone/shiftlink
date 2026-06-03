@@ -94,6 +94,13 @@ export type BrowserQaRunAudit = {
   duplicateItemIds: string[];
 };
 
+export type BrowserQaRunValidation = {
+  valid: boolean;
+  resultCount: number;
+  audit: BrowserQaRunAudit;
+  warnings: string[];
+};
+
 export type BrowserQaOpenItem = BrowserQaChecklistItem & {
   status: BrowserQaRunStatus;
   result?: BrowserQaRunResult;
@@ -315,6 +322,21 @@ export function auditBrowserQaRunResults(items = buildBrowserQaChecklist(), resu
   return {
     unknownItemIds: [...unknownItemIds].sort(),
     duplicateItemIds: [...duplicateItemIds].sort(),
+  };
+}
+
+export function validateBrowserQaRunResults(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): BrowserQaRunValidation {
+  const audit = auditBrowserQaRunResults(items, results);
+  const warnings = [
+    audit.unknownItemIds.length > 0 ? `Unknown item ids: ${audit.unknownItemIds.join(', ')}` : null,
+    audit.duplicateItemIds.length > 0 ? `Duplicate item ids: ${audit.duplicateItemIds.join(', ')}` : null,
+  ].filter((warning): warning is string => Boolean(warning));
+
+  return {
+    valid: warnings.length === 0,
+    resultCount: results.length,
+    audit,
+    warnings,
   };
 }
 
@@ -709,6 +731,30 @@ export function renderBrowserQaRunReportMarkdown(items = buildBrowserQaChecklist
     lines.push(
       `- [${item.status}] ${item.id} (${item.ownerRole}, ${item.route}, ${item.viewport})${formatResultProvenance(item.result)}${formatOptionalNote(item.result)}`,
     );
+  }
+
+  return lines.join('\n').trimEnd();
+}
+
+export function renderBrowserQaRunValidationMarkdown(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): string {
+  const validation = validateBrowserQaRunResults(items, results);
+  const lines = [
+    '# Phase 7 Browser QA Result Validation',
+    '',
+    `Valid: ${validation.valid ? 'yes' : 'no'}`,
+    `Results: ${validation.resultCount}`,
+    `Duplicate item ids: ${validation.audit.duplicateItemIds.length > 0 ? validation.audit.duplicateItemIds.join(', ') : 'none'}`,
+    `Unknown item ids: ${validation.audit.unknownItemIds.length > 0 ? validation.audit.unknownItemIds.join(', ') : 'none'}`,
+  ];
+
+  if (validation.warnings.length === 0) {
+    lines.push('', 'Warnings: none');
+    return lines.join('\n');
+  }
+
+  lines.push('', '## Warnings', '');
+  for (const warning of validation.warnings) {
+    lines.push(`- ${warning}`);
   }
 
   return lines.join('\n').trimEnd();

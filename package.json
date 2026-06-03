@@ -21,6 +21,8 @@
     "qa:browser-result-template-json": "npm run build && node scripts/browser-qa.js result-template-json",
     "qa:browser-report": "npm run build && node scripts/browser-qa.js report",
     "qa:browser-report-json": "npm run build && node scripts/browser-qa.js report-json",
+    "qa:browser-validate": "npm run build && node scripts/browser-qa.js validate",
+    "qa:browser-validate-json": "npm run build && node scripts/browser-qa.js validate-json",
     "prisma:generate": "prisma generate --config prisma.config.ts",
     "web:dev": "vite --config web/vite.config.ts",
     "web:build": "npm --prefix web run build"
