@@ -65,6 +65,7 @@ export type BrowserQaResultTemplateItem = Pick<
   'id' | 'ownerRole' | 'route' | 'viewport' | 'title' | 'seededRecords' | 'criticalRegions' | 'expectedSignals' | 'browserAssertions'
 > & {
   status: null;
+  checkedAt: string;
   note: string;
   previousResult?: BrowserQaRunResult;
 };
@@ -274,6 +275,7 @@ export function buildBrowserQaResultTemplate(
       expectedSignals: item.expectedSignals,
       browserAssertions: item.browserAssertions,
       status: null,
+      checkedAt: '',
       note: '',
       ...(resultByItemId.has(item.id) ? { previousResult: resultByItemId.get(item.id)! } : {}),
     })) ?? [],
@@ -425,7 +427,7 @@ function parseBrowserQaTemplateResult(
     result.batchId = value.batchId;
   }
 
-  if (value.checkedAt !== undefined) {
+  if (value.checkedAt !== undefined && value.checkedAt !== null && value.checkedAt !== '') {
     if (typeof value.checkedAt !== 'string' || !isValidCheckedAt(value.checkedAt)) {
       throw new Error(`Browser QA template item at index ${index} checkedAt must be a valid date string when provided.`);
     }
@@ -645,6 +647,7 @@ export function renderBrowserQaResultTemplateMarkdown(
       `- Browser assertions: ${item.browserAssertions.join('; ')}`,
       `- Previous result: ${item.previousResult ? `${item.previousResult.status}${formatResultProvenance(item.previousResult)}${formatOptionalNote(item.previousResult)}` : 'none'}`,
       '- Status: ',
+      '- Checked at: ',
       '- Note: ',
       '',
     );

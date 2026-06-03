@@ -171,6 +171,7 @@ Progress while visual QA is blocked:
 - [done] Browser QA result parsing rejects malformed checked-at provenance before resumable report generation.
 - [done] Filled Browser QA result templates preserve explicit per-item batch provenance for manual recheck handoff.
 - [done] Browser QA artifact bundles inherit wrapper-level batch and checked-at provenance across nested result arrays and templates.
+- [done] Browser QA result templates include a checked-at handoff field and tolerate unfilled checked-at placeholders during import.
 
 Blocked note:
 - current OpenClaw visual QA path issue is tracked separately in `UNRESOLVED.md`
@@ -264,7 +265,7 @@ Checklist:
 - Form/validation hardening: Complete
 - Navigation cohesion: Complete
 - GAP_ANALYSIS: Complete
-- Test coverage: 169 tests green
+- Test coverage: 170 tests green
 - Remaining: Visual QA (blocked on OpenClaw), server deployment (pending Jurica)
 
 ## Open from GAP_ANALYSIS.md

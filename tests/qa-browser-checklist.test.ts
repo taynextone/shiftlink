@@ -276,6 +276,7 @@ describe('phase 7 browser QA checklist builder', () => {
       expect.objectContaining({
         id: 'nurse-activation-to-offer:nurse:mobile',
         status: null,
+        checkedAt: '',
         note: '',
         route: '/nurse',
         viewport: 'mobile',
@@ -318,8 +319,34 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(markdown).toContain('- Seeded records: released nurse profile with healthcare documents approved');
     expect(markdown).toContain('- Critical regions: activation progress; recent contracts; upcoming availability');
     expect(markdown).toContain('- Status: ');
+    expect(markdown).toContain('- Checked at: ');
     expect(markdown).toContain('- Note: ');
     expect(markdown).not.toContain('## nurse-activation-to-offer:nurse:desktop');
+  });
+
+  it('allows empty checked-at placeholders in filled browser QA result templates', () => {
+    const checklist = buildBrowserQaChecklist();
+
+    expect(parseBrowserQaRunResults({
+      batchId: 'nurse:desktop',
+      items: [
+        { id: checklist[0].id, status: 'passed', checkedAt: '', note: '' },
+        { id: checklist[1].id, status: 'blocked', checkedAt: null, note: 'Screenshot node unavailable' },
+        { id: checklist[2].id, status: null, checkedAt: '', note: '' },
+      ],
+    })).toEqual([
+      {
+        itemId: checklist[0].id,
+        status: 'passed',
+        batchId: 'nurse:desktop',
+      },
+      {
+        itemId: checklist[1].id,
+        status: 'blocked',
+        batchId: 'nurse:desktop',
+        note: 'Screenshot node unavailable',
+      },
+    ]);
   });
 
   it('carries previous failed or blocked results into attention-target templates', () => {
