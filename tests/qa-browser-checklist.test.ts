@@ -1,4 +1,5 @@
 import {
+  assertBrowserQaRunResultsValid,
   auditBrowserQaRunResults,
   buildBrowserQaChecklist,
   buildBrowserQaChecklistDocument,
@@ -14,6 +15,7 @@ import {
   renderBrowserQaExecutionPlanMarkdown,
   renderBrowserQaResultTemplateMarkdown,
   renderBrowserQaRunReportMarkdown,
+  renderBrowserQaRunValidationResultMarkdown,
   renderBrowserQaRunValidationMarkdown,
   renderNextBrowserQaExecutionBatchMarkdown,
   summarizeBrowserQaChecklist,
@@ -526,6 +528,18 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(renderBrowserQaRunValidationMarkdown(checklist, [
       { itemId: checklist[0].id, status: 'passed' },
     ])).toContain('Warnings: none');
+    expect(assertBrowserQaRunResultsValid(checklist, [
+      { itemId: checklist[0].id, status: 'passed' },
+    ])).toEqual({
+      valid: true,
+      resultCount: 1,
+      audit: {
+        duplicateItemIds: [],
+        unknownItemIds: [],
+        batchMismatches: [],
+      },
+      warnings: [],
+    });
   });
 
   it('surfaces stale and duplicate browser QA result artifact warnings', () => {
@@ -558,6 +572,12 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(markdown).toContain('Valid: no');
     expect(markdown).toContain(`Duplicate item ids: ${checklist[0].id}`);
     expect(markdown).toContain('Unknown item ids: legacy-route:removed:desktop');
+    expect(renderBrowserQaRunValidationResultMarkdown(validation)).toContain('Valid: no');
+    expect(() => assertBrowserQaRunResultsValid(checklist, [
+      { itemId: checklist[0].id, status: 'failed', note: 'Old overflow finding' },
+      { itemId: checklist[0].id, status: 'passed', note: 'Latest recheck' },
+      { itemId: 'legacy-route:removed:desktop', status: 'blocked' },
+    ])).toThrow('Browser QA result artifacts are invalid');
   });
 
   it('surfaces browser QA result batch mismatches before report handoff', () => {

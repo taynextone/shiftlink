@@ -7,6 +7,7 @@ const {
   buildBrowserQaExecutionPlan,
   buildBrowserQaResultTemplate,
   buildBrowserQaRunReport,
+  assertBrowserQaRunResultsValid,
   validateBrowserQaRunResults,
   getNextBrowserQaExecutionBatch,
   parseBrowserQaRunResults,
@@ -14,6 +15,7 @@ const {
   renderBrowserQaExecutionPlanMarkdown,
   renderBrowserQaResultTemplateMarkdown,
   renderBrowserQaRunReportMarkdown,
+  renderBrowserQaRunValidationResultMarkdown,
   renderBrowserQaRunValidationMarkdown,
   renderNextBrowserQaExecutionBatchMarkdown,
 } = require('../dist/qa/browser-checklist');
@@ -40,6 +42,13 @@ function loadResults() {
   });
 }
 
+function renderStrictValidation(asJson = false) {
+  const validation = assertBrowserQaRunResultsValid(undefined, loadResults());
+  return asJson
+    ? JSON.stringify(validation, null, 2)
+    : renderBrowserQaRunValidationResultMarkdown(validation);
+}
+
 const renderers = {
   checklist: renderBrowserQaChecklistMarkdown,
   'checklist-json': () => JSON.stringify(buildBrowserQaChecklistDocument(), null, 2),
@@ -53,13 +62,21 @@ const renderers = {
   'report-json': () => JSON.stringify(buildBrowserQaRunReport(undefined, loadResults()), null, 2),
   validate: () => renderBrowserQaRunValidationMarkdown(undefined, loadResults()),
   'validate-json': () => JSON.stringify(validateBrowserQaRunResults(undefined, loadResults()), null, 2),
+  'validate-strict': () => renderStrictValidation(false),
+  'validate-strict-json': () => renderStrictValidation(true),
 };
 
 const render = renderers[command];
 
 if (!render) {
-  console.error('Usage: node scripts/browser-qa.js [checklist|checklist-json|plan|plan-json|next-batch|next-batch-json|result-template|result-template-json|report|report-json|validate|validate-json] [results.json ...|-]');
+  console.error('Usage: node scripts/browser-qa.js [checklist|checklist-json|plan|plan-json|next-batch|next-batch-json|result-template|result-template-json|report|report-json|validate|validate-json|validate-strict|validate-strict-json] [results.json ...|-]');
   process.exit(1);
 }
 
-process.stdout.write(`${render()}\n`);
+try {
+  process.stdout.write(`${render()}\n`);
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(message);
+  process.exit(1);
+}

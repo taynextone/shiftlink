@@ -355,6 +355,15 @@ export function validateBrowserQaRunResults(items = buildBrowserQaChecklist(), r
   };
 }
 
+export function assertBrowserQaRunResultsValid(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): BrowserQaRunValidation {
+  const validation = validateBrowserQaRunResults(items, results);
+  if (!validation.valid) {
+    throw new Error(`Browser QA result artifacts are invalid: ${validation.warnings.join('; ')}`);
+  }
+
+  return validation;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -758,8 +767,7 @@ export function renderBrowserQaRunReportMarkdown(items = buildBrowserQaChecklist
   return lines.join('\n').trimEnd();
 }
 
-export function renderBrowserQaRunValidationMarkdown(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): string {
-  const validation = validateBrowserQaRunResults(items, results);
+export function renderBrowserQaRunValidationResultMarkdown(validation: BrowserQaRunValidation): string {
   const lines = [
     '# Phase 7 Browser QA Result Validation',
     '',
@@ -781,4 +789,8 @@ export function renderBrowserQaRunValidationMarkdown(items = buildBrowserQaCheck
   }
 
   return lines.join('\n').trimEnd();
+}
+
+export function renderBrowserQaRunValidationMarkdown(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): string {
+  return renderBrowserQaRunValidationResultMarkdown(validateBrowserQaRunResults(items, results));
 }
