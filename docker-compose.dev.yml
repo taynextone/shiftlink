@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: shiftlink-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: shiftlink
+      POSTGRES_PASSWORD: shiftlink
+      POSTGRES_DB: shiftlink
+    ports:
+      - "5432:5432"
+    volumes:
+      - shiftlink-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shiftlink"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: shiftlink-redis
+    restart: unless-stopped
+    command: redis-server --requirepass shiftlink
+    ports:
+      - "6379:6379"
+    volumes:
+      - shiftlink-redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "shiftlink", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  shiftlink-pgdata:
+  shiftlink-redisdata:
