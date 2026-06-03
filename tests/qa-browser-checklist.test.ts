@@ -270,7 +270,10 @@ describe('phase 7 browser QA checklist builder', () => {
     );
 
     expect(template.batchId).toBe('nurse:mobile');
+    expect(template.ownerRole).toBe('NURSE');
+    expect(template.viewport).toBe('mobile');
     expect(template.statusOptions).toEqual(['passed', 'failed', 'blocked']);
+    expect(template.itemCount).toBe(3);
     expect(template.items).toHaveLength(3);
     expect(template.items[0]).toEqual(
       expect.objectContaining({
@@ -295,7 +298,10 @@ describe('phase 7 browser QA checklist builder', () => {
 
     expect(template).toEqual({
       batchId: null,
+      ownerRole: null,
+      viewport: null,
       statusOptions: ['passed', 'failed', 'blocked'],
+      itemCount: 0,
       items: [],
     });
   });
@@ -310,6 +316,8 @@ describe('phase 7 browser QA checklist builder', () => {
 
     expect(markdown).toContain('# Phase 7 Browser QA Result Template');
     expect(markdown).toContain('Batch: nurse:mobile');
+    expect(markdown).toContain('Role: NURSE');
+    expect(markdown).toContain('Viewport: mobile');
     expect(markdown).toContain('Status options: passed, failed, blocked');
     expect(markdown).toContain('Items: 3');
     expect(markdown).toContain('## nurse-activation-to-offer:nurse:mobile');

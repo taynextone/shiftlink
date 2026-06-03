@@ -72,7 +72,10 @@ export type BrowserQaResultTemplateItem = Pick<
 
 export type BrowserQaResultTemplate = {
   batchId: string | null;
+  ownerRole: QaRegressionScenario['ownerRole'] | null;
+  viewport: QaViewport | null;
   statusOptions: BrowserQaRunResult['status'][];
+  itemCount: number;
   items: BrowserQaResultTemplateItem[];
 };
 
@@ -263,7 +266,10 @@ export function buildBrowserQaResultTemplate(
   const resultByItemId = latestResultByItemId(results);
   return {
     batchId: nextBatch?.id ?? null,
+    ownerRole: nextBatch?.ownerRole ?? null,
+    viewport: nextBatch?.viewport ?? null,
     statusOptions: ['passed', 'failed', 'blocked'],
+    itemCount: nextBatch?.items.length ?? 0,
     items: nextBatch?.items.map((item) => ({
       id: item.id,
       ownerRole: item.ownerRole,
@@ -628,8 +634,10 @@ export function renderBrowserQaResultTemplateMarkdown(
     '# Phase 7 Browser QA Result Template',
     '',
     `Batch: ${template.batchId}`,
+    `Role: ${template.ownerRole ?? 'none'}`,
+    `Viewport: ${template.viewport ?? 'none'}`,
     `Status options: ${template.statusOptions.join(', ')}`,
-    `Items: ${template.items.length}`,
+    `Items: ${template.itemCount}`,
     '',
   ];
 
