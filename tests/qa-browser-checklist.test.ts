@@ -467,6 +467,7 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(audit).toEqual({
       duplicateItemIds: [checklist[0].id],
       unknownItemIds: ['legacy-route:removed:desktop'],
+      batchMismatches: [],
     });
     expect(summarizeBrowserQaRun(checklist, [
       { itemId: checklist[0].id, status: 'failed' },
@@ -495,6 +496,7 @@ describe('phase 7 browser QA checklist builder', () => {
       audit: {
         duplicateItemIds: [],
         unknownItemIds: [],
+        batchMismatches: [],
       },
       warnings: [],
     });
@@ -522,6 +524,7 @@ describe('phase 7 browser QA checklist builder', () => {
       audit: {
         duplicateItemIds: [checklist[0].id],
         unknownItemIds: ['legacy-route:removed:desktop'],
+        batchMismatches: [],
       },
       warnings: [
         'Unknown item ids: legacy-route:removed:desktop',
@@ -532,6 +535,30 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(markdown).toContain('Valid: no');
     expect(markdown).toContain(`Duplicate item ids: ${checklist[0].id}`);
     expect(markdown).toContain('Unknown item ids: legacy-route:removed:desktop');
+  });
+
+  it('surfaces browser QA result batch mismatches before report handoff', () => {
+    const checklist = buildBrowserQaChecklist();
+    const validation = validateBrowserQaRunResults(checklist, [
+      { itemId: checklist[0].id, status: 'passed', batchId: 'hospital_admin:desktop' },
+    ]);
+    const markdown = renderBrowserQaRunValidationMarkdown(checklist, [
+      { itemId: checklist[0].id, status: 'passed', batchId: 'hospital_admin:desktop' },
+    ]);
+
+    expect(validation).toEqual({
+      valid: false,
+      resultCount: 1,
+      audit: {
+        duplicateItemIds: [],
+        unknownItemIds: [],
+        batchMismatches: [`${checklist[0].id} expected nurse:desktop but got hospital_admin:desktop`],
+      },
+      warnings: [
+        `Batch mismatches: ${checklist[0].id} expected nurse:desktop but got hospital_admin:desktop`,
+      ],
+    });
+    expect(markdown).toContain(`Batch mismatches: ${checklist[0].id} expected nurse:desktop but got hospital_admin:desktop`);
   });
 
   it('renders a browser QA run report with open items and result data audit', () => {
@@ -556,6 +583,7 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(markdown).toContain('- nurse:mobile: 0/3 passed, 1 failed, 1 blocked, 1 pending, attention yes');
     expect(markdown).toContain(`- Duplicate item ids: ${checklist[3].id}`);
     expect(markdown).toContain('- Unknown item ids: legacy-route:removed:mobile');
+    expect(markdown).toContain('- Batch mismatches: none');
     expect(markdown).toContain(`[failed] ${checklist[1].id}`);
     expect(markdown).toContain('(batch nurse:mobile, checked 2026-06-03T05:45:00.000Z)');
     expect(markdown).toContain('Mobile metric cards overlap');
@@ -584,6 +612,7 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(report.audit).toEqual({
       duplicateItemIds: [],
       unknownItemIds: ['legacy-route:removed:desktop'],
+      batchMismatches: [],
     });
     expect(report.batchSummaries.find((summary) => summary.id === 'nurse:desktop')?.summary.complete).toBe(true);
     expect(report.openItems).toEqual(

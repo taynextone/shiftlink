@@ -92,6 +92,7 @@ export type BrowserQaRunSummary = {
 export type BrowserQaRunAudit = {
   unknownItemIds: string[];
   duplicateItemIds: string[];
+  batchMismatches: string[];
 };
 
 export type BrowserQaRunValidation = {
@@ -301,15 +302,22 @@ export function getOpenBrowserQaChecklistItems(items = buildBrowserQaChecklist()
 }
 
 export function auditBrowserQaRunResults(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): BrowserQaRunAudit {
-  const knownItemIds = new Set(items.map((item) => item.id));
+  const itemById = new Map(items.map((item) => [item.id, item]));
   const seenItemIds = new Set<string>();
   const duplicateItemIds = new Set<string>();
   const unknownItemIds = new Set<string>();
+  const batchMismatches = new Set<string>();
 
   for (const result of results) {
-    if (!knownItemIds.has(result.itemId)) {
+    const item = itemById.get(result.itemId);
+    if (!item) {
       unknownItemIds.add(result.itemId);
       continue;
+    }
+
+    const expectedBatchId = `${item.ownerRole.toLowerCase()}:${item.viewport}`;
+    if (result.batchId && result.batchId !== expectedBatchId) {
+      batchMismatches.add(`${result.itemId} expected ${expectedBatchId} but got ${result.batchId}`);
     }
 
     if (seenItemIds.has(result.itemId)) {
@@ -322,6 +330,7 @@ export function auditBrowserQaRunResults(items = buildBrowserQaChecklist(), resu
   return {
     unknownItemIds: [...unknownItemIds].sort(),
     duplicateItemIds: [...duplicateItemIds].sort(),
+    batchMismatches: [...batchMismatches].sort(),
   };
 }
 
@@ -330,6 +339,7 @@ export function validateBrowserQaRunResults(items = buildBrowserQaChecklist(), r
   const warnings = [
     audit.unknownItemIds.length > 0 ? `Unknown item ids: ${audit.unknownItemIds.join(', ')}` : null,
     audit.duplicateItemIds.length > 0 ? `Duplicate item ids: ${audit.duplicateItemIds.join(', ')}` : null,
+    audit.batchMismatches.length > 0 ? `Batch mismatches: ${audit.batchMismatches.join('; ')}` : null,
   ].filter((warning): warning is string => Boolean(warning));
 
   return {
@@ -710,12 +720,13 @@ export function renderBrowserQaRunReportMarkdown(items = buildBrowserQaChecklist
   }
   lines.push('');
 
-  if (report.audit.duplicateItemIds.length > 0 || report.audit.unknownItemIds.length > 0) {
+  if (report.audit.duplicateItemIds.length > 0 || report.audit.unknownItemIds.length > 0 || report.audit.batchMismatches.length > 0) {
     lines.push(
       '## Result data audit',
       '',
       `- Duplicate item ids: ${report.audit.duplicateItemIds.length > 0 ? report.audit.duplicateItemIds.join(', ') : 'none'}`,
       `- Unknown item ids: ${report.audit.unknownItemIds.length > 0 ? report.audit.unknownItemIds.join(', ') : 'none'}`,
+      `- Batch mismatches: ${report.audit.batchMismatches.length > 0 ? report.audit.batchMismatches.join('; ') : 'none'}`,
       '',
     );
   }
@@ -745,6 +756,7 @@ export function renderBrowserQaRunValidationMarkdown(items = buildBrowserQaCheck
     `Results: ${validation.resultCount}`,
     `Duplicate item ids: ${validation.audit.duplicateItemIds.length > 0 ? validation.audit.duplicateItemIds.join(', ') : 'none'}`,
     `Unknown item ids: ${validation.audit.unknownItemIds.length > 0 ? validation.audit.unknownItemIds.join(', ') : 'none'}`,
+    `Batch mismatches: ${validation.audit.batchMismatches.length > 0 ? validation.audit.batchMismatches.join('; ') : 'none'}`,
   ];
 
   if (validation.warnings.length === 0) {

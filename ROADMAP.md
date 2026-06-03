@@ -175,6 +175,7 @@ Progress while visual QA is blocked:
 - [done] Browser QA result templates expose top-level role, viewport, and item-count context for the current screenshot batch.
 - [done] Browser QA report / next-batch / template CLI can consume result artifacts from stdin with `-` for direct Canvas or runner handoff.
 - [done] Browser QA result artifacts can be validated as Markdown or JSON before report handoff, surfacing stale item ids and duplicate result rows.
+- [done] Browser QA result validation now flags batch provenance mismatches before resumable screenshot reports are trusted.
 
 Blocked note:
 - current OpenClaw visual QA path issue is tracked separately in `UNRESOLVED.md`
