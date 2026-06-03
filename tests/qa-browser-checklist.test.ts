@@ -631,6 +631,19 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(() => parseBrowserQaRunResults({ items: [{ id: 'x', status: 'blocked', note: 42 }] })).toThrow('note must be a string');
   });
 
+  it('rejects malformed browser QA checked-at provenance before report generation', () => {
+    expect(() => parseBrowserQaRunResults({
+      checkedAt: 'not-a-date',
+      results: [{ itemId: 'x', status: 'blocked' }],
+    })).toThrow('wrapper checkedAt must be a valid date string');
+    expect(() => parseBrowserQaRunResults([
+      { itemId: 'x', status: 'blocked', checkedAt: 'not-a-date' },
+    ])).toThrow('checkedAt must be a valid date string');
+    expect(() => parseBrowserQaRunResults({
+      items: [{ id: 'x', status: 'blocked', checkedAt: 'not-a-date' }],
+    })).toThrow('checkedAt must be a valid date string');
+  });
+
   it('rejects malformed browser QA result artifacts before report generation', () => {
     expect(() => parseBrowserQaRunResults({ artifact: [] })).toThrow('results array');
     expect(() => parseBrowserQaRunResults({ artifacts: [{ artifact: [] }] })).toThrow('artifact at index 0 is invalid');

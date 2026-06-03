@@ -168,6 +168,7 @@ Progress while visual QA is blocked:
 - [done] Browser QA result templates include seeded-record setup context so screenshot executors can validate against the intended fixtures.
 - [done] Browser QA result artifacts preserve optional batch and checked-at provenance in reports for cleaner screenshot recheck handoff.
 - [done] Browser QA result parsing applies wrapper-level batch and checked-at provenance to filled templates and result arrays while preserving explicit per-item overrides.
+- [done] Browser QA result parsing rejects malformed checked-at provenance before resumable report generation.
 
 Blocked note:
 - current OpenClaw visual QA path issue is tracked separately in `UNRESOLVED.md`
@@ -261,7 +262,7 @@ Checklist:
 - Form/validation hardening: Complete
 - Navigation cohesion: Complete
 - GAP_ANALYSIS: Complete
-- Test coverage: 166 tests green
+- Test coverage: 167 tests green
 - Remaining: Visual QA (blocked on OpenClaw), server deployment (pending Jurica)
 
 ## Open from GAP_ANALYSIS.md

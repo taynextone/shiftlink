@@ -314,13 +314,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function isValidCheckedAt(value: string): boolean {
+  return value.length > 0 && !Number.isNaN(Date.parse(value));
+}
+
 function buildBrowserQaResultDefaults(value: Record<string, unknown>): Pick<BrowserQaRunResult, 'batchId' | 'checkedAt'> {
   if (value.batchId !== undefined && (typeof value.batchId !== 'string' || value.batchId.length === 0)) {
     throw new Error('Browser QA result wrapper batchId must be a non-empty string when provided.');
   }
 
-  if (value.checkedAt !== undefined && (typeof value.checkedAt !== 'string' || value.checkedAt.length === 0)) {
-    throw new Error('Browser QA result wrapper checkedAt must be a non-empty string when provided.');
+  if (value.checkedAt !== undefined && (typeof value.checkedAt !== 'string' || !isValidCheckedAt(value.checkedAt))) {
+    throw new Error('Browser QA result wrapper checkedAt must be a valid date string when provided.');
   }
 
   return {
@@ -367,8 +371,8 @@ function parseBrowserQaRunResult(
   }
 
   if (value.checkedAt !== undefined) {
-    if (typeof value.checkedAt !== 'string') {
-      throw new Error(`Browser QA result at index ${index} checkedAt must be a string when provided.`);
+    if (typeof value.checkedAt !== 'string' || !isValidCheckedAt(value.checkedAt)) {
+      throw new Error(`Browser QA result at index ${index} checkedAt must be a valid date string when provided.`);
     }
     result.checkedAt = value.checkedAt;
   }
@@ -411,8 +415,8 @@ function parseBrowserQaTemplateResult(
   }
 
   if (value.checkedAt !== undefined) {
-    if (typeof value.checkedAt !== 'string') {
-      throw new Error(`Browser QA template item at index ${index} checkedAt must be a string when provided.`);
+    if (typeof value.checkedAt !== 'string' || !isValidCheckedAt(value.checkedAt)) {
+      throw new Error(`Browser QA template item at index ${index} checkedAt must be a valid date string when provided.`);
     }
     result.checkedAt = value.checkedAt;
   }
