@@ -166,6 +166,7 @@ Progress while visual QA is blocked:
 - [done] Browser QA result parsing can merge wrapped artifact batches and multiple CLI result files for resumable screenshot passes.
 - [done] Browser QA attention-target result templates preserve previous failed / blocked / passed result context for focused rechecks.
 - [done] Browser QA result templates include seeded-record setup context so screenshot executors can validate against the intended fixtures.
+- [done] Browser QA result artifacts preserve optional batch and checked-at provenance in reports for cleaner screenshot recheck handoff.
 
 Blocked note:
 - current OpenClaw visual QA path issue is tracked separately in `UNRESOLVED.md`
@@ -259,7 +260,7 @@ Checklist:
 - Form/validation hardening: Complete
 - Navigation cohesion: Complete
 - GAP_ANALYSIS: Complete
-- Test coverage: 164 tests green
+- Test coverage: 165 tests green
 - Remaining: Visual QA (blocked on OpenClaw), server deployment (pending Jurica)
 
 ## Open from GAP_ANALYSIS.md

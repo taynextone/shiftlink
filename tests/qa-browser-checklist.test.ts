@@ -356,7 +356,7 @@ describe('phase 7 browser QA checklist builder', () => {
         },
       }),
     );
-    expect(markdown).toContain('- Previous result: failed - Desktop contract cards overlap the activation panel');
+    expect(markdown).toContain('- Previous result: failed (checked 2026-06-03T01:30:00.000Z) - Desktop contract cards overlap the activation panel');
     expect(markdown).toContain('- Previous result: passed');
   });
 
@@ -450,7 +450,7 @@ describe('phase 7 browser QA checklist builder', () => {
     const nurseDesktopItems = buildBrowserQaExecutionBatches(checklist).find((batch) => batch.id === 'nurse:desktop')!.items;
     const markdown = renderBrowserQaRunReportMarkdown(checklist, [
       ...nurseDesktopItems.map((item) => ({ itemId: item.id, status: 'passed' as const })),
-      { itemId: checklist[1].id, status: 'failed', note: 'Mobile metric cards overlap' },
+      { itemId: checklist[1].id, status: 'failed', batchId: 'nurse:mobile', checkedAt: '2026-06-03T05:45:00.000Z', note: 'Mobile metric cards overlap' },
       { itemId: checklist[3].id, status: 'blocked', note: 'Screenshot node disconnected' },
       { itemId: checklist[3].id, status: 'blocked', note: 'Screenshot node disconnected' },
       { itemId: 'legacy-route:removed:mobile', status: 'failed' },
@@ -468,6 +468,7 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(markdown).toContain(`- Duplicate item ids: ${checklist[3].id}`);
     expect(markdown).toContain('- Unknown item ids: legacy-route:removed:mobile');
     expect(markdown).toContain(`[failed] ${checklist[1].id}`);
+    expect(markdown).toContain('(batch nurse:mobile, checked 2026-06-03T05:45:00.000Z)');
     expect(markdown).toContain('Mobile metric cards overlap');
     expect(markdown).not.toContain(`[passed] ${checklist[0].id}`);
   });
@@ -531,14 +532,30 @@ describe('phase 7 browser QA checklist builder', () => {
     const checklist = buildBrowserQaChecklist();
 
     expect(parseBrowserQaRunResults({
+      batchId: 'nurse:desktop',
       items: [
         { id: checklist[0].id, status: 'passed', note: '' },
         { id: checklist[1].id, status: 'failed', note: 'Mobile action row overlaps', checkedAt: '2026-06-02T18:30:00.000Z' },
         { id: checklist[2].id, status: null, note: '' },
       ],
     })).toEqual([
-      { itemId: checklist[0].id, status: 'passed' },
-      { itemId: checklist[1].id, status: 'failed', note: 'Mobile action row overlaps', checkedAt: '2026-06-02T18:30:00.000Z' },
+      { itemId: checklist[0].id, status: 'passed', batchId: 'nurse:desktop' },
+      { itemId: checklist[1].id, status: 'failed', batchId: 'nurse:desktop', note: 'Mobile action row overlaps', checkedAt: '2026-06-02T18:30:00.000Z' },
+    ]);
+  });
+
+  it('preserves batch provenance from wrapped browser QA result payloads', () => {
+    const checklist = buildBrowserQaChecklist();
+
+    expect(parseBrowserQaRunResults({
+      batchId: 'hospital_admin:mobile',
+      results: [
+        { itemId: checklist[4].id, status: 'blocked', note: 'Mobile screenshot runner disconnected' },
+        { itemId: checklist[5].id, status: 'failed', batchId: 'manual-recheck', note: 'Explicit batch should win' },
+      ],
+    })).toEqual([
+      { itemId: checklist[4].id, status: 'blocked', batchId: 'hospital_admin:mobile', note: 'Mobile screenshot runner disconnected' },
+      { itemId: checklist[5].id, status: 'failed', batchId: 'manual-recheck', note: 'Explicit batch should win' },
     ]);
   });
 
@@ -580,6 +597,7 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(() => parseBrowserQaRunResults({ artifacts: [{ artifact: [] }] })).toThrow('artifact at index 0 is invalid');
     expect(() => parseBrowserQaRunResults([{ itemId: 'x', status: 'pending' }])).toThrow('passed, failed, or blocked');
     expect(() => parseBrowserQaRunResults([{ itemId: '', status: 'passed' }])).toThrow('non-empty itemId');
+    expect(() => parseBrowserQaRunResults([{ itemId: 'x', status: 'blocked', batchId: '' }])).toThrow('batchId must be a non-empty string');
     expect(() => parseBrowserQaRunResults([{ itemId: 'x', status: 'blocked', note: 42 }])).toThrow('note must be a string');
   });
 });

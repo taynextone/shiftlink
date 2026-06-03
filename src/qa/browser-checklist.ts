@@ -55,6 +55,7 @@ export type BrowserQaRunStatus = 'pending' | 'passed' | 'failed' | 'blocked';
 export type BrowserQaRunResult = {
   itemId: string;
   status: Exclude<BrowserQaRunStatus, 'pending'>;
+  batchId?: string;
   note?: string;
   checkedAt?: string;
 };
@@ -119,6 +120,15 @@ function formatOptionalNote(result?: BrowserQaRunResult): string {
   }
 
   return ` - ${result.note}`;
+}
+
+function formatResultProvenance(result?: BrowserQaRunResult): string {
+  const provenance = [
+    result?.batchId ? `batch ${result.batchId}` : null,
+    result?.checkedAt ? `checked ${result.checkedAt}` : null,
+  ].filter(Boolean);
+
+  return provenance.length > 0 ? ` (${provenance.join(', ')})` : '';
 }
 
 const roleExecutionOrder: QaRegressionScenario['ownerRole'][] = ['NURSE', 'HOSPITAL_ADMIN', 'SUPER_ADMIN'];
@@ -304,7 +314,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function parseBrowserQaRunResult(value: unknown, index: number): BrowserQaRunResult {
+function parseBrowserQaRunResult(value: unknown, index: number, defaultBatchId?: string): BrowserQaRunResult {
   if (!isRecord(value)) {
     throw new Error(`Browser QA result at index ${index} must be an object.`);
   }
@@ -320,7 +330,15 @@ function parseBrowserQaRunResult(value: unknown, index: number): BrowserQaRunRes
   const result: BrowserQaRunResult = {
     itemId: value.itemId,
     status: value.status as BrowserQaRunResult['status'],
+    ...(defaultBatchId ? { batchId: defaultBatchId } : {}),
   };
+
+  if (value.batchId !== undefined) {
+    if (typeof value.batchId !== 'string' || value.batchId.length === 0) {
+      throw new Error(`Browser QA result at index ${index} batchId must be a non-empty string when provided.`);
+    }
+    result.batchId = value.batchId;
+  }
 
   if (value.note !== undefined) {
     if (typeof value.note !== 'string') {
@@ -339,7 +357,7 @@ function parseBrowserQaRunResult(value: unknown, index: number): BrowserQaRunRes
   return result;
 }
 
-function parseBrowserQaTemplateResult(value: unknown, index: number): BrowserQaRunResult | null {
+function parseBrowserQaTemplateResult(value: unknown, index: number, batchId?: string): BrowserQaRunResult | null {
   if (!isRecord(value)) {
     throw new Error(`Browser QA template item at index ${index} must be an object.`);
   }
@@ -359,6 +377,7 @@ function parseBrowserQaTemplateResult(value: unknown, index: number): BrowserQaR
   const result: BrowserQaRunResult = {
     itemId: value.id,
     status: value.status as BrowserQaRunResult['status'],
+    ...(batchId ? { batchId } : {}),
   };
 
   if (value.note !== undefined && value.note !== '') {
@@ -391,12 +410,16 @@ export function parseBrowserQaRunResults(value: unknown): BrowserQaRunResult[] {
   }
 
   if (isRecord(value) && Array.isArray(value.items)) {
+    const batchId = typeof value.batchId === 'string' && value.batchId.length > 0 ? value.batchId : undefined;
     return value.items.flatMap((item, index) => {
-      const result = parseBrowserQaTemplateResult(item, index);
+      const result = parseBrowserQaTemplateResult(item, index, batchId);
       return result ? [result] : [];
     });
   }
 
+  const defaultBatchId = isRecord(value) && typeof value.batchId === 'string' && value.batchId.length > 0
+    ? value.batchId
+    : undefined;
   const rawResults = Array.isArray(value)
     ? value
     : isRecord(value) && Array.isArray(value.results)
@@ -407,7 +430,7 @@ export function parseBrowserQaRunResults(value: unknown): BrowserQaRunResult[] {
     throw new Error('Browser QA results JSON must be an array, an object with a results array, or a result template object with an items array.');
   }
 
-  return rawResults.map(parseBrowserQaRunResult);
+  return rawResults.map((result, index) => parseBrowserQaRunResult(result, index, defaultBatchId));
 }
 
 export function buildBrowserQaRunReport(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): BrowserQaRunReport {
@@ -576,7 +599,7 @@ export function renderBrowserQaResultTemplateMarkdown(
       `- Critical regions: ${item.criticalRegions.join('; ')}`,
       `- Expected signals: ${item.expectedSignals.join('; ')}`,
       `- Browser assertions: ${item.browserAssertions.join('; ')}`,
-      `- Previous result: ${item.previousResult ? `${item.previousResult.status}${formatOptionalNote(item.previousResult)}` : 'none'}`,
+      `- Previous result: ${item.previousResult ? `${item.previousResult.status}${formatResultProvenance(item.previousResult)}${formatOptionalNote(item.previousResult)}` : 'none'}`,
       '- Status: ',
       '- Note: ',
       '',
@@ -629,7 +652,7 @@ export function renderBrowserQaRunReportMarkdown(items = buildBrowserQaChecklist
 
   for (const item of report.openItems) {
     lines.push(
-      `- [${item.status}] ${item.id} (${item.ownerRole}, ${item.route}, ${item.viewport})${formatOptionalNote(item.result)}`,
+      `- [${item.status}] ${item.id} (${item.ownerRole}, ${item.route}, ${item.viewport})${formatResultProvenance(item.result)}${formatOptionalNote(item.result)}`,
     );
   }
 
