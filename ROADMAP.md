@@ -168,6 +168,7 @@ Progress while visual QA is blocked:
 - [done] Browser QA result templates include seeded-record setup context so screenshot executors can validate against the intended fixtures.
 - [done] Browser QA result artifacts preserve optional batch and checked-at provenance in reports for cleaner screenshot recheck handoff.
 - [done] Browser QA result parsing applies wrapper-level batch and checked-at provenance to filled templates and result arrays while preserving explicit per-item overrides.
+- [done] Browser QA execution plans are result-aware, so resumed plan output advances to the next incomplete or attention-needed batch.
 - [done] Browser QA result parsing rejects malformed checked-at provenance before resumable report generation.
 - [done] Filled Browser QA result templates preserve explicit per-item batch provenance for manual recheck handoff.
 - [done] Browser QA artifact bundles inherit wrapper-level batch and checked-at provenance across nested result arrays and templates.

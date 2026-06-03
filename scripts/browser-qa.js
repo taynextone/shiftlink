@@ -43,8 +43,8 @@ function loadResults() {
 const renderers = {
   checklist: renderBrowserQaChecklistMarkdown,
   'checklist-json': () => JSON.stringify(buildBrowserQaChecklistDocument(), null, 2),
-  plan: renderBrowserQaExecutionPlanMarkdown,
-  'plan-json': () => JSON.stringify(buildBrowserQaExecutionPlan(), null, 2),
+  plan: () => renderBrowserQaExecutionPlanMarkdown(undefined, loadResults()),
+  'plan-json': () => JSON.stringify(buildBrowserQaExecutionPlan(undefined, loadResults()), null, 2),
   'next-batch': () => renderNextBrowserQaExecutionBatchMarkdown(undefined, loadResults()),
   'next-batch-json': () => JSON.stringify(getNextBrowserQaExecutionBatch(undefined, loadResults()), null, 2),
   'result-template': () => renderBrowserQaResultTemplateMarkdown(undefined, loadResults()),

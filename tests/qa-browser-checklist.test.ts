@@ -141,6 +141,7 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(markdown).toContain('## hospital_admin:desktop');
     expect(markdown).toContain('- Role: HOSPITAL_ADMIN');
     expect(markdown).toContain('- Viewport: desktop');
+    expect(markdown).toContain('- Status: 0/3 passed, 0 failed, 0 blocked, 3 pending, attention no');
     expect(markdown).toContain('- Routes: /hospital, /hospital/contracts, /hospital/billing');
     expect(markdown).toContain('- hospital-shift-to-billing-ops:hospital-billing:desktop: billing summary; invoice detail; HR/payroll handoff');
   });
@@ -151,6 +152,7 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(plan.batchCount).toBe(6);
     expect(plan.itemCount).toBe(17);
     expect(plan.nextBatchId).toBe('nurse:desktop');
+    expect(plan.batchSummaries).toHaveLength(6);
     expect(plan.batches.map((batch) => batch.id)).toEqual([
       'nurse:desktop',
       'nurse:mobile',
@@ -163,6 +165,27 @@ describe('phase 7 browser QA checklist builder', () => {
       '/admin/verification',
       '/admin/ops',
     ]);
+  });
+
+  it('keeps execution plans resumable with prior browser QA results', () => {
+    const checklist = buildBrowserQaChecklist();
+    const [nurseDesktop] = buildBrowserQaExecutionBatches(checklist);
+    const results = nurseDesktop.items.map((item) => ({ itemId: item.id, status: 'passed' as const }));
+    const plan = buildBrowserQaExecutionPlan(checklist, results);
+    const markdown = renderBrowserQaExecutionPlanMarkdown(checklist, results);
+
+    expect(plan.nextBatchId).toBe('nurse:mobile');
+    expect(plan.batchSummaries.find((summary) => summary.id === 'nurse:desktop')?.summary).toEqual({
+      total: nurseDesktop.items.length,
+      pending: 0,
+      passed: nurseDesktop.items.length,
+      failed: 0,
+      blocked: 0,
+      complete: true,
+      needsAttention: false,
+    });
+    expect(markdown).toContain('Next batch: nurse:mobile');
+    expect(markdown).toContain(`- Status: ${nurseDesktop.items.length}/${nurseDesktop.items.length} passed, 0 failed, 0 blocked, 0 pending, attention no`);
   });
 
   it('summarizes browser QA execution status per role and viewport batch', () => {

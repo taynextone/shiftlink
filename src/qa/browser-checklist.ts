@@ -43,6 +43,7 @@ export type BrowserQaExecutionPlan = {
   batchCount: number;
   itemCount: number;
   nextBatchId: string | null;
+  batchSummaries: BrowserQaExecutionBatchSummary[];
   batches: BrowserQaExecutionBatch[];
 };
 
@@ -256,12 +257,16 @@ export function getNextBrowserQaExecutionBatch(
   return null;
 }
 
-export function buildBrowserQaExecutionPlan(items = buildBrowserQaChecklist()): BrowserQaExecutionPlan {
+export function buildBrowserQaExecutionPlan(
+  items = buildBrowserQaChecklist(),
+  results: BrowserQaRunResult[] = [],
+): BrowserQaExecutionPlan {
   const batches = buildBrowserQaExecutionBatches(items);
   return {
     batchCount: batches.length,
     itemCount: items.length,
-    nextBatchId: getNextBrowserQaExecutionBatch(items)?.id ?? null,
+    nextBatchId: getNextBrowserQaExecutionBatch(items, results)?.id ?? null,
+    batchSummaries: summarizeBrowserQaExecutionBatches(items, results),
     batches,
   };
 }
@@ -568,8 +573,12 @@ export function renderBrowserQaChecklistMarkdown(items = buildBrowserQaChecklist
   return lines.join('\n').trimEnd();
 }
 
-export function renderBrowserQaExecutionPlanMarkdown(items = buildBrowserQaChecklist()): string {
-  const plan = buildBrowserQaExecutionPlan(items);
+export function renderBrowserQaExecutionPlanMarkdown(
+  items = buildBrowserQaChecklist(),
+  results: BrowserQaRunResult[] = [],
+): string {
+  const plan = buildBrowserQaExecutionPlan(items, results);
+  const summaryByBatchId = new Map(plan.batchSummaries.map((batchSummary) => [batchSummary.id, batchSummary.summary]));
   const lines = [
     '# Phase 7 Browser QA Execution Plan',
     '',
@@ -580,12 +589,14 @@ export function renderBrowserQaExecutionPlanMarkdown(items = buildBrowserQaCheck
   ];
 
   for (const batch of plan.batches) {
+    const summary = summaryByBatchId.get(batch.id);
     lines.push(
       `## ${batch.id}`,
       '',
       `- Role: ${batch.ownerRole}`,
       `- Viewport: ${batch.viewport}`,
       `- Items: ${batch.items.length}`,
+      `- Status: ${summary?.passed ?? 0}/${summary?.total ?? batch.items.length} passed, ${summary?.failed ?? 0} failed, ${summary?.blocked ?? 0} blocked, ${summary?.pending ?? batch.items.length} pending, attention ${summary?.needsAttention ? 'yes' : 'no'}`,
       `- Routes: ${[...new Set(batch.items.map((item) => item.route))].join(', ')}`,
       '',
     );
