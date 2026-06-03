@@ -318,7 +318,10 @@ function isValidCheckedAt(value: string): boolean {
   return value.length > 0 && !Number.isNaN(Date.parse(value));
 }
 
-function buildBrowserQaResultDefaults(value: Record<string, unknown>): Pick<BrowserQaRunResult, 'batchId' | 'checkedAt'> {
+function buildBrowserQaResultDefaults(
+  value: Record<string, unknown>,
+  inheritedDefaults: Pick<BrowserQaRunResult, 'batchId' | 'checkedAt'> = {},
+): Pick<BrowserQaRunResult, 'batchId' | 'checkedAt'> {
   if (value.batchId !== undefined && (typeof value.batchId !== 'string' || value.batchId.length === 0)) {
     throw new Error('Browser QA result wrapper batchId must be a non-empty string when provided.');
   }
@@ -328,6 +331,7 @@ function buildBrowserQaResultDefaults(value: Record<string, unknown>): Pick<Brow
   }
 
   return {
+    ...inheritedDefaults,
     ...(value.batchId ? { batchId: value.batchId as string } : {}),
     ...(value.checkedAt ? { checkedAt: value.checkedAt as string } : {}),
   };
@@ -431,11 +435,15 @@ function parseBrowserQaTemplateResult(
   return result;
 }
 
-export function parseBrowserQaRunResults(value: unknown): BrowserQaRunResult[] {
+function parseBrowserQaRunResultsWithDefaults(
+  value: unknown,
+  inheritedDefaults: Pick<BrowserQaRunResult, 'batchId' | 'checkedAt'> = {},
+): BrowserQaRunResult[] {
   if (isRecord(value) && Array.isArray(value.artifacts)) {
+    const defaults = buildBrowserQaResultDefaults(value, inheritedDefaults);
     return value.artifacts.flatMap((artifact, index) => {
       try {
-        return parseBrowserQaRunResults(artifact);
+        return parseBrowserQaRunResultsWithDefaults(artifact, defaults);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         throw new Error(`Browser QA artifact at index ${index} is invalid: ${message}`);
@@ -444,14 +452,14 @@ export function parseBrowserQaRunResults(value: unknown): BrowserQaRunResult[] {
   }
 
   if (isRecord(value) && Array.isArray(value.items)) {
-    const defaults = buildBrowserQaResultDefaults(value);
+    const defaults = buildBrowserQaResultDefaults(value, inheritedDefaults);
     return value.items.flatMap((item, index) => {
       const result = parseBrowserQaTemplateResult(item, index, defaults);
       return result ? [result] : [];
     });
   }
 
-  const defaults = isRecord(value) ? buildBrowserQaResultDefaults(value) : {};
+  const defaults = isRecord(value) ? buildBrowserQaResultDefaults(value, inheritedDefaults) : inheritedDefaults;
   const rawResults = Array.isArray(value)
     ? value
     : isRecord(value) && Array.isArray(value.results)
@@ -463,6 +471,10 @@ export function parseBrowserQaRunResults(value: unknown): BrowserQaRunResult[] {
   }
 
   return rawResults.map((result, index) => parseBrowserQaRunResult(result, index, defaults));
+}
+
+export function parseBrowserQaRunResults(value: unknown): BrowserQaRunResult[] {
+  return parseBrowserQaRunResultsWithDefaults(value);
 }
 
 export function buildBrowserQaRunReport(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): BrowserQaRunReport {

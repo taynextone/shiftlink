@@ -658,6 +658,59 @@ describe('phase 7 browser QA checklist builder', () => {
     ]);
   });
 
+  it('applies wrapper provenance to nested browser QA artifact batches', () => {
+    const checklist = buildBrowserQaChecklist();
+
+    expect(parseBrowserQaRunResults({
+      batchId: 'nurse:desktop',
+      checkedAt: '2026-06-03T11:00:00.000Z',
+      artifacts: [
+        [
+          { itemId: checklist[0].id, status: 'passed' },
+        ],
+        {
+          checkedAt: '2026-06-03T11:15:00.000Z',
+          results: [
+            { itemId: checklist[1].id, status: 'blocked', note: 'Canvas node unavailable' },
+            { itemId: checklist[2].id, status: 'failed', batchId: 'manual-card-recheck', note: 'Desktop card overlap' },
+          ],
+        },
+        {
+          items: [
+            { id: checklist[3].id, status: 'passed', note: '' },
+          ],
+        },
+      ],
+    })).toEqual([
+      {
+        itemId: checklist[0].id,
+        status: 'passed',
+        batchId: 'nurse:desktop',
+        checkedAt: '2026-06-03T11:00:00.000Z',
+      },
+      {
+        itemId: checklist[1].id,
+        status: 'blocked',
+        batchId: 'nurse:desktop',
+        checkedAt: '2026-06-03T11:15:00.000Z',
+        note: 'Canvas node unavailable',
+      },
+      {
+        itemId: checklist[2].id,
+        status: 'failed',
+        batchId: 'manual-card-recheck',
+        checkedAt: '2026-06-03T11:15:00.000Z',
+        note: 'Desktop card overlap',
+      },
+      {
+        itemId: checklist[3].id,
+        status: 'passed',
+        batchId: 'nurse:desktop',
+        checkedAt: '2026-06-03T11:00:00.000Z',
+      },
+    ]);
+  });
+
   it('rejects malformed browser QA template result artifacts before report generation', () => {
     expect(() => parseBrowserQaRunResults({ items: [{ id: '', status: 'passed' }] })).toThrow('non-empty id');
     expect(() => parseBrowserQaRunResults({ items: [{ id: 'x', status: 'pending' }] })).toThrow('passed, failed, blocked, or null');
@@ -676,6 +729,12 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(() => parseBrowserQaRunResults({
       items: [{ id: 'x', status: 'blocked', checkedAt: 'not-a-date' }],
     })).toThrow('checkedAt must be a valid date string');
+    expect(() => parseBrowserQaRunResults({
+      checkedAt: 'not-a-date',
+      artifacts: [
+        [{ itemId: 'x', status: 'blocked' }],
+      ],
+    })).toThrow('wrapper checkedAt must be a valid date string');
   });
 
   it('rejects malformed browser QA result artifacts before report generation', () => {
