@@ -549,13 +549,52 @@ describe('phase 7 browser QA checklist builder', () => {
 
     expect(parseBrowserQaRunResults({
       batchId: 'hospital_admin:mobile',
+      checkedAt: '2026-06-03T07:10:00.000Z',
       results: [
         { itemId: checklist[4].id, status: 'blocked', note: 'Mobile screenshot runner disconnected' },
-        { itemId: checklist[5].id, status: 'failed', batchId: 'manual-recheck', note: 'Explicit batch should win' },
+        {
+          itemId: checklist[5].id,
+          status: 'failed',
+          batchId: 'manual-recheck',
+          checkedAt: '2026-06-03T07:20:00.000Z',
+          note: 'Explicit batch should win',
+        },
       ],
     })).toEqual([
-      { itemId: checklist[4].id, status: 'blocked', batchId: 'hospital_admin:mobile', note: 'Mobile screenshot runner disconnected' },
-      { itemId: checklist[5].id, status: 'failed', batchId: 'manual-recheck', note: 'Explicit batch should win' },
+      {
+        itemId: checklist[4].id,
+        status: 'blocked',
+        batchId: 'hospital_admin:mobile',
+        checkedAt: '2026-06-03T07:10:00.000Z',
+        note: 'Mobile screenshot runner disconnected',
+      },
+      {
+        itemId: checklist[5].id,
+        status: 'failed',
+        batchId: 'manual-recheck',
+        checkedAt: '2026-06-03T07:20:00.000Z',
+        note: 'Explicit batch should win',
+      },
+    ]);
+  });
+
+  it('preserves wrapper provenance from filled browser QA result templates', () => {
+    const checklist = buildBrowserQaChecklist();
+
+    expect(parseBrowserQaRunResults({
+      batchId: 'super_admin:desktop',
+      checkedAt: '2026-06-03T07:30:00.000Z',
+      items: [
+        { id: checklist[14].id, status: 'passed', note: '' },
+        { id: checklist[15].id, status: null, note: '' },
+      ],
+    })).toEqual([
+      {
+        itemId: checklist[14].id,
+        status: 'passed',
+        batchId: 'super_admin:desktop',
+        checkedAt: '2026-06-03T07:30:00.000Z',
+      },
     ]);
   });
 
@@ -599,5 +638,6 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(() => parseBrowserQaRunResults([{ itemId: '', status: 'passed' }])).toThrow('non-empty itemId');
     expect(() => parseBrowserQaRunResults([{ itemId: 'x', status: 'blocked', batchId: '' }])).toThrow('batchId must be a non-empty string');
     expect(() => parseBrowserQaRunResults([{ itemId: 'x', status: 'blocked', note: 42 }])).toThrow('note must be a string');
+    expect(() => parseBrowserQaRunResults({ checkedAt: 42, results: [{ itemId: 'x', status: 'blocked' }] })).toThrow('wrapper checkedAt');
   });
 });

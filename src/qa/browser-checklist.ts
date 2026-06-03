@@ -314,7 +314,26 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function parseBrowserQaRunResult(value: unknown, index: number, defaultBatchId?: string): BrowserQaRunResult {
+function buildBrowserQaResultDefaults(value: Record<string, unknown>): Pick<BrowserQaRunResult, 'batchId' | 'checkedAt'> {
+  if (value.batchId !== undefined && (typeof value.batchId !== 'string' || value.batchId.length === 0)) {
+    throw new Error('Browser QA result wrapper batchId must be a non-empty string when provided.');
+  }
+
+  if (value.checkedAt !== undefined && (typeof value.checkedAt !== 'string' || value.checkedAt.length === 0)) {
+    throw new Error('Browser QA result wrapper checkedAt must be a non-empty string when provided.');
+  }
+
+  return {
+    ...(value.batchId ? { batchId: value.batchId as string } : {}),
+    ...(value.checkedAt ? { checkedAt: value.checkedAt as string } : {}),
+  };
+}
+
+function parseBrowserQaRunResult(
+  value: unknown,
+  index: number,
+  defaults: Pick<BrowserQaRunResult, 'batchId' | 'checkedAt'> = {},
+): BrowserQaRunResult {
   if (!isRecord(value)) {
     throw new Error(`Browser QA result at index ${index} must be an object.`);
   }
@@ -330,7 +349,7 @@ function parseBrowserQaRunResult(value: unknown, index: number, defaultBatchId?:
   const result: BrowserQaRunResult = {
     itemId: value.itemId,
     status: value.status as BrowserQaRunResult['status'],
-    ...(defaultBatchId ? { batchId: defaultBatchId } : {}),
+    ...defaults,
   };
 
   if (value.batchId !== undefined) {
@@ -357,7 +376,11 @@ function parseBrowserQaRunResult(value: unknown, index: number, defaultBatchId?:
   return result;
 }
 
-function parseBrowserQaTemplateResult(value: unknown, index: number, batchId?: string): BrowserQaRunResult | null {
+function parseBrowserQaTemplateResult(
+  value: unknown,
+  index: number,
+  defaults: Pick<BrowserQaRunResult, 'batchId' | 'checkedAt'> = {},
+): BrowserQaRunResult | null {
   if (!isRecord(value)) {
     throw new Error(`Browser QA template item at index ${index} must be an object.`);
   }
@@ -377,7 +400,7 @@ function parseBrowserQaTemplateResult(value: unknown, index: number, batchId?: s
   const result: BrowserQaRunResult = {
     itemId: value.id,
     status: value.status as BrowserQaRunResult['status'],
-    ...(batchId ? { batchId } : {}),
+    ...defaults,
   };
 
   if (value.note !== undefined && value.note !== '') {
@@ -410,16 +433,14 @@ export function parseBrowserQaRunResults(value: unknown): BrowserQaRunResult[] {
   }
 
   if (isRecord(value) && Array.isArray(value.items)) {
-    const batchId = typeof value.batchId === 'string' && value.batchId.length > 0 ? value.batchId : undefined;
+    const defaults = buildBrowserQaResultDefaults(value);
     return value.items.flatMap((item, index) => {
-      const result = parseBrowserQaTemplateResult(item, index, batchId);
+      const result = parseBrowserQaTemplateResult(item, index, defaults);
       return result ? [result] : [];
     });
   }
 
-  const defaultBatchId = isRecord(value) && typeof value.batchId === 'string' && value.batchId.length > 0
-    ? value.batchId
-    : undefined;
+  const defaults = isRecord(value) ? buildBrowserQaResultDefaults(value) : {};
   const rawResults = Array.isArray(value)
     ? value
     : isRecord(value) && Array.isArray(value.results)
@@ -430,7 +451,7 @@ export function parseBrowserQaRunResults(value: unknown): BrowserQaRunResult[] {
     throw new Error('Browser QA results JSON must be an array, an object with a results array, or a result template object with an items array.');
   }
 
-  return rawResults.map((result, index) => parseBrowserQaRunResult(result, index, defaultBatchId));
+  return rawResults.map((result, index) => parseBrowserQaRunResult(result, index, defaults));
 }
 
 export function buildBrowserQaRunReport(items = buildBrowserQaChecklist(), results: BrowserQaRunResult[] = []): BrowserQaRunReport {
