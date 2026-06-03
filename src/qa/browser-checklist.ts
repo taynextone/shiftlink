@@ -65,6 +65,7 @@ export type BrowserQaResultTemplateItem = Pick<
 > & {
   status: null;
   note: string;
+  previousResult?: BrowserQaRunResult;
 };
 
 export type BrowserQaResultTemplate = {
@@ -248,6 +249,7 @@ export function buildBrowserQaResultTemplate(
   results: BrowserQaRunResult[] = [],
 ): BrowserQaResultTemplate {
   const nextBatch = getNextBrowserQaExecutionBatch(items, results);
+  const resultByItemId = latestResultByItemId(results);
   return {
     batchId: nextBatch?.id ?? null,
     statusOptions: ['passed', 'failed', 'blocked'],
@@ -262,6 +264,7 @@ export function buildBrowserQaResultTemplate(
       browserAssertions: item.browserAssertions,
       status: null,
       note: '',
+      ...(resultByItemId.has(item.id) ? { previousResult: resultByItemId.get(item.id)! } : {}),
     })) ?? [],
   };
 }
@@ -571,6 +574,7 @@ export function renderBrowserQaResultTemplateMarkdown(
       `- Critical regions: ${item.criticalRegions.join('; ')}`,
       `- Expected signals: ${item.expectedSignals.join('; ')}`,
       `- Browser assertions: ${item.browserAssertions.join('; ')}`,
+      `- Previous result: ${item.previousResult ? `${item.previousResult.status}${formatOptionalNote(item.previousResult)}` : 'none'}`,
       '- Status: ',
       '- Note: ',
       '',

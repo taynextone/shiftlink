@@ -320,6 +320,44 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(markdown).not.toContain('## nurse-activation-to-offer:nurse:desktop');
   });
 
+  it('carries previous failed or blocked results into attention-target templates', () => {
+    const checklist = buildBrowserQaChecklist();
+    const [nurseDesktop] = buildBrowserQaExecutionBatches(checklist);
+    const previousResults = nurseDesktop.items.map((item, index) => ({
+      itemId: item.id,
+      status: index === 0 ? 'failed' as const : 'passed' as const,
+      note: index === 0 ? 'Desktop contract cards overlap the activation panel' : undefined,
+      checkedAt: index === 0 ? '2026-06-03T01:30:00.000Z' : undefined,
+    }));
+    const template = buildBrowserQaResultTemplate(checklist, previousResults);
+    const markdown = renderBrowserQaResultTemplateMarkdown(checklist, previousResults);
+
+    expect(template.batchId).toBe('nurse:desktop');
+    expect(template.items[0]).toEqual(
+      expect.objectContaining({
+        id: nurseDesktop.items[0].id,
+        status: null,
+        note: '',
+        previousResult: {
+          itemId: nurseDesktop.items[0].id,
+          status: 'failed',
+          note: 'Desktop contract cards overlap the activation panel',
+          checkedAt: '2026-06-03T01:30:00.000Z',
+        },
+      }),
+    );
+    expect(template.items[1]).toEqual(
+      expect.objectContaining({
+        previousResult: {
+          itemId: nurseDesktop.items[1].id,
+          status: 'passed',
+        },
+      }),
+    );
+    expect(markdown).toContain('- Previous result: failed - Desktop contract cards overlap the activation panel');
+    expect(markdown).toContain('- Previous result: passed');
+  });
+
   it('renders an empty browser QA result template once every batch passed', () => {
     const checklist = buildBrowserQaChecklist();
     const markdown = renderBrowserQaResultTemplateMarkdown(
