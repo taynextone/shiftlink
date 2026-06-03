@@ -598,6 +598,39 @@ describe('phase 7 browser QA checklist builder', () => {
     ]);
   });
 
+  it('preserves explicit item batch provenance from filled browser QA result templates', () => {
+    const checklist = buildBrowserQaChecklist();
+
+    expect(parseBrowserQaRunResults({
+      batchId: 'nurse:desktop',
+      checkedAt: '2026-06-03T10:00:00.000Z',
+      items: [
+        { id: checklist[0].id, status: 'passed', note: '' },
+        {
+          id: checklist[1].id,
+          status: 'blocked',
+          batchId: 'manual-overflow-recheck',
+          checkedAt: '2026-06-03T10:15:00.000Z',
+          note: 'Manual mobile overflow recheck',
+        },
+      ],
+    })).toEqual([
+      {
+        itemId: checklist[0].id,
+        status: 'passed',
+        batchId: 'nurse:desktop',
+        checkedAt: '2026-06-03T10:00:00.000Z',
+      },
+      {
+        itemId: checklist[1].id,
+        status: 'blocked',
+        batchId: 'manual-overflow-recheck',
+        checkedAt: '2026-06-03T10:15:00.000Z',
+        note: 'Manual mobile overflow recheck',
+      },
+    ]);
+  });
+
   it('parses wrapped browser QA artifact batches for resumable report generation', () => {
     const checklist = buildBrowserQaChecklist();
 
@@ -629,6 +662,7 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(() => parseBrowserQaRunResults({ items: [{ id: '', status: 'passed' }] })).toThrow('non-empty id');
     expect(() => parseBrowserQaRunResults({ items: [{ id: 'x', status: 'pending' }] })).toThrow('passed, failed, blocked, or null');
     expect(() => parseBrowserQaRunResults({ items: [{ id: 'x', status: 'blocked', note: 42 }] })).toThrow('note must be a string');
+    expect(() => parseBrowserQaRunResults({ items: [{ id: 'x', status: 'blocked', batchId: '' }] })).toThrow('batchId must be a non-empty string');
   });
 
   it('rejects malformed browser QA checked-at provenance before report generation', () => {

@@ -414,6 +414,13 @@ function parseBrowserQaTemplateResult(
     result.note = value.note;
   }
 
+  if (value.batchId !== undefined) {
+    if (typeof value.batchId !== 'string' || value.batchId.length === 0) {
+      throw new Error(`Browser QA template item at index ${index} batchId must be a non-empty string when provided.`);
+    }
+    result.batchId = value.batchId;
+  }
+
   if (value.checkedAt !== undefined) {
     if (typeof value.checkedAt !== 'string' || !isValidCheckedAt(value.checkedAt)) {
       throw new Error(`Browser QA template item at index ${index} checkedAt must be a valid date string when provided.`);
