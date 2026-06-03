@@ -281,6 +281,7 @@ describe('phase 7 browser QA checklist builder', () => {
         viewport: 'mobile',
       }),
     );
+    expect(template.items[0].seededRecords).toContain('released nurse profile with healthcare documents approved');
     expect(template.items[0].criticalRegions).toContain('activation progress');
   });
 
@@ -314,6 +315,7 @@ describe('phase 7 browser QA checklist builder', () => {
     expect(markdown).toContain('- Role: NURSE');
     expect(markdown).toContain('- Route: /nurse');
     expect(markdown).toContain('- Viewport: mobile');
+    expect(markdown).toContain('- Seeded records: released nurse profile with healthcare documents approved');
     expect(markdown).toContain('- Critical regions: activation progress; recent contracts; upcoming availability');
     expect(markdown).toContain('- Status: ');
     expect(markdown).toContain('- Note: ');

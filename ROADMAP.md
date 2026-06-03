@@ -165,6 +165,7 @@ Progress while visual QA is blocked:
 - [done] Browser QA result templates can render as Markdown for manual screenshot passes and as JSON for automation handoff.
 - [done] Browser QA result parsing can merge wrapped artifact batches and multiple CLI result files for resumable screenshot passes.
 - [done] Browser QA attention-target result templates preserve previous failed / blocked / passed result context for focused rechecks.
+- [done] Browser QA result templates include seeded-record setup context so screenshot executors can validate against the intended fixtures.
 
 Blocked note:
 - current OpenClaw visual QA path issue is tracked separately in `UNRESOLVED.md`

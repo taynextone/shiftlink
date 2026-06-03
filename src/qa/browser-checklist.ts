@@ -61,7 +61,7 @@ export type BrowserQaRunResult = {
 
 export type BrowserQaResultTemplateItem = Pick<
   BrowserQaChecklistItem,
-  'id' | 'ownerRole' | 'route' | 'viewport' | 'title' | 'criticalRegions' | 'expectedSignals' | 'browserAssertions'
+  'id' | 'ownerRole' | 'route' | 'viewport' | 'title' | 'seededRecords' | 'criticalRegions' | 'expectedSignals' | 'browserAssertions'
 > & {
   status: null;
   note: string;
@@ -259,6 +259,7 @@ export function buildBrowserQaResultTemplate(
       route: item.route,
       viewport: item.viewport,
       title: item.title,
+      seededRecords: item.seededRecords,
       criticalRegions: item.criticalRegions,
       expectedSignals: item.expectedSignals,
       browserAssertions: item.browserAssertions,
@@ -571,6 +572,7 @@ export function renderBrowserQaResultTemplateMarkdown(
       `- Route: ${item.route}`,
       `- Viewport: ${item.viewport}`,
       `- Scenario: ${item.title}`,
+      `- Seeded records: ${item.seededRecords.join('; ')}`,
       `- Critical regions: ${item.criticalRegions.join('; ')}`,
       `- Expected signals: ${item.expectedSignals.join('; ')}`,
       `- Browser assertions: ${item.browserAssertions.join('; ')}`,
