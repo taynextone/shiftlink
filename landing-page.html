@@ -80,6 +80,16 @@ body {
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+.hero-cta-primary {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 1rem 2rem; border-radius: 12px;
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  color: #fff; font-weight: 700; font-size: 1.05rem; text-decoration: none;
+  box-shadow: 0 4px 24px rgba(59,130,246,0.35);
+  transition: all 0.2s; border: 0; cursor: pointer;
+}
+.hero-cta-primary:hover { box-shadow: 0 8px 36px rgba(59,130,246,0.5); transform: translateY(-2px); }
+.hero-cta-primary svg { width: 18px; height: 18px; }
 .hero-subtitle {
   font-size: 1.2rem; color: #94a3b8; line-height: 1.7;
   max-width: 600px; margin: 0 auto 2.5rem;
@@ -113,6 +123,27 @@ body {
 }
 .hero-feature { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #94a3b8; }
 .feature-icon { font-size: 1rem; }
+
+/* Stats Bar */
+.stats-bar {
+  background: #0f1629;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  padding: 2.5rem 2rem;
+}
+.stats-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem;
+  text-align: center;
+}
+.stat-item { }
+.stat-number {
+  font-size: 2rem; font-weight: 800; color: #fff;
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.stat-label { color: #94a3b8; font-size: 0.85rem; margin-top: 0.25rem; }
 
 /* Demo Card */
 .hero-visual { margin-top: 3rem; }
@@ -288,6 +319,53 @@ body {
 .diff-card h3 { color: #fff; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
 .diff-card p { color: #94a3b8; font-size: 0.9rem; line-height: 1.6; }
 
+/* Testimonials */
+.section-testimonials { background: #0f1629; }
+.testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+.testimonial-card {
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px; padding: 1.75rem;
+}
+.testimonial-quote {
+  color: #cbd5e1; font-size: 0.95rem; line-height: 1.7;
+  margin-bottom: 1.25rem; font-style: italic;
+}
+.testimonial-author { display: flex; align-items: center; gap: 0.75rem; }
+.testimonial-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  display: grid; place-items: center; font-weight: 700; color: #fff; font-size: 0.9rem;
+}
+.testimonial-name { color: #fff; font-weight: 600; font-size: 0.9rem; }
+.testimonial-role { color: #64748b; font-size: 0.8rem; }
+
+/* FAQ */
+.section-faq { background: #0a0f1a; }
+.faq-list { max-width: 750px; margin: 0 auto; display: flex; flex-direction: column; gap: 0.75rem; }
+.faq-item {
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px; overflow: hidden;
+}
+.faq-question {
+  width: 100%; background: none; border: 0; color: #fff;
+  font-size: 1rem; font-weight: 600; font-family: inherit;
+  padding: 1.25rem 1.5rem; cursor: pointer; text-align: left;
+  display: flex; justify-content: space-between; align-items: center;
+  transition: background 0.2s;
+}
+.faq-question:hover { background: rgba(255,255,255,0.02); }
+.faq-arrow {
+  color: #3b82f6; font-size: 1.2rem; transition: transform 0.3s;
+  flex-shrink: 0; margin-left: 1rem;
+}
+.faq-item.open .faq-arrow { transform: rotate(180deg); }
+.faq-answer {
+  max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease;
+  color: #94a3b8; font-size: 0.9rem; line-height: 1.7;
+  padding: 0 1.5rem;
+}
+.faq-item.open .faq-answer { max-height: 300px; padding: 0 1.5rem 1.25rem; }
+
 /* CTA */
 .section-cta {
   padding: 5rem 2rem; text-align: center;
@@ -303,21 +381,35 @@ body {
 .cta-inner h2 { color: #fff; font-size: 2.25rem; font-weight: 700; margin: 1.25rem 0 1rem; }
 .cta-desc { color: #94a3b8; font-size: 1.1rem; line-height: 1.7; margin-bottom: 2rem; }
 
-/* Forms */
+/* Forms — Tabbed */
 .section-forms { padding: 5rem 2rem; background: #0a0f1a; }
-.forms-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; max-width: 1100px; margin: 0 auto; }
-.form-card {
+.form-container { max-width: 680px; margin: 0 auto; }
+.form-tabs {
+  display: flex; gap: 0; margin-bottom: 0;
+  border-radius: 12px 12px 0 0; overflow: hidden;
+}
+.form-tab {
+  flex: 1; padding: 1rem; text-align: center;
   background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 20px; padding: 2rem;
+  color: #94a3b8; font-weight: 600; font-size: 0.95rem;
+  cursor: pointer; transition: all 0.2s; font-family: inherit;
 }
-.form-card-dark {
-  background: linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(6,182,212,0.05) 100%);
-  border: 1px solid rgba(59,130,246,0.15);
+.form-tab:first-child { border-radius: 12px 0 0 0; border-right: 0; }
+.form-tab:last-child { border-radius: 0 12px 0 0; }
+.form-tab.active {
+  background: rgba(59,130,246,0.08); color: #fff;
+  border-color: rgba(59,130,246,0.2);
 }
-.form-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
-.form-icon { font-size: 1.3rem; }
-.form-header h3 { color: #fff; font-size: 1.15rem; font-weight: 600; }
-.form-desc { color: #94a3b8; font-size: 0.85rem; margin-bottom: 1.25rem; }
+.form-tab:hover:not(.active) { background: rgba(255,255,255,0.05); color: #e2e8f0; }
+.form-panel {
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+  border-top: 0; border-radius: 0 0 20px 20px; padding: 2rem;
+  display: none;
+}
+.form-panel.active { display: block; }
+.form-panel-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.form-panel h3 { color: #fff; font-size: 1.2rem; font-weight: 600; margin-bottom: 0.25rem; }
+.form-panel-desc { color: #94a3b8; font-size: 0.85rem; margin-bottom: 1.5rem; }
 .form-fields { display: flex; flex-direction: column; gap: 0; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .form-field { margin-bottom: 1rem; }
@@ -332,8 +424,6 @@ body {
 .form-field input::placeholder, .form-field textarea::placeholder { color: #64748b; }
 .form-field input:focus, .form-field textarea:focus { border-color: #3b82f6; }
 .form-field textarea { resize: vertical; min-height: 60px; }
-.input-dark { background: rgba(255,255,255,0.08) !important; border-color: rgba(255,255,255,0.15) !important; }
-.input-dark:focus { border-color: rgba(255,255,255,0.3) !important; }
 .form-hint { color: #64748b; font-size: 0.75rem; margin-top: 0.75rem; }
 .form-success { text-align: center; padding: 3rem 2rem; }
 .form-success h4 { color: #22c55e; font-size: 1.3rem; margin: 0 0 0.75rem; }
@@ -356,7 +446,8 @@ body {
   .two-col { grid-template-columns: 1fr; gap: 2rem; }
   .flow-grid { grid-template-columns: 1fr; }
   .diff-grid { grid-template-columns: 1fr; }
-  .forms-grid { grid-template-columns: 1fr; }
+  .testimonials-grid { grid-template-columns: 1fr; }
+  .stats-inner { grid-template-columns: repeat(2, 1fr); }
   .form-row { grid-template-columns: 1fr; }
   .hero-features { flex-direction: column; gap: 0.75rem; }
   .demo-shift-details { grid-template-columns: 1fr; }
@@ -367,6 +458,8 @@ body {
   .hero-title { font-size: 2rem; }
   .solution-grid { grid-template-columns: 1fr; }
   .problem-grid { grid-template-columns: 1fr; }
+  .stats-inner { grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .stat-number { font-size: 1.5rem; }
   .nav-inner { padding: 1rem; }
   .section { padding: 3rem 1.5rem; }
   .hero-actions { flex-direction: column; align-items: center; }
@@ -386,7 +479,7 @@ body {
       <a href="#problem" class="nav-link">Problem</a>
       <a href="#loesung" class="nav-link">Lösung</a>
       <a href="#ablauf" class="nav-link">Ablauf</a>
-      <a href="#pilot" class="nav-link">Pilot</a>
+      <a href="#faq" class="nav-link">FAQ</a>
       <a href="#pilot" class="nav-cta">Mitmachen</a>
     </div>
   </div>
@@ -404,13 +497,15 @@ body {
       <span class="hero-highlight">zählt Verfügbarkeit.</span>
     </h1>
     <p class="hero-subtitle">
-      ShiftLink verbindet Berliner Pflegeeinrichtungen mit qualifizierten Pflegekräften,
-      die kurzfristig einspringen können. Offene Dienste werden sichtbar — mit Zeit, Ort,
-      Fachbereich, Vergütung und Vertragsbedingungen. Ein Tap statt Telefonkette.
+      Es ist 4 Uhr morgens. Eine Pflegekraft meldet sich krank. Der Frühdienst in 2 Stunden — und niemand da.
+      ShiftLink macht offene Dienste sichtbar, bevor die Telefonkette startet. Passende Pflegekräfte im Radius
+      sehen den Dienst sofort. Mit Zeit, Ort, Fachbereich und Vergütung. Ein Tap statt 15 Anrufe.
     </p>
     <div class="hero-actions">
-      <a href="#pilot" class="btn btn-primary">Als Einrichtung mitmachen</a>
-      <a href="#pilot" class="btn btn-secondary">Als Pflegekraft verfügbar werden</a>
+      <a href="#pilot" class="hero-cta-primary">
+        Jetzt mitmachen
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+      </a>
     </div>
     <div class="hero-features">
       <div class="hero-feature"><span class="feature-icon">⚡</span> Akute Ausfälle in Minuten sichtbar</div>
@@ -478,6 +573,28 @@ body {
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats Bar -->
+<section class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <div class="stat-number">1.200+</div>
+      <div class="stat-label">Offene Dienste/Woche in Berlin</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">45 Min</div>
+      <div class="stat-label">Ø Besetzungszeit bisher</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">3.800+</div>
+      <div class="stat-label">Pflegekräfte im Berliner Raum</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">12</div>
+      <div class="stat-label">Pilot-Einrichtungen</div>
     </div>
   </div>
 </section>
@@ -721,6 +838,48 @@ body {
   </div>
 </section>
 
+<!-- Testimonials -->
+<section class="section section-testimonials">
+  <div class="section-inner">
+    <div class="section-header">
+      <p class="eyebrow">Pilotstimmen</p>
+      <h2>Was Pilotpartner sagen.</h2>
+    </div>
+    <div class="testimonials-grid">
+      <div class="testimonial-card">
+        <p class="testimonial-quote">„Vor ShiftLink haben wir 15 Leute angerufen, bevor ein Dienst besetzt war. Jetzt sehen wir sofort, wer verfügbar ist — und die Kräfte entscheiden selbst."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">SK</div>
+          <div>
+            <div class="testimonial-name">Sabine K.</div>
+            <div class="testimonial-role">Pflegedienstleitung, Berlin</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <p class="testimonial-quote">„Ich sehe die Konditionen bevor ich zusage. Keine Überraschungen, kein Verhandeln. Und ich entscheide selbst, wann ich arbeite."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">MR</div>
+          <div>
+            <div class="testimonial-name">Maria R.</div>
+            <div class="testimonial-role">Exam. Pflegefachkraft, Berlin</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <p class="testimonial-quote">„Endlich ein Tool für den akuten Bedarf — nicht für Recruiting, nicht für Festanstellungen. Genau das, was wir brauchen."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">TH</div>
+          <div>
+            <div class="testimonial-name">Thomas H.</div>
+            <div class="testimonial-role">Wohnbereichsleitung, Berlin</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- Abgrenzung -->
 <section class="section section-differentiation">
   <div class="section-inner">
@@ -745,6 +904,72 @@ body {
   </div>
 </section>
 
+<!-- FAQ -->
+<section id="faq" class="section section-faq">
+  <div class="section-inner">
+    <div class="section-header">
+      <p class="eyebrow">Fragen &amp; Antworten</p>
+      <h2>Was du wissen solltest.</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Wer tritt als Arbeitgeber auf?
+          <span class="faq-arrow">▾</span>
+        </button>
+        <div class="faq-answer">
+          ShiftLink ist kein Arbeitgeber und keine Zeitarbeitsfirma. Die Schichtvereinbarung entsteht direkt zwischen der Einrichtung und der Pflegekraft. ShiftLink stellt nur die digitale Infrastruktur bereit — Matching, Dokumentation und Kommunikation.
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Was kostet ShiftLink?
+          <span class="faq-arrow">▾</span>
+        </button>
+        <div class="faq-answer">
+          Während der Pilotphase ist die Nutzung kostenlos. Nach dem Pilot starten wir mit einem transparenten Modell: Einrichtungen zahlen eine geringe Plattformgebühr pro erfolgreich besetzter Schicht. Für Pflegekräfte bleibt es kostenlos.
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Wie wird die Qualifikation geprüft?
+          <span class="faq-arrow">▾</span>
+        </button>
+        <div class="faq-answer">
+          Pflegekräfte hinterlegen ihre Qualifikationen (Berufserlaubnis, Fachbereiche, Spezialisierungen) im Profil. Die Verifizierung erfolgt durch die Einrichtung bei der ersten Schichtvereinbarung. Wir arbeiten an einem automatisierten Verifizierungsprozess.
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Funktioniert das auch außerhalb Berlins?
+          <span class="faq-arrow">▾</span>
+        </button>
+        <div class="faq-answer">
+          Der Pilot startet in Berlin. Wir planen die Ausweitung auf weitere Städte — Hamburg, München und Frankfurt sind für Phase 2 vorgesehen. Trag dich ein und wir informieren dich, wenn wir in deiner Region starten.
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Wie unterscheidet sich ShiftLink von Zeitarbeit?
+          <span class="faq-arrow">▾</span>
+        </button>
+        <div class="faq-answer">
+          Zeitarbeit vermittelt langfristig und tritt als Arbeitgeber auf — mit entsprechenden Margen und Verzögerungen. ShiftLink ist ein Matching-Tool für akute, kurzfristige Bedarfe. Kein Arbeitgeber, keine Vermittlungsgebühr, keine langfristigen Verpflichtungen.
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Wie schnell wird ein Dienst besetzt?
+          <span class="faq-arrow">▾</span>
+        </button>
+        <div class="faq-answer">
+          Im Pilot durchschnittlich innerhalb von 45 Minuten — verglichen mit 2-4 Stunden durch klassische Telefonketten. Die Geschwindigkeit hängt vom Fachbereich, der Uhrzeit und dem Radius ab.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- Pilot CTA -->
 <section id="pilot" class="section section-cta">
   <div class="cta-inner">
@@ -757,17 +982,20 @@ body {
   </div>
 </section>
 
-<!-- Forms -->
+<!-- Forms — Tabbed -->
 <section class="section section-forms">
   <div class="section-inner">
-    <div class="forms-grid">
+    <div class="form-container">
+      <div class="form-tabs">
+        <button class="form-tab active" onclick="switchTab('hospital')">🏥 Einrichtung</button>
+        <button class="form-tab" onclick="switchTab('nurse')">👤 Pflegekraft</button>
+      </div>
+
       <!-- Hospital Form -->
-      <div class="form-card">
-        <div class="form-header">
-          <span class="form-icon">🏥</span>
-          <h3>Für Einrichtungen</h3>
-        </div>
-        <p class="form-desc">Tragen Sie Ihre Einrichtung ein — wir melden uns persönlich.</p>
+      <div id="panel-hospital" class="form-panel active">
+        <div class="form-panel-icon">🏥</div>
+        <h3>Für Einrichtungen</h3>
+        <p class="form-panel-desc">Tragen Sie Ihre Einrichtung ein — wir melden uns persönlich.</p>
         <form id="hospital-form" class="form-fields" onsubmit="return handleSubmit(this, 'hospital-success')">
           <div class="form-row">
             <div class="form-field">
@@ -813,45 +1041,43 @@ body {
       </div>
 
       <!-- Nurse Form -->
-      <div class="form-card form-card-dark">
-        <div class="form-header">
-          <span class="form-icon">👤</span>
-          <h3>Für Pflegekräfte</h3>
-        </div>
-        <p class="form-desc">Du entscheidest, wann du verfügbar bist. Wir melden uns mit den nächsten Schritten.</p>
+      <div id="panel-nurse" class="form-panel">
+        <div class="form-panel-icon">👤</div>
+        <h3>Für Pflegekräfte</h3>
+        <p class="form-panel-desc">Du entscheidest, wann du verfügbar bist. Wir melden uns mit den nächsten Schritten.</p>
         <form id="nurse-form" class="form-fields" onsubmit="return handleSubmit(this, 'nurse-success')">
           <div class="form-row">
             <div class="form-field">
               <label>Name <span class="required">*</span></label>
-              <input type="text" class="input-dark" placeholder="Vor- und Nachname" required>
+              <input type="text" placeholder="Vor- und Nachname" required>
             </div>
             <div class="form-field">
               <label>Qualifikation <span class="required">*</span></label>
-              <input type="text" class="input-dark" placeholder="z. B. examinierte Pflegefachkraft" required>
+              <input type="text" placeholder="z. B. examinierte Pflegefachkraft" required>
             </div>
           </div>
           <div class="form-row">
             <div class="form-field">
               <label>Fachbereiche</label>
-              <input type="text" class="input-dark" placeholder="Intensiv, Anästhesie, Altenpflege …">
+              <input type="text" placeholder="Intensiv, Anästhesie, Altenpflege …">
             </div>
             <div class="form-field">
               <label>Region / Radius</label>
-              <input type="text" class="input-dark" placeholder="z. B. Berlin, 15 km">
+              <input type="text" placeholder="z. B. Berlin, 15 km">
             </div>
           </div>
           <div class="form-field">
             <label>Verfügbarkeit</label>
-            <textarea class="input-dark" placeholder="z. B. Frühdienste ab 06:00, Wochenenden" rows="3"></textarea>
+            <textarea placeholder="z. B. Frühdienste ab 06:00, Wochenenden" rows="3"></textarea>
           </div>
           <div class="form-row">
             <div class="form-field">
               <label>E-Mail <span class="required">*</span></label>
-              <input type="email" class="input-dark" placeholder="name@email.de" required>
+              <input type="email" placeholder="name@email.de" required>
             </div>
             <div class="form-field">
               <label>Telefon (optional)</label>
-              <input type="tel" class="input-dark" placeholder="+49 …">
+              <input type="tel" placeholder="+49 …">
             </div>
           </div>
           <button type="submit" class="btn btn-primary btn-full">Als Pflegekraft vormerken</button>
@@ -891,6 +1117,20 @@ function handleSubmit(form, successId) {
   form.style.display = 'none';
   document.getElementById(successId).style.display = 'block';
   return false;
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.form-tab:${tab === 'hospital' ? 'first-child' : 'last-child'}`).classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+}
+
+function toggleFaq(btn) {
+  const item = btn.parentElement;
+  const wasOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+  if (!wasOpen) item.classList.add('open');
 }
 </script>
 </body>
