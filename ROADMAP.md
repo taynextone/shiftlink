@@ -271,7 +271,9 @@ Checklist:
 - Form/validation hardening: Complete
 - Navigation cohesion: Complete
 - GAP_ANALYSIS: Complete
-- Test coverage: 170 tests green
+- Test coverage: 174 tests green
+- Production hardening: Complete (rate limiting, security headers, structured logging, graceful shutdown, production Dockerfile)
+- Frontend UX: Complete (error boundary, 404 page, logout redirect, nav fixes, meta tags, favicon)
 - Remaining: Visual QA (blocked on OpenClaw), server deployment (pending Jurica)
 
 ## Open from GAP_ANALYSIS.md

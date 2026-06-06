@@ -5,28 +5,30 @@
 ## 1. Kritisch — Produkt kann nicht live gehen
 
 ### 1.1 Kein Production-Server / Deployment
-- Es gibt keinen produktionsfähigen Server. `npm start` führt `dist/server.js` aus, aber es fehlt:
-  - Reverse Proxy Konfiguration (nginx/Caddy)
-  - SSL/TLS Setup
-  - Environment-Management für Production
-  - Prozessmanager (PM2/systemd)
-- **Was fehlt:** `Dockerfile`, `docker-compose.yml`, nginx-Config, Deployment-Doku
+- ~~Es gibt keinen produktionsfähigen Server~~ ✅
+- Multi-stage Dockerfile mit non-root user, HEALTHCHECK, production CMD
+- nginx-Config vorhanden (HTTP + HTTPS-Template)
+- docker-compose.dev.yml mit db, redis, minio, app
+- DEPLOYMENT.md vorhanden
+- **Erledigt:** 2026-06-06
 
-### 1.2 Vite base path nicht gesetzt
-- `web/vite.config.ts` hat kein `base` Attribut. In Produktion (z.B. hinter nginx-Subpath) brechen alle Assets und Routes.
-- **Fix:** `base` konfigurieren oder sicherstellen dass Setup relativ funktioniert
+### 1.2 Vite base path nicht gesetzt ✅
+- `base` in vite.config.ts gesetzt (default `/`, über `VITE_BASE_PATH` konfigurierbar)
+- **Erledigt:** 2026-06-06
 
-### 1.3 API-Basis-URL hardcodet / nicht produktions-tauglich
-- Die Web-App muss wissen wo das Backend läuft. Ohne Konfiguration geht das nicht live.
-- **Fix:** `VITE_API_URL` Env-Variable durchgängig nutzen, Fallback für Dev
+### 1.3 API-Basis-URL hardcodet / nicht produktions-tauglich ✅
+- `VITE_API_BASE_URL` Env-Variable wird von Vite automatisch exposed
+- Fallback auf `/api/v1` für Production (same-origin hinter nginx)
+- **Erledigt:** 2026-06-06
 
 ### 1.4 Keine Datenbank-Migration-Strategy
 - `prisma:generate` existiert, aber es gibt kein Migrations-Script für Production
 - **Fix:** `prisma migrate deploy` in Deployment-Pipeline, Seed-Script für initiales Setup
 
-### 1.5 Kein Health-Check Endpoint
-- Der Server hat keinen `/health` Endpoint für Monitoring/Loadbalancer
-- **Fix:** `GET /health` der DB + Redis prüft und 200/503 zurückgibt
+### 1.5 Kein Health-Check Endpoint ✅
+- `/api/v1/health` vorhanden mit DB, Redis, Queue checks
+- Gibt 200/503 zurück mit Latency-Info
+- **Erledigt:** 2026-06-06
 
 ## 2. Wichtig — UX/UI Probleme
 
@@ -34,9 +36,9 @@
 - Landing Page ist generisch ("Direct staffing marketplace"). Kein Marken-Gefühl, kein USP, keine Tonalität.
 - **Fix:** Überarbeitete Landing Page mit klarer Botschaft, Shiftlink als Marke positionieren
 
-### 2.2 AppShell zeigt rohes Session-User-ID
-- In der Sidebar steht `User ID: 12345` — das ist ein UX-No-Go für Produktion
-- **Fix:** Name/E-Mail anzeigen statt roher ID
+### 2.2 AppShell zeigt rohes Session-User-ID ✅
+- Zeigt jetzt E-Mail oder Rollenname statt roher User ID
+- **Erledigt:** 2026-06-06
 
 ### 2.3 Kein Mobile-Responsive Design
 - `AppShell` hat Sidebar-Layout ohne Mobile-Breakpoints
@@ -47,23 +49,26 @@
 - `AsyncState` existiert aber ist rudimentär — keine Skeletonskeletons, keine Loading-Spinner
 - **Fix:** Konsistente Loading-States überall
 
-### 2.5 Keine Error-Seite (404/500)
-- Kein `ErrorBoundary` in der App, keine 404-Seite
-- **Fix:** React Error Boundary, 404-Seite, generische Error-Fallbacks
+### 2.5 Keine Error-Seite (404/500) ✅
+- `ErrorBoundary` Komponente + 404 NotFoundPage
+- ErrorBoundary wrappt die gesamte App
+- Wildcard-Route zeigt NotFoundPage
+- **Erledigt:** 2026-06-06
 
-### 2.6 Kein Logout-Redirect
-- Logout setzt State aber navigiert nicht zur Login-Seite
-- **Fix:** Nach Logout → `/login` redirect
+### 2.6 Kein Logout-Redirect ✅
+- Logout führt jetzt zu `window.location.href = '/login'`
+- **Erledigt:** 2026-06-06
 
-### 2.7 `NurseContractsPage` fehlt in Navigation
-- Route existiert (`/nurse/contracts`) aber kein Nav-Eintrag im AppShell
-- **Fix:** Nav-Eintrag hinzufügen oder Route entfernen wenn nicht gebraucht
+### 2.7 `NurseContractsPage` fehlt in Navigation ✅
+- Nav-Eintrag "Verträge" hinzugefügt unter Pflegekraft
+- **Erledigt:** 2026-06-06
 
 ## 3. Wichtig — Code-Qualität / Architektur
 
-### 3.1 Fehlende TypeScript Strictness
-- `tsconfig.json` hat vermutlich `strict: false`
-- **Fix:** `strict: true` aktivieren, alle Errors fixen
+### 3.1 Fehlende TypeScript Strictness ✅
+- Backend: `strict: true` (war bereits gesetzt)
+- Frontend: `strict: true` (war bereits gesetzt)
+- **Erledigt:** 2026-06-06 (bereits vorhanden)
 
 ### 3.2 Keine API Error-Handling Strategie
 - API-Calls haben kein einheitliches Error-Handling
@@ -83,12 +88,13 @@
 
 ## 4. Nice-to-have — Shipquality
 
-### 4.1 SEO / Meta Tags
-- Kein `<title>`, keine Meta-Descriptions, kein Open Graph
-- **Fix:** `react-helmet-async` oder Vite-Plugin für Meta-Tags
+### 4.1 SEO / Meta Tags ✅
+- `index.html` mit Title, description, og:title, og:description, theme-color
+- **Erledigt:** 2026-06-06
 
-### 4.2 Favicon / Branding Kein Favicon, kein Logo (nur "S" als Text-Brandmark)
-- **Fix:** SVG-Logo, Favicon, App-Icons
+### 4.2 Favicon / Branding ✅
+- Inline SVG Favicon (blauer Kreis mit "S") in index.html
+- **Erledigt:** 2026-06-06
 
 ### 4.3 Lokalisation UI ist gemischt — Teils Deutsch (Navigation: "Pflegekraft", "Einsätze"), Teils Englisch (Session Card: "Workspace", "Operations Console")
 - **Fix:** Durchgängig Deutsch ODER Englisch
@@ -122,21 +128,24 @@
 
 ## 6. Sicherheit — Vor Produktion
 
-### 6.1 CORS muss eingeschränkt werden
-- Vermutlich `cors()` ohne Origin-Restriction im Dev-Modus
-- **Fix:** Production-CORS whitelist
+### 6.1 CORS muss eingeschränkt werden ✅
+- CORS erlaubt localhost (dev) + `APP_ORIGIN` + `ALLOWED_ORIGINS` (prod)
+- Production: nur whitelisted Origins
+- **Erledigt:** 2026-06-06
 
-### 6.2 Rate Limiting fehlt
-- Kein `express-rate-limit` sichtbar
-- **Fix:** Rate-Limiter für Auth + API-Routes
+### 6.2 Rate Limiting fehlt ✅
+- General API rate limiter (100 req/15min default)
+- Auth rate limiter (10 req/15min, bereits vorhanden)
+- **Erledigt:** 2026-06-06
 
-### 6.3 Helmet / Security Headers
-- Kein `express-helmet` sichtbar
-- **Fix:** Helmet aktivieren, HSTS, CSP
+### 6.3 Helmet / Security Headers ✅
+- Helmet mit CSP, COEP, COOP, CORP, Referrer-Policy
+- HSTS nur in Production
+- **Erledigt:** 2026-06-06
 
-### 6.4 Session/Cookie Config für Production
-- `secure: true`, `sameSite` für Cookies?
-- **Fix:** Production-Session-Config prüfen
+### 6.4 Session/Cookie Config für Production ✅
+- `secure: true` nur in Production, `sameSite: 'lax'`
+- **Erledigt:** 2026-06-06 (bereits korrekt)
 
 ---
 
