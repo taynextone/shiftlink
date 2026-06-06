@@ -1,4 +1,5 @@
 import { prisma } from '../config/prisma';
+import logger from '../config/logger';
 
 export type AuditAction =
   | 'NURSE_REGISTER'
@@ -42,7 +43,7 @@ export async function recordAuditLog(data: {
     });
   } catch {
     // Audit logging should not break the main flow
-    console.error(`Failed to record audit log: ${data.action}`);
+    logger.error({ action: data.action }, 'Failed to record audit log');
   }
 }
 

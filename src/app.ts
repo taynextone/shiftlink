@@ -15,22 +15,61 @@ import { env } from './config/env';
 import userRoutes from './routes/user.routes';
 import path from 'path';
 import { notFoundMiddleware } from './middlewares/not-found';
+import { apiRateLimit } from './middlewares/rate-limit';
 import { errorHandler } from './middlewares/error-handler';
 
 export function createApp() {
   const app = express();
 
   app.disable('x-powered-by');
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", ...(env.NODE_ENV !== 'production' ? ['localhost:*'] : [])],
+          styleSrc: ["'self'", "'unsafe-inline'", ...(env.NODE_ENV !== 'production' ? ['localhost:*'] : [])],
+          imgSrc: ["'self'", 'data:', 'blob:', ...(env.NODE_ENV !== 'production' ? ['localhost:*'] : [])],
+          connectSrc: ["'self'", ...(env.NODE_ENV !== 'production' ? ['localhost:*', 'ws://localhost:*'] : [])],
+          fontSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          mediaSrc: ["'self'"],
+          frameSrc: ["'none'"],
+        },
+      },
+      crossOriginEmbedderPolicy: true,
+      crossOriginOpenerPolicy: true,
+      crossOriginResourcePolicy: { policy: 'same-origin' },
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+      strictTransportSecurity: env.NODE_ENV === 'production' ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
+    }),
+  );
+  const allowedOrigins = new Set<string>();
+
+  // Always allow configured origin
+  allowedOrigins.add(env.APP_ORIGIN);
+
+  // Parse additional origins from env
+  const extraOrigins = (process.env.ALLOWED_ORIGINS ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  for (const o of extraOrigins) allowedOrigins.add(o);
+
   app.use(
     cors({
       origin: (origin, callback) => {
-        // Allow requests with no origin (mobile apps, curl, etc.)
+        // Allow requests with no origin (mobile apps, curl, server-to-server)
         if (!origin) return callback(null, true);
-        // Allow localhost on any port for development
-        if (origin.match(/^http:\/\/localhost(:\d+)?$/)) return callback(null, true);
-        // Allow configured origin
-        if (origin === env.APP_ORIGIN) return callback(null, true);
+        // Allow localhost on any port for development/test
+        if (
+          (env.NODE_ENV === 'development' || env.NODE_ENV === 'test') &&
+          origin.match(/^http:\/\/localhost(:\d+)?$/)
+        ) {
+          return callback(null, true);
+        }
+        // Allow whitelisted origins
+        if (allowedOrigins.has(origin)) return callback(null, true);
         callback(new Error('Not allowed by CORS'));
       },
       credentials: true,
@@ -40,8 +79,10 @@ export function createApp() {
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
 
+  // Health check without rate limiting
   app.use('/api/v1', healthRoutes);
-app.use('/api/v1', adminRoutes);
+  app.use('/api/v1', apiRateLimit);
+  app.use('/api/v1', adminRoutes);
   app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1/matches', matchRoutes);
   app.use('/api/v1/documents', documentRoutes);

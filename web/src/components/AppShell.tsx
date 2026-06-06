@@ -12,6 +12,7 @@ const navGroups = [
       { to: '/nurse/availability', label: 'Verfügbarkeiten', caption: 'Matching-Zeitfenster' },
       { to: '/nurse/matches', label: 'Angebote', caption: 'Offers & Antworten' },
       { to: '/nurse/profile', label: 'Profil', caption: 'Verifikation & Freigabe' },
+      { to: '/nurse/contracts', label: 'Verträge', caption: 'Meine Verträge & Signatur' },
     ],
   },
   {
@@ -38,7 +39,7 @@ const navGroups = [
 
 export function AppShell({ children }: PropsWithChildren) {
   const location = useLocation();
-  const { session, logout } = useAuth();
+  const { session, user, logout } = useAuth();
 
   const visibleGroups = session
     ? navGroups.filter((group) => group.roles.includes(session.role))
@@ -62,8 +63,8 @@ export function AppShell({ children }: PropsWithChildren) {
           </div>
           <div className="workspace-card session-card">
             <span className="workspace-label">Session</span>
-            <strong>{session ? session.role : 'Nicht eingeloggt'}</strong>
-            <p>{session ? `User ID: ${session.userId}` : 'Bitte anmelden, um geschützte Produktbereiche zu öffnen.'}</p>
+            <strong>{session ? (user?.email ?? session.role) : 'Nicht eingeloggt'}</strong>
+            <p>{session ? (session.role === 'NURSE' ? 'Pflegekraft' : session.role === 'HOSPITAL_ADMIN' ? 'Krankenhaus' : 'Superadmin') : 'Bitte anmelden, um geschützte Produktbereiche zu öffnen.'}</p>
             {session ? <button className="secondary ghost-button" onClick={() => void logout()}>Logout</button> : null}
           </div>
         </div>

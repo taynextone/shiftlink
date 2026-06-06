@@ -1,4 +1,6 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { ErrorBoundary } from '../components/ErrorBoundary';
+import { NotFoundPage } from '../features/errors/NotFoundPage';
 import { AppShell } from '../components/AppShell';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { AuthProvider, useAuth } from '../state/AuthContext';
@@ -62,7 +64,7 @@ function AppRoutes() {
         <Route path="/hospital/billing" element={<ProtectedRoute allowedRoles={['HOSPITAL_ADMIN', 'SUPER_ADMIN']}><HospitalBillingPage /></ProtectedRoute>} />
         <Route path="/admin/ops" element={<ProtectedRoute allowedRoles={['SUPER_ADMIN']}><AdminOpsPage /></ProtectedRoute>} />
         <Route path="/admin/verification" element={<ProtectedRoute allowedRoles={['SUPER_ADMIN']}><AdminVerificationPage /></ProtectedRoute>} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AppShell>
   );
@@ -71,7 +73,9 @@ function AppRoutes() {
 export function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <ErrorBoundary>
+        <AppRoutes />
+      </ErrorBoundary>
     </AuthProvider>
   );
 }

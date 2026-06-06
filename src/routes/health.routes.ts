@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../config/prisma';
 import { env } from '../config/env';
+import { redis } from '../config/redis';
 import { getQueueStatus } from '../workers/status';
 
 const router = Router();
@@ -15,6 +16,15 @@ router.get('/health', async (_req: Request, res: Response) => {
     checks.database = { status: 'ok', latencyMs: Date.now() - dbStart };
   } catch (error) {
     checks.database = { status: 'error', error: error instanceof Error ? error.message : 'Unknown' };
+  }
+
+  // Redis check
+  const redisStart = Date.now();
+  try {
+    await redis.ping();
+    checks.redis = { status: 'ok', latencyMs: Date.now() - redisStart };
+  } catch (error) {
+    checks.redis = { status: 'error', error: error instanceof Error ? error.message : 'Unknown' };
   }
 
   // Queue check (with timeout)

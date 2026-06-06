@@ -1,13 +1,13 @@
 version: "3.9"
 
 services:
-  postgres:
+  db:
     image: postgres:16-alpine
-    container_name: shiftlink-postgres
+    container_name: shiftlink-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: shiftlink
-      POSTGRES_PASSWORD: shiftlink
+      POSTGRES_PASSWORD: shiftlink123
       POSTGRES_DB: shiftlink
     ports:
       - "5432:5432"
@@ -23,17 +23,55 @@ services:
     image: redis:7-alpine
     container_name: shiftlink-redis
     restart: unless-stopped
-    command: redis-server --requirepass shiftlink
     ports:
       - "6379:6379"
     volumes:
       - shiftlink-redisdata:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "shiftlink", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  minio:
+    image: minio/minio:latest
+    container_name: shiftlink-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - shiftlink-miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shiftlink-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - shiftlink-uploads:/app/uploads
+
 volumes:
   shiftlink-pgdata:
   shiftlink-redisdata:
+  shiftlink-miniodata:
+  shiftlink-uploads:

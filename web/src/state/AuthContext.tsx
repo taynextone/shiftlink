@@ -47,6 +47,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     await api.logout();
     setSession(null);
     setUser(null);
+    window.location.href = '/login';
   }, []);
 
   const value = useMemo(

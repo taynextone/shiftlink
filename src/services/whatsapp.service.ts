@@ -1,5 +1,6 @@
 import { env } from '../config/env';
 import { prisma } from '../config/prisma';
+import logger from '../config/logger';
 
 export type NewMatchOfferWhatsappPayload = {
   type: 'new-match-offer';
@@ -64,7 +65,7 @@ async function dispatchWhatsappMessage(phoneNumber: string, messageText: string)
   const provider = env.WHATSAPP_PROVIDER;
 
   if (provider === 'mock') {
-    console.log('[whatsapp:mock] send', { phoneNumber, messageText });
+    logger.info({ phoneNumber, messageText }, '[whatsapp:mock] send');
     return {
       provider,
       accepted: true,
@@ -73,11 +74,7 @@ async function dispatchWhatsappMessage(phoneNumber: string, messageText: string)
   }
 
   if (provider === 'twilio') {
-    console.log('[whatsapp:twilio-adapter] prepared send', {
-      phoneNumber,
-      from: env.WHATSAPP_FROM_NUMBER,
-      messageText,
-    });
+    logger.info({ phoneNumber, from: env.WHATSAPP_FROM_NUMBER, messageText }, '[whatsapp:twilio-adapter] prepared send');
 
     return {
       provider,
