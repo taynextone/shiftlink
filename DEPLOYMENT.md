@@ -49,6 +49,20 @@ This starts:
 docker compose exec app npx prisma migrate deploy
 ```
 
+Then seed the database (creates super admin + demo data in non-production):
+
+```bash
+docker compose exec app npx tsx prisma/seed.ts
+```
+
+Or use the production migration script (safety checks included):
+
+```bash
+docker compose exec app bash prisma/migrate-prod.sh
+```
+
+> **Note:** The super admin password defaults to `ChangeMe123!` (overridable via `SEED_ADMIN_PASSWORD` env). **Change it immediately after first login.**
+
 ### 4. Verify
 
 ```bash

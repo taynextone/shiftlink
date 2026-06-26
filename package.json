@@ -26,6 +26,8 @@
     "qa:browser-validate-strict": "npm run build && node scripts/browser-qa.js validate-strict",
     "qa:browser-validate-strict-json": "npm run build && node scripts/browser-qa.js validate-strict-json",
     "prisma:generate": "prisma generate --config prisma.config.ts",
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:migrate-prod": "bash prisma/migrate-prod.sh",
     "web:dev": "vite --config web/vite.config.ts",
     "web:build": "npm --prefix web run build"
   },
@@ -62,6 +64,9 @@
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.15.1",
     "zod": "^4.4.3"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
   },
   "private": true,
   "devDependencies": {

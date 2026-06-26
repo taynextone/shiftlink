@@ -21,9 +21,14 @@
 - Fallback auf `/api/v1` für Production (same-origin hinter nginx)
 - **Erledigt:** 2026-06-06
 
-### 1.4 Keine Datenbank-Migration-Strategy
+### 1.4 Keine Datenbank-Migration-Strategy ✅
 - `prisma:generate` existiert, aber es gibt kein Migrations-Script für Production
 - **Fix:** `prisma migrate deploy` in Deployment-Pipeline, Seed-Script für initiales Setup
+- `prisma/seed.ts` mit Super-Admin (idempotent, argon2-Hash, Env-Override)
+- `prisma/migrate-prod.sh` mit Safety-Checks (NODE_ENV, DATABASE_URL)
+- Demo-Nurse und Demo-Hospital (nur wenn NODE_ENV !== 'production')
+- `db:seed` und `db:migrate-prod` npm Scripts
+- **Erledigt:** 2026-06-26
 
 ### 1.5 Kein Health-Check Endpoint ✅
 - `/api/v1/health` vorhanden mit DB, Redis, Queue checks
