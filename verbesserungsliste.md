@@ -121,9 +121,10 @@
 
 ## 5. Tests — Lücken
 
-### 5.1 Keine Frontend-Tests
+### 5.1 Keine Frontend-Tests ✅
 - 174 Tests aber alles Backend. Kein einziger React/Vitest-Test.
 - **Fix:** Vitest + React Testing Library setup + Component-Tests
+- **Erledigt:** Vitest + RTL setup, initial component tests
 
 ### 5.2 Keine E2E-Tests
 - Jest + etwas Code für Browser-QA aber kein Playwright/Puppeteer
