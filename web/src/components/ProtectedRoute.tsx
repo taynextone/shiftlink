@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import type { PropsWithChildren } from 'react';
 import { useAuth } from '../state/AuthContext';
+import { LoadingSkeleton } from './LoadingSkeleton';
 
 type ProtectedRouteProps = PropsWithChildren<{
   allowedRoles?: string[];
@@ -11,7 +12,11 @@ export function ProtectedRoute({ children, allowedRoles, redirectTo = '/login' }
   const { loading, session } = useAuth();
 
   if (loading) {
-    return <div className="panel state-panel">Session wird geladen…</div>;
+    return (
+      <div className="panel state-panel">
+        <LoadingSkeleton title="Sitzung wird geprüft" compact rows={3} />
+      </div>
+    );
   }
 
   if (!session) {

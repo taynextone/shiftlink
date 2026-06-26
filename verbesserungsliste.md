@@ -53,9 +53,11 @@
 - Bestehende Content-Grids fallen unterhalb der Breakpoints auf eine Spalte zurück
 - **Erledigt:** 2026-06-26
 
-### 2.4 Keine Ladezustände / Skeletons
-- `AsyncState` existiert aber ist rudimentär — keine Skeletonskeletons, keine Loading-Spinner
-- **Fix:** Konsistente Loading-States überall
+### 2.4 Keine Ladezustände / Skeletons ✅
+- Wiederverwendbare `LoadingSkeleton`-Komponente mit ARIA-Status ergänzt
+- `AsyncState` und geschützte Routen nutzen konsistente Skeleton-Zustände
+- Bestehende Aufrufer bleiben API-kompatibel
+- **Erledigt:** 2026-06-26
 
 ### 2.5 Keine Error-Seite (404/500) ✅
 - `ErrorBoundary` Komponente + 404 NotFoundPage

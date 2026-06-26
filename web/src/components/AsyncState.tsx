@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { LoadingSkeleton } from './LoadingSkeleton';
 
 type AsyncStateProps = {
   loading: boolean;
@@ -10,7 +11,11 @@ type AsyncStateProps = {
 
 export function AsyncState({ loading, error, isEmpty, emptyMessage, children }: AsyncStateProps) {
   if (loading) {
-    return <div className="panel state-panel">Daten werden geladen…</div>;
+    return (
+      <div className="panel state-panel">
+        <LoadingSkeleton />
+      </div>
+    );
   }
 
   if (error) {
