@@ -96,9 +96,11 @@
 - **Fix:** Tailwind/PostCSS-Konfiguration im Web-Paket ergänzt, Tailwind-Directives aktiviert und bestehende Base-/Komponenten-Styles in `@layer` einsortiert
 - **Erledigt:** 2026-06-27
 
-### 3.5 `register` Route ohne Registrierungsflow für Krankenhäuser
+### 3.5 `register` Route ohne Registrierungsflow für Krankenhäuser ✅
 - Registrierung ist nur für Nurses — Hospital-Registrierung fehlt
-- **Fix:** Shared Register-Page mit Role-Auswahl oder separate Hospital-Registrierung
+- **Fix:** Shared Register-Page mit Role-Auswahl, Hospital-Pflichtfeldern, rollenbasiertem Payload und Redirect in den passenden Arbeitsbereich
+- Frontend-Test deckt Hospital-Registrierung und Default-Nurse-Flow ab
+- **Erledigt:** 2026-06-27
 
 ## 4. Nice-to-have — Shipquality
 

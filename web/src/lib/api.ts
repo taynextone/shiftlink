@@ -552,7 +552,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ role }),
     }),
-  registerNurse: (input: Record<string, unknown>) =>
+  register: (input: Record<string, unknown>) =>
     request<{ auth: AuthState }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(input),
