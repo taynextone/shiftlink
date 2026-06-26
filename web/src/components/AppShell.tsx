@@ -10,7 +10,7 @@ const navGroups = [
       { to: '/nurse', label: 'Dashboard', caption: 'Status & Überblick' },
       { to: '/nurse/jobs', label: 'Einsätze', caption: 'Verfügbare Bedarfe' },
       { to: '/nurse/availability', label: 'Verfügbarkeiten', caption: 'Matching-Zeitfenster' },
-      { to: '/nurse/matches', label: 'Angebote', caption: 'Offers & Antworten' },
+      { to: '/nurse/matches', label: 'Angebote', caption: 'Anfragen & Antworten' },
       { to: '/nurse/profile', label: 'Profil', caption: 'Verifikation & Freigabe' },
       { to: '/nurse/contracts', label: 'Verträge', caption: 'Meine Verträge & Signatur' },
     ],
@@ -21,18 +21,18 @@ const navGroups = [
     items: [
       { to: '/hospital', label: 'Dashboard', caption: 'Operativer Überblick' },
       { to: '/hospital/shifts', label: 'Schichten', caption: 'Bedarfe & Import' },
-      { to: '/hospital/offers', label: 'Offers', caption: 'Kandidaten & Angebote' },
+      { to: '/hospital/offers', label: 'Angebote', caption: 'Kandidaten & Zusagen' },
       { to: '/hospital/dossier', label: 'Dossiers', caption: 'Verifizierte Profile' },
       { to: '/hospital/contracts', label: 'Verträge', caption: 'Lifecycle & Aktionen' },
-      { to: '/hospital/billing', label: 'Billing', caption: 'Gebühren & Exporte' },
+      { to: '/hospital/billing', label: 'Abrechnung', caption: 'Gebühren & Exporte' },
     ],
   },
   {
     label: 'Superadmin',
     roles: ['SUPER_ADMIN'],
     items: [
-      { to: '/admin/verification', label: 'Verification Ops', caption: 'Review, Release, Intervention' },
-      { to: '/admin/ops', label: 'Ops Control Plane', caption: 'Hotspots, Failures, Prioritäten' },
+      { to: '/admin/verification', label: 'Verifikation', caption: 'Prüfung, Freigabe, Intervention' },
+      { to: '/admin/ops', label: 'Betrieb', caption: 'Hotspots, Fehler, Prioritäten' },
     ],
   },
 ];
@@ -53,19 +53,19 @@ export function AppShell({ children }: PropsWithChildren) {
             <div className="brand-mark">S</div>
             <div>
               <strong>Shiftlink</strong>
-              <p>Direct staffing marketplace for hospitals and nurses</p>
+              <p>Kurzfristige Dienste direkt zwischen Pflegekräften und Einrichtungen besetzen</p>
             </div>
           </div>
           <div className="workspace-card">
-            <span className="workspace-label">Workspace</span>
-            <strong>Operations Console</strong>
-            <p>Matching, contracts, verification and platform-fee workflows.</p>
+            <span className="workspace-label">Arbeitsbereich</span>
+            <strong>Einsatzsteuerung</strong>
+            <p>Matching, Verträge, Verifikation und Abrechnung in einem operativen Ablauf.</p>
           </div>
           <div className="workspace-card session-card">
-            <span className="workspace-label">Session</span>
+            <span className="workspace-label">Sitzung</span>
             <strong>{session ? (user?.email ?? session.role) : 'Nicht eingeloggt'}</strong>
             <p>{session ? (session.role === 'NURSE' ? 'Pflegekraft' : session.role === 'HOSPITAL_ADMIN' ? 'Krankenhaus' : 'Superadmin') : 'Bitte anmelden, um geschützte Produktbereiche zu öffnen.'}</p>
-            {session ? <button className="secondary ghost-button" onClick={() => void logout()}>Logout</button> : null}
+            {session ? <button className="secondary ghost-button" onClick={() => void logout()}>Abmelden</button> : null}
           </div>
         </div>
         <nav className="nav-groups">
@@ -90,7 +90,7 @@ export function AppShell({ children }: PropsWithChildren) {
               <span className="section-label">Zugang</span>
               <div className="nav-list">
                 <Link className={location.pathname === '/' ? 'nav-link active' : 'nav-link'} to="/">
-                  <span className="nav-link-title">Landing Page</span>
+                  <span className="nav-link-title">Startseite</span>
                   <span className="nav-link-caption">Produktüberblick für Pflegekräfte und Kliniken</span>
                 </Link>
                 <Link className={location.pathname === '/login' ? 'nav-link active' : 'nav-link'} to="/login">

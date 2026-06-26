@@ -37,9 +37,11 @@
 
 ## 2. Wichtig — UX/UI Probleme
 
-### 2.1 Nameless/unnamed Design
-- Landing Page ist generisch ("Direct staffing marketplace"). Kein Marken-Gefühl, kein USP, keine Tonalität.
-- **Fix:** Überarbeitete Landing Page mit klarer Botschaft, Shiftlink als Marke positionieren
+### 2.1 Nameless/unnamed Design ✅
+- Landing Page positioniert Shiftlink als Berliner Pilot für kurzfristige Pflegedienst-Besetzung
+- Hero, USP-Texte, Demo-Card, Footer und AppShell-Tonalität geschärft
+- Generische englische Shell-Texte ersetzt, Marken-Schreibweise vereinheitlicht
+- **Erledigt:** 2026-06-26
 
 ### 2.2 AppShell zeigt rohes Session-User-ID ✅
 - Zeigt jetzt E-Mail oder Rollenname statt roher User ID

@@ -43,9 +43,9 @@ export function LandingPage() {
       {/* Navigation */}
       <nav className="landing-nav">
         <div className="landing-nav-inner">
-          <a href="#" className="landing-logo">
+          <a href="#" className="landing-logo" aria-label="Shiftlink Startseite">
             <span className="landing-logo-mark">S</span>
-            <span className="landing-logo-text">ShiftLink</span>
+            <span className="landing-logo-text">Shiftlink</span>
           </a>
           <div className="landing-nav-links">
             <a href="#problem" className="landing-nav-link">Problem</a>
@@ -61,17 +61,16 @@ export function LandingPage() {
       <section className="landing-hero">
         <div className="landing-hero-inner">
           <div className="landing-hero-badge">
-            <span className="landing-badge-dot" />
-            04:12 Uhr · Krankmeldung Frühdienst · Berlin
+            <span className="landing-badge-dot" aria-hidden="true" />
+            Shiftlink · Pilotregion Berlin · Akutdienste
           </div>
           <h1 className="landing-hero-title">
-            Wenn ein Dienst ausfällt,<br />
-            <span className="landing-hero-highlight">zählt Verfügbarkeit.</span>
+            Shiftlink besetzt kurzfristige Pflegedienste direkt.
           </h1>
           <p className="landing-hero-subtitle">
-            ShiftLink verbindet Berliner Pflegeeinrichtungen mit qualifizierten Pflegekräften,
-            die kurzfristig einspringen können. Offene Dienste werden sichtbar — mit Zeit, Ort,
-            Fachbereich, Vergütung und Vertragsbedingungen. Ein Tap statt Telefonkette.
+            Berliner Einrichtungen veröffentlichen offene Dienste mit Zeit, Ort,
+            Fachbereich, Vergütung und Vertragsbedingungen. Verfügbare Pflegekräfte sehen nur
+            passende Anfragen und können direkt zusagen.
           </p>
           <div className="landing-hero-actions">
             <a href="#pilot" className="landing-btn landing-btn-primary">
@@ -83,15 +82,15 @@ export function LandingPage() {
           </div>
           <div className="landing-hero-features">
             <div className="landing-hero-feature">
-              <span className="landing-feature-icon">⚡</span>
+              <span className="landing-feature-icon" aria-hidden="true">01</span>
               Akute Ausfälle in Minuten sichtbar
             </div>
             <div className="landing-hero-feature">
-              <span className="landing-feature-icon">🎯</span>
+              <span className="landing-feature-icon" aria-hidden="true">02</span>
               Matching nach Qualifikation &amp; Radius
             </div>
             <div className="landing-hero-feature">
-              <span className="landing-feature-icon">👁</span>
+              <span className="landing-feature-icon" aria-hidden="true">03</span>
               Konditionen vor Annahme sichtbar
             </div>
           </div>
@@ -102,7 +101,7 @@ export function LandingPage() {
               <div className="landing-demo-header">
                 <div className="landing-demo-header-left">
                   <span className="landing-dot-red" />
-                  Live · Offene Dienste in Berlin
+                  Shiftlink Live · Offene Dienste in Berlin
                 </div>
                 <div className="landing-demo-time">04:12 Uhr</div>
               </div>
@@ -120,12 +119,12 @@ export function LandingPage() {
                     </div>
                   </div>
                   <div className="landing-demo-shift-details">
-                    <span>🕐 Heute 06:00–14:00</span>
-                    <span>📍 3,8 km · Berlin-Mitte</span>
-                    <span>👥 1 von 1 offen</span>
+                    <span>Heute 06:00-14:00</span>
+                    <span>3,8 km · Berlin-Mitte</span>
+                    <span>1 von 1 offen</span>
                   </div>
                   <div className="landing-demo-shift-actions">
-                    <button className="landing-btn landing-btn-primary">Schicht anfragen</button>
+                    <button className="landing-btn landing-btn-primary">Anfrage senden</button>
                     <button className="landing-btn landing-btn-ghost">Details</button>
                   </div>
                 </div>
@@ -142,14 +141,14 @@ export function LandingPage() {
                     </div>
                   </div>
                   <div className="landing-demo-shift-details">
-                    <span>🕐 14:00–22:00</span>
-                    <span>📍 7,4 km · Berlin-Neukölln</span>
-                    <span>👥 1 von 2 offen</span>
+                    <span>14:00-22:00</span>
+                    <span>7,4 km · Berlin-Neukölln</span>
+                    <span>1 von 2 offen</span>
                   </div>
                 </div>
               </div>
               <div className="landing-demo-toast">
-                <span className="landing-toast-icon">🔔</span>
+                <span className="landing-toast-icon" aria-hidden="true">SL</span>
                 <div>
                   <strong>3 verfügbare Kräfte im Radius</strong>
                   <p>Qualifikation und Verfügbarkeit geprüft</p>
@@ -174,27 +173,27 @@ export function LandingPage() {
           </div>
           <div className="landing-problem-grid">
             <div className="landing-problem-card">
-              <span className="landing-card-emoji">📵</span>
+              <span className="landing-card-emoji" aria-hidden="true">01</span>
               <h3>Krankmeldung kurz vor Dienstbeginn</h3>
               <p>Eine Nachricht — und der Schichtplan bricht.</p>
             </div>
             <div className="landing-problem-card">
-              <span className="landing-card-emoji">📞</span>
+              <span className="landing-card-emoji" aria-hidden="true">02</span>
               <h3>PDL und WBL telefonieren hektisch herum</h3>
               <p>Telefonketten, WhatsApp-Gruppen, Vertretungslisten.</p>
             </div>
             <div className="landing-problem-card">
-              <span className="landing-card-emoji">👥</span>
+              <span className="landing-card-emoji" aria-hidden="true">03</span>
               <h3>Das Stammteam wird wieder belastet</h3>
               <p>Doppeldienste und Holen aus dem Frei — auf Kosten der Bindung.</p>
             </div>
             <div className="landing-problem-card">
-              <span className="landing-card-emoji">💰</span>
+              <span className="landing-card-emoji" aria-hidden="true">04</span>
               <h3>Zeitarbeit ist teuer und träge</h3>
               <p>Lange Vorlauf, hohe Aufwandsentschädigungen, wenig Transparenz.</p>
             </div>
             <div className="landing-problem-card landing-problem-card-warn">
-              <span className="landing-card-emoji">⚠️</span>
+              <span className="landing-card-emoji" aria-hidden="true">05</span>
               <h3>Versorgungssicherheit gerät unter Druck</h3>
               <p>Im Worst Case bleiben Dienste unbesetzt — mit allen Folgen.</p>
             </div>
@@ -207,7 +206,7 @@ export function LandingPage() {
         <div className="landing-section-inner">
           <div className="landing-section-header">
             <p className="landing-eyebrow">Die Lösung</p>
-            <h2>ShiftLink macht verfügbare Pflegekräfte sichtbar.</h2>
+            <h2>Shiftlink macht verfügbare Pflegekräfte sichtbar.</h2>
             <p className="landing-section-desc">
               Statt Recruiting-Prozess: ein operatives Werkzeug für den Moment,
               in dem ein Dienst kurzfristig besetzt werden muss.
@@ -215,32 +214,32 @@ export function LandingPage() {
           </div>
           <div className="landing-solution-grid">
             <div className="landing-solution-card">
-              <span className="landing-solution-icon">📋</span>
+              <span className="landing-solution-icon" aria-hidden="true">01</span>
               <h3>Einrichtungen stellen offene Dienste ein</h3>
               <p>Dienstzeit, Fachbereich, Qualifikation, Einsatzort, Vergütung und Vertragsbedingungen werden klar definiert.</p>
             </div>
             <div className="landing-solution-card">
-              <span className="landing-solution-icon">🔄</span>
+              <span className="landing-solution-icon" aria-hidden="true">02</span>
               <h3>Pflegekräfte aktivieren ihre Verfügbarkeit</h3>
               <p>Nur wer wirklich kann, sieht und erhält passende Schichtanfragen im Berliner Radius.</p>
             </div>
             <div className="landing-solution-card">
-              <span className="landing-solution-icon">🎯</span>
+              <span className="landing-solution-icon" aria-hidden="true">03</span>
               <h3>Matching nach Qualifikation, Fachbereich, Radius &amp; Zeit</h3>
               <p>Kein Streuen, keine Blindbewerbung — nur passende Vorschläge.</p>
             </div>
             <div className="landing-solution-card">
-              <span className="landing-solution-icon">👁</span>
+              <span className="landing-solution-icon" aria-hidden="true">04</span>
               <h3>Konditionen vor Anfrage sichtbar</h3>
               <p>Vergütung, Zeit, Einsatzort und Vertragsbedingungen — alles transparent, bevor angefragt wird.</p>
             </div>
             <div className="landing-solution-card">
-              <span className="landing-solution-icon">🤝</span>
+              <span className="landing-solution-icon" aria-hidden="true">05</span>
               <h3>Direkte Schichtvereinbarung</h3>
-              <p>Die Vereinbarung entsteht direkt zwischen Pflegekraft und Einrichtung. ShiftLink stellt die digitale Infrastruktur.</p>
+              <p>Die Vereinbarung entsteht direkt zwischen Pflegekraft und Einrichtung. Shiftlink stellt die digitale Infrastruktur.</p>
             </div>
             <div className="landing-solution-card">
-              <span className="landing-solution-icon">⚡</span>
+              <span className="landing-solution-icon" aria-hidden="true">06</span>
               <h3>Anfrage und Zusage digital</h3>
               <p>Ein Tap statt Telefonkette. Beide Seiten haben sofort Klarheit.</p>
             </div>
@@ -256,7 +255,7 @@ export function LandingPage() {
             <h2>Offene Dienste einstellen statt herumtelefonieren.</h2>
             <p className="landing-section-desc">
               Melden Sie kurzfristige Ausfälle, definieren Sie Qualifikation, Zeitraum,
-              Einsatzort und Konditionen. ShiftLink zeigt den Dienst passenden Pflegekräften,
+              Einsatzort und Konditionen. Shiftlink zeigt den Dienst passenden Pflegekräften,
               die aktuell verfügbar sind.
             </p>
             <ul className="landing-feature-list">
@@ -278,9 +277,9 @@ export function LandingPage() {
               </div>
               <div className="landing-card-body">
                 <div className="landing-progress">
-                  <div className="landing-progress-step done">✅ Frühdienst Innere — besetzt</div>
-                  <div className="landing-progress-step done">✅ Spätdienst Chirurgie — besetzt</div>
-                  <div className="landing-progress-step active">⏳ Nachtdienst Intensiv — 1 Kandidat</div>
+                  <div className="landing-progress-step done">Besetzt · Frühdienst Innere</div>
+                  <div className="landing-progress-step done">Besetzt · Spätdienst Chirurgie</div>
+                  <div className="landing-progress-step active">Aktiv · Nachtdienst Intensiv · 1 Kandidat</div>
                   <div className="landing-progress-step">○ Frühdienst Gastro — suchen</div>
                 </div>
               </div>
@@ -365,7 +364,7 @@ export function LandingPage() {
                   <span className="landing-step-num">03</span>
                   <div>
                     <strong>Schichtvereinbarung abschließen</strong>
-                    <p>Wenn eine Pflegekraft zusagt, entsteht die Vereinbarung direkt zwischen Einrichtung und Pflegekraft. ShiftLink dokumentiert den Prozess digital.</p>
+                    <p>Wenn eine Pflegekraft zusagt, entsteht die Vereinbarung direkt zwischen Einrichtung und Pflegekraft. Shiftlink dokumentiert den Prozess digital.</p>
                   </div>
                 </div>
               </div>
@@ -391,7 +390,7 @@ export function LandingPage() {
                   <span className="landing-step-num">03</span>
                   <div>
                     <strong>Verfügbarkeit aktivieren</strong>
-                    <p>Selbst entscheiden, wann ShiftLink Dienste vorschlagen darf.</p>
+                    <p>Selbst entscheiden, wann Shiftlink Dienste vorschlagen darf.</p>
                   </div>
                 </div>
                 <div className="landing-flow-step">
@@ -421,7 +420,7 @@ export function LandingPage() {
             </div>
             <div className="landing-diff-card">
               <h3>Keine klassische Zeitarbeit</h3>
-              <p>ShiftLink tritt nicht als Arbeitgeber auf. Die Schichtvereinbarung entsteht direkt.</p>
+              <p>Shiftlink tritt nicht als Arbeitgeber auf. Die Schichtvereinbarung entsteht direkt.</p>
             </div>
             <div className="landing-diff-card">
               <h3>Kein Recruiting-Portal</h3>
@@ -437,7 +436,7 @@ export function LandingPage() {
           <span className="landing-cta-badge">PILOT · BERLIN</span>
           <h2>Pilotregion Berlin — dabei sein.</h2>
           <p className="landing-cta-desc">
-            ShiftLink startet in Berlin mit ausgewählten Krankenhäusern, Pflegeeinrichtungen
+            Shiftlink startet in Berlin mit ausgewählten Krankenhäusern, Pflegeeinrichtungen
             und qualifizierten Pflegekräften. Tragen Sie sich ein — wir melden uns persönlich.
           </p>
         </div>
@@ -450,7 +449,7 @@ export function LandingPage() {
             {/* Hospital Form */}
             <div className="landing-form-card">
               <div className="landing-form-header">
-                <span className="landing-form-icon">🏥</span>
+                <span className="landing-form-icon" aria-hidden="true">E</span>
                 <h3>Für Einrichtungen</h3>
               </div>
               {hospitalSubmitted ? (
@@ -543,7 +542,7 @@ export function LandingPage() {
             {/* Nurse Form */}
             <div className="landing-form-card landing-form-card-dark">
               <div className="landing-form-header">
-                <span className="landing-form-icon">👤</span>
+                <span className="landing-form-icon" aria-hidden="true">P</span>
                 <h3>Für Pflegekräfte</h3>
               </div>
               {nurseSubmitted ? (
@@ -648,10 +647,10 @@ export function LandingPage() {
         <div className="landing-footer-inner">
           <div className="landing-footer-logo">
             <span className="landing-logo-mark">S</span>
-            <span className="landing-logo-text">ShiftLink</span>
+            <span className="landing-logo-text">Shiftlink</span>
           </div>
           <p className="landing-footer-tagline">
-            ShiftLink verkauft keine Jobs. ShiftLink hilft, offene Dienste schnell sichtbar zu machen
+            Shiftlink verkauft keine Jobs. Shiftlink hilft, offene Dienste schnell sichtbar zu machen
             und direkt zwischen Einrichtung und Pflegekraft zu vereinbaren.
           </p>
           <div className="landing-footer-links">
@@ -659,7 +658,7 @@ export function LandingPage() {
             <a href="#">Datenschutz</a>
             <a href="#">Kontakt</a>
           </div>
-          <p className="landing-footer-copy">ShiftLink © 2026 · Pilot</p>
+          <p className="landing-footer-copy">Shiftlink © 2026 · Pilot</p>
         </div>
       </footer>
     </div>
