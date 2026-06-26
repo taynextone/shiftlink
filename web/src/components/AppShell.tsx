@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import type { PropsWithChildren } from 'react';
+import { useState, type PropsWithChildren } from 'react';
 import { useAuth } from '../state/AuthContext';
 
 const navGroups = [
@@ -40,6 +40,7 @@ const navGroups = [
 export function AppShell({ children }: PropsWithChildren) {
   const location = useLocation();
   const { session, user, logout } = useAuth();
+  const [navOpen, setNavOpen] = useState(false);
 
   const visibleGroups = session
     ? navGroups.filter((group) => group.roles.includes(session.role))
@@ -47,7 +48,7 @@ export function AppShell({ children }: PropsWithChildren) {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      <aside className={navOpen ? 'sidebar sidebar-open' : 'sidebar'}>
         <div className="sidebar-top">
           <div className="brand-card">
             <div className="brand-mark">S</div>
@@ -56,6 +57,17 @@ export function AppShell({ children }: PropsWithChildren) {
               <p>Kurzfristige Dienste direkt zwischen Pflegekräften und Einrichtungen besetzen</p>
             </div>
           </div>
+          <button
+            type="button"
+            className="mobile-nav-toggle"
+            aria-label={navOpen ? 'Navigation schließen' : 'Navigation öffnen'}
+            aria-expanded={navOpen}
+            onClick={() => setNavOpen((open) => !open)}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
           <div className="workspace-card">
             <span className="workspace-label">Arbeitsbereich</span>
             <strong>Einsatzsteuerung</strong>
@@ -76,7 +88,12 @@ export function AppShell({ children }: PropsWithChildren) {
                 {group.items.map((item) => {
                   const active = location.pathname === item.to;
                   return (
-                    <Link key={item.to} className={active ? 'nav-link active' : 'nav-link'} to={item.to}>
+                    <Link
+                      key={item.to}
+                      className={active ? 'nav-link active' : 'nav-link'}
+                      to={item.to}
+                      onClick={() => setNavOpen(false)}
+                    >
                       <span className="nav-link-title">{item.label}</span>
                       <span className="nav-link-caption">{item.caption}</span>
                     </Link>
@@ -89,15 +106,15 @@ export function AppShell({ children }: PropsWithChildren) {
             <section className="nav-group">
               <span className="section-label">Zugang</span>
               <div className="nav-list">
-                <Link className={location.pathname === '/' ? 'nav-link active' : 'nav-link'} to="/">
+                <Link className={location.pathname === '/' ? 'nav-link active' : 'nav-link'} to="/" onClick={() => setNavOpen(false)}>
                   <span className="nav-link-title">Startseite</span>
                   <span className="nav-link-caption">Produktüberblick für Pflegekräfte und Kliniken</span>
                 </Link>
-                <Link className={location.pathname === '/login' ? 'nav-link active' : 'nav-link'} to="/login">
+                <Link className={location.pathname === '/login' ? 'nav-link active' : 'nav-link'} to="/login" onClick={() => setNavOpen(false)}>
                   <span className="nav-link-title">Login</span>
                   <span className="nav-link-caption">Bestehenden Zugang verwenden</span>
                 </Link>
-                <Link className={location.pathname === '/register' ? 'nav-link active' : 'nav-link'} to="/register">
+                <Link className={location.pathname === '/register' ? 'nav-link active' : 'nav-link'} to="/register" onClick={() => setNavOpen(false)}>
                   <span className="nav-link-title">Registrierung</span>
                   <span className="nav-link-caption">Neue Pflegekraft anlegen</span>
                 </Link>

@@ -47,10 +47,11 @@
 - Zeigt jetzt E-Mail oder Rollenname statt roher User ID
 - **Erledigt:** 2026-06-06
 
-### 2.3 Kein Mobile-Responsive Design
-- `AppShell` hat Sidebar-Layout ohne Mobile-Breakpoints
-- Alle Feature-Pages sind Desktop-only
-- **Fix:** Responsive CSS, Mobile-Nav (Hamburger), Viewport-aware Layout
+### 2.3 Kein Mobile-Responsive Design ✅
+- AppShell nutzt auf Tablet/Mobile eine kompakte Kopfzeile mit einklappbarer Navigation
+- Sidebar-Karten und Navigationsgruppen klappen sauber unter dem Markenbereich auf
+- Bestehende Content-Grids fallen unterhalb der Breakpoints auf eine Spalte zurück
+- **Erledigt:** 2026-06-26
 
 ### 2.4 Keine Ladezustände / Skeletons
 - `AsyncState` existiert aber ist rudimentär — keine Skeletonskeletons, keine Loading-Spinner
