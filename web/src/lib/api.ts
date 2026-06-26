@@ -1,3 +1,5 @@
+import { ApiError } from './api-error';
+
 export type AuthUser = {
   id: string;
   email: string;
@@ -405,32 +407,139 @@ export type HospitalBillingSummary = {
 };
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
+const DEFAULT_TIMEOUT_MS = 15_000;
+const DEFAULT_RETRIES = 2;
+const RETRY_DELAYS_MS = [1_000, 2_000];
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
-    credentials: 'include',
-    headers: {
-      'content-type': 'application/json',
-      ...(init?.headers ?? {}),
-    },
-    ...init,
-  });
+export type ApiRequestInit = RequestInit & {
+  timeoutMs?: number;
+  retries?: number;
+};
 
-  if (!response.ok) {
-    const rawMessage = await response.text();
-    let message = rawMessage;
+type ServerErrorResponse = {
+  message?: string;
+  error?: string;
+  code?: string;
+};
 
-    try {
-      const parsed = JSON.parse(rawMessage) as { message?: string; error?: string };
-      message = parsed.message ?? parsed.error ?? rawMessage;
-    } catch {
-      message = rawMessage;
-    }
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
 
-    throw new Error(message || `Request failed with ${response.status}`);
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError';
+}
+
+async function readApiError(response: Response): Promise<ApiError> {
+  const rawMessage = await response.text();
+  let message = rawMessage;
+  let code: string | undefined;
+
+  try {
+    const parsed = JSON.parse(rawMessage) as ServerErrorResponse;
+    message = parsed.message ?? parsed.error ?? rawMessage;
+    code = parsed.code;
+  } catch {
+    message = rawMessage;
   }
 
-  return response.json() as Promise<T>;
+  return new ApiError(response.status, message || `Request failed with ${response.status}`, code);
+}
+
+async function parseResponse<T>(response: Response): Promise<T> {
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const rawBody = await response.text();
+  if (!rawBody) {
+    return undefined as T;
+  }
+
+  return JSON.parse(rawBody) as T;
+}
+
+async function requestAttempt<T>(path: string, init: ApiRequestInit): Promise<T> {
+  const {
+    headers,
+    signal,
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    retries: _retries,
+    ...fetchInit
+  } = init;
+  const controller = new AbortController();
+  let timedOut = false;
+
+  const timeoutId = timeoutMs > 0
+    ? window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, timeoutMs)
+    : undefined;
+
+  const abortRequest = () => controller.abort();
+
+  if (signal?.aborted) {
+    abortRequest();
+  } else {
+    signal?.addEventListener('abort', abortRequest, { once: true });
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}${path}`, {
+      credentials: 'include',
+      headers: {
+        'content-type': 'application/json',
+        ...(headers ?? {}),
+      },
+      ...fetchInit,
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw await readApiError(response);
+    }
+
+    return parseResponse<T>(response);
+  } catch (error) {
+    if (timedOut) {
+      throw new ApiError(0, 'Zeitüberschreitung der Anfrage', 'REQUEST_TIMEOUT');
+    }
+
+    if (isAbortError(error) && signal?.aborted) {
+      throw error;
+    }
+
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    throw new ApiError(0, error instanceof Error ? error.message : 'Netzwerkfehler', 'NETWORK_ERROR');
+  } finally {
+    if (timeoutId !== undefined) {
+      window.clearTimeout(timeoutId);
+    }
+    signal?.removeEventListener('abort', abortRequest);
+  }
+}
+
+export async function request<T>(path: string, init: ApiRequestInit = {}): Promise<T> {
+  const maxRetries = init.retries ?? DEFAULT_RETRIES;
+  let attempt = 0;
+
+  while (true) {
+    try {
+      return await requestAttempt<T>(path, init);
+    } catch (error) {
+      const canRetry = error instanceof ApiError && error.isRetryable && attempt < maxRetries && !init.signal?.aborted;
+      if (!canRetry) {
+        throw error;
+      }
+
+      await delay(RETRY_DELAYS_MS[attempt] ?? RETRY_DELAYS_MS[RETRY_DELAYS_MS.length - 1]);
+      attempt += 1;
+    }
+  }
 }
 
 export const api = {

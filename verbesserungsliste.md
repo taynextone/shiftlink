@@ -75,9 +75,11 @@
 - Frontend: `strict: true` (war bereits gesetzt)
 - **Erledigt:** 2026-06-06 (bereits vorhanden)
 
-### 3.2 Keine API Error-Handling Strategie
-- API-Calls haben kein einheitliches Error-Handling
-- **Fix:** Globaler Error Handler, Retry-Logic, Timeout-Handling
+### 3.2 Keine API Error-Handling Strategie ✅
+- API-Calls nutzen jetzt strukturierte `ApiError`s mit Status/Code/Retryable-Flag
+- Request-Timeout (15s Default), AbortController-Support und Retry-Logic für transiente Fehler vorhanden
+- `useApiError` stellt deutsche Fehlermeldungen und Login-Redirect bei 401 bereit
+- **Erledigt:** 2026-06-26
 
 ### 3.3 AuthContext erntet User separat
 - `setAuthenticatedUser` + `refreshSession` — doppelter State für Auth/User
