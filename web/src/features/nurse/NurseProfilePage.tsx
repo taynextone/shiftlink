@@ -149,13 +149,13 @@ export function NurseProfilePage() {
           <div className="content-grid two-columns-equal">
             <SectionCard
               title="Matching-Freigabe"
-              description="Gate für Marketplace-Sichtbarkeit und Angebotsfähigkeit."
+              description="Schwelle für Sichtbarkeit im Marktplatz und Angebotsfähigkeit."
               actions={<StatusBadge value={verification.isReleasedForMatching ? 'released' : 'pending'} />}
             >
               <InfoList
                 items={[
                   { label: 'Freigegeben', value: verification.isReleasedForMatching ? 'Ja' : 'Nein' },
-                  { label: 'Released at', value: verification.releasedAt ? new Date(verification.releasedAt).toLocaleString('de-DE') : '—' },
+                  { label: 'Freigegeben am', value: verification.releasedAt ? new Date(verification.releasedAt).toLocaleString('de-DE') : '—' },
                 ]}
               />
               {!verification.isReleasedForMatching && verification.documents.length > 0 && (

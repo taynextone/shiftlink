@@ -8,7 +8,7 @@ import { EmptyState } from '../../components/EmptyState';
 import { InfoList } from '../../components/InfoList';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
-import { StatusBadge } from '../../components/StatusBadge';
+import { formatStatusLabel, StatusBadge } from '../../components/StatusBadge';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { api, type AdminVerificationOverview, type VerificationDocumentReviewResult } from '../../lib/api';
 
@@ -27,7 +27,7 @@ export function AdminVerificationPage() {
   const [submitting, setSubmitting] = useState(false);
   const [confirmAction, setConfirmAction] = useState<null | { title: string; message: string; tone: 'danger' | 'warning' | 'neutral'; onConfirm: () => void | Promise<void> }>(null);
   const rejectionRequired = status === 'REJECTED';
-  const nursePublicIdError = !nursePublicId.trim() && feedback?.tone === 'error' && feedback.message.includes('Nurse Public ID') ? 'Pflichtfeld' : null;
+  const nursePublicIdError = !nursePublicId.trim() && feedback?.tone === 'error' && feedback.message.includes('Pflegekraft Public ID') ? 'Pflichtfeld' : null;
   const documentIdError = !documentId.trim() && feedback?.tone === 'error' && feedback.message.includes('Dokument') ? 'Pflichtfeld' : null;
   const rejectionReasonError = rejectionRequired && rejectionReason.trim().length > 0 && rejectionReason.trim().length < 3 ? 'Mindestens 3 Zeichen' : null;
   const hasSelectableDocument = overview ? overview.documents.some((document) => document.id === documentId.trim()) : documentId.trim().length > 0;
@@ -39,7 +39,7 @@ export function AdminVerificationPage() {
 
   async function handleLookup() {
     if (!nursePublicId.trim()) {
-      setFeedback({ tone: 'error', message: 'Bitte zuerst eine Nurse Public ID eingeben.' });
+      setFeedback({ tone: 'error', message: 'Bitte zuerst eine Pflegekraft Public ID eingeben.' });
       return;
     }
 
@@ -47,7 +47,7 @@ export function AdminVerificationPage() {
     setFeedback(null);
     try {
       await refreshOverviewContext(nursePublicId.trim());
-      setFeedback({ tone: 'success', message: 'Verification-Kontext geladen.' });
+      setFeedback({ tone: 'success', message: 'Verifikationskontext geladen.' });
     } catch (error) {
       setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Lookup fehlgeschlagen' });
     } finally {
@@ -80,7 +80,7 @@ export function AdminVerificationPage() {
             setResult(null);
             setFeedback({ tone: 'success', message: 'Pflegekraft für Matching zurückgezogen.' });
           } catch (error) {
-            setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Release-Änderung fehlgeschlagen' });
+            setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Freigabeänderung fehlgeschlagen' });
           } finally {
             setSubmitting(false);
           }
@@ -101,7 +101,7 @@ export function AdminVerificationPage() {
       setResult(null);
       setFeedback({ tone: 'success', message: 'Pflegekraft für Matching freigegeben.' });
     } catch (error) {
-      setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Release-Änderung fehlgeschlagen' });
+      setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Freigabeänderung fehlgeschlagen' });
     } finally {
       setSubmitting(false);
     }
@@ -133,7 +133,7 @@ export function AdminVerificationPage() {
     setSubmitting(true);
     setFeedback(null);
     void refreshOverviewContext(initialNursePublicId, initialDocumentId)
-      .then(() => setFeedback({ tone: 'success', message: 'Verification-Kontext aus Link geladen.' }))
+      .then(() => setFeedback({ tone: 'success', message: 'Verifikationskontext aus Link geladen.' }))
       .catch((error) => {
         setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Lookup fehlgeschlagen' });
       })
@@ -159,7 +159,7 @@ export function AdminVerificationPage() {
       await refreshOverviewContext(response.verificationDocument.nurseProfile.publicId);
       setFeedback({ tone: 'success', message: `Dokument ${status === 'VERIFIED' ? 'verifiziert' : 'abgelehnt'}.` });
     } catch (error) {
-      setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Review fehlgeschlagen' });
+      setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Prüfung fehlgeschlagen' });
     } finally {
       setSubmitting(false);
     }
@@ -168,14 +168,14 @@ export function AdminVerificationPage() {
   return (
     <section className="stack page-stack">
       <PageHeader
-        eyebrow="Operations"
-        title="Verification Review"
+        eyebrow="Betrieb"
+        title="Verifikationsprüfung"
         description="Erste Superadmin-Oberfläche für die operative Prüfung und Freigabe von Verifikationsdokumenten."
       />
       <div className="content-grid two-columns-equal">
         <form className="panel form-panel stack" onSubmit={handleSubmit}>
-          <FormSection title="Dokumentenreview" description="Greift auf den echten Superadmin-Review-Endpoint zurück und aktualisiert den Release-Zustand der Pflegekraft.">
-            <Field label="Nurse Public ID" error={nursePublicIdError} helpText="Lädt die echte Verifikationslage einer Pflegekraft, damit Dokumente nicht blind per ID gesucht werden müssen.">
+          <FormSection title="Dokumentenprüfung" description="Greift auf den echten Superadmin-Prüfendpunkt zurück und aktualisiert den Freigabezustand der Pflegekraft.">
+            <Field label="Pflegekraft Public ID" error={nursePublicIdError} helpText="Lädt die echte Verifikationslage einer Pflegekraft, damit Dokumente nicht blind per ID gesucht werden müssen.">
               <input value={nursePublicId} onChange={(event) => setNursePublicId(event.target.value)} placeholder="NUR-..." />
             </Field>
             <ActionBar>
@@ -189,13 +189,13 @@ export function AdminVerificationPage() {
                 <InfoList
                   items={[
                     { label: 'Pflegekraft', value: `${overview.nurseProfile.displayName} (${overview.nurseProfile.publicId})` },
-                    { label: 'Release', value: overview.nurseProfile.isReleasedForMatching ? 'released' : 'pending' },
-                    { label: 'Release-Hinweis', value: releaseStatusHint },
+                    { label: 'Freigabe', value: overview.nurseProfile.isReleasedForMatching ? 'freigegeben' : 'offen' },
+                    { label: 'Freigabehinweis', value: releaseStatusHint },
                     { label: 'Dokumente', value: overview.documents.length },
                     { label: 'Bereits geprüft', value: reviewedDocuments },
                   ]}
                 />
-                <Field label="Release Reason" helpText="Wird für Freigabe oder Rücknahme mitgeführt, damit die Maßnahme operativ nachvollziehbar bleibt.">
+                <Field label="Freigabegrund" helpText="Wird für Freigabe oder Rücknahme mitgeführt, damit die Maßnahme operativ nachvollziehbar bleibt.">
                   <input value={releaseReason} onChange={(event) => setReleaseReason(event.target.value)} placeholder="Freigabegrund" />
                 </Field>
                 <ActionBar>
@@ -212,7 +212,7 @@ export function AdminVerificationPage() {
                       <select value={documentId} onChange={(event) => setDocumentId(event.target.value)}>
                         {overview.documents.map((document) => (
                           <option key={document.id} value={document.id}>
-                            {document.documentType} · {document.status} · {new Date(document.createdAt).toLocaleDateString('de-DE')}
+                            {document.documentType} · {formatStatusLabel(document.status)} · {new Date(document.createdAt).toLocaleDateString('de-DE')}
                           </option>
                         ))}
                       </select>
@@ -228,7 +228,7 @@ export function AdminVerificationPage() {
                           <div>
                             <strong>{document.documentType}</strong>
                             <p>{new Date(document.createdAt).toLocaleDateString('de-DE')} · {document.id}</p>
-                            <p>Reviewed: {document.reviewedAt ? new Date(document.reviewedAt).toLocaleString('de-DE') : 'noch nicht geprüft'}</p>
+                            <p>Geprüft: {document.reviewedAt ? new Date(document.reviewedAt).toLocaleString('de-DE') : 'noch nicht geprüft'}</p>
                             <p>{document.rejectionReason ?? 'Keine dokumentierte Ablehnungsbegründung.'}</p>
                           </div>
                           <StatusBadge value={document.status} />
@@ -239,52 +239,52 @@ export function AdminVerificationPage() {
                 ) : (
                   <EmptyState
                     title="Keine Dokumente im Verifikationskontext"
-                    description="Für diese Pflegekraft liegt aktuell nichts zur Review-Entscheidung vor. Release-Entscheidungen bleiben oben separat steuerbar."
+                    description="Für diese Pflegekraft liegt aktuell nichts zur Prüfentscheidung vor. Freigabeentscheidungen bleiben oben separat steuerbar."
                   />
                 )}
               </>
             ) : (
-              <Field label="Document ID" error={documentIdError} helpText="Fallback, falls du direkt mit einer Dokument-ID arbeitest.">
+              <Field label="Dokument-ID" error={documentIdError} helpText="Fallback, falls du direkt mit einer Dokument-ID arbeitest.">
                 <input value={documentId} onChange={(event) => setDocumentId(event.target.value)} placeholder="documentId" />
               </Field>
             )}
             <Field label="Entscheidung" helpText="Ablehnung verlangt eine Begründung mit mindestens 3 Zeichen.">
               <select value={status} onChange={(event) => setStatus(event.target.value as 'VERIFIED' | 'REJECTED')}>
-                <option value="VERIFIED">VERIFIED</option>
-                <option value="REJECTED">REJECTED</option>
+                <option value="VERIFIED">Verifiziert</option>
+                <option value="REJECTED">Abgelehnt</option>
               </select>
             </Field>
             {rejectionRequired ? (
-              <Field label="Rejection Reason" error={rejectionReasonError} helpText="Mindestens 3 Zeichen Begründung bei Ablehnung.">
+              <Field label="Ablehnungsgrund" error={rejectionReasonError} helpText="Mindestens 3 Zeichen Begründung bei Ablehnung.">
                 <input value={rejectionReason} onChange={(event) => setRejectionReason(event.target.value)} placeholder="Begründung" />
               </Field>
             ) : null}
           </FormSection>
           <ActionBar>
-            <button type="submit" disabled={submitting || !canSubmit}>{submitting ? 'Prüft…' : 'Review ausführen'}</button>
+            <button type="submit" disabled={submitting || !canSubmit}>{submitting ? 'Prüft…' : 'Prüfung ausführen'}</button>
           </ActionBar>
         </form>
 
-        <SectionCard title="Review Result" description="Zeigt den zurückgelieferten Dokument- und Nurse-Status nach der Aktion.">
+        <SectionCard title="Prüfergebnis" description="Zeigt den zurückgelieferten Dokument- und Pflegekraftstatus nach der Aktion.">
           {result ? (
             <>
               <div className="summary-grid">
                 <div className="summary-card">
-                  <span>Document Status</span>
+                  <span>Dokumentstatus</span>
                   <StatusBadge value={result.status} />
                 </div>
                 <div className="summary-card">
-                  <span>Nurse Release</span>
+                  <span>Pflegekraft-Freigabe</span>
                   <StatusBadge value={result.nurseProfile.isReleasedForMatching ? 'released' : 'pending'} />
                 </div>
               </div>
               <InfoList
                 items={[
-                  { label: 'Document ID', value: result.id },
+                  { label: 'Dokument-ID', value: result.id },
                   { label: 'Typ', value: result.documentType },
-                  { label: 'Reviewed At', value: result.reviewedAt ? new Date(result.reviewedAt).toLocaleString('de-DE') : '—' },
+                  { label: 'Geprüft am', value: result.reviewedAt ? new Date(result.reviewedAt).toLocaleString('de-DE') : '—' },
                   { label: 'Pflegekraft', value: `${result.nurseProfile.displayName} (${result.nurseProfile.publicId})` },
-                  { label: 'Rejection Reason', value: result.rejectionReason ?? '—' },
+                  { label: 'Ablehnungsgrund', value: result.rejectionReason ?? '—' },
                 ]}
               />
             </>

@@ -112,8 +112,10 @@
 - Inline SVG Favicon (blauer Kreis mit "S") in index.html
 - **Erledigt:** 2026-06-06
 
-### 4.3 Lokalisation UI ist gemischt — Teils Deutsch (Navigation: "Pflegekraft", "Einsätze"), Teils Englisch (Session Card: "Workspace", "Operations Console")
-- **Fix:** Durchgängig Deutsch ODER Englisch
+### 4.3 Lokalisation UI ist gemischt ✅
+- UI sichtbar auf Deutsch vereinheitlicht: Status-Badges lokalisieren Backend-Enums, zentrale Admin-/Krankenhaus-/Pflegekraft-Flows vermeiden englische Labels wie Offer, Contract, Billing, Invoice, Execution und Dashboard
+- Tests für lokalisierte Statusanzeige ergänzt
+- **Erledigt:** 2026-06-27
 
 ### 4.4 Konnte kein Print-Stylesheet finden
 - Für PDF-Druck von Verträgen/Billing-Seiten

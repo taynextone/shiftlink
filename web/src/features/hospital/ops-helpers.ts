@@ -2,16 +2,16 @@ import type { ContractExecutionOverview, ContractLifecycle, ContractVoidOverview
 
 export function computeOfferHealth(offer: HospitalOffer) {
   if (offer.status === 'SIGNED') {
-    return { label: 'vertraglich gebunden', nextAction: 'Vertrag / Dossier prüfen', exceptionNote: 'Offer ist bereits im Vertragskontext gebunden.' };
+    return { label: 'vertraglich gebunden', nextAction: 'Vertrag / Dossier prüfen', exceptionNote: 'Angebot ist bereits im Vertragskontext gebunden.' };
   }
   if (offer.status === 'DECLINED') {
-    return { label: 'durch Pflegekraft beendet', nextAction: 'neue Schicht oder Reopen-Entscheidung', exceptionNote: 'Backend-Regel: neue Schicht oder explizite spätere Wiederöffnung nötig.' };
+    return { label: 'durch Pflegekraft beendet', nextAction: 'neue Schicht oder Wiederöffnungsentscheidung', exceptionNote: 'Backend-Regel: neue Schicht oder explizite spätere Wiederöffnung nötig.' };
   }
   if (offer.status === 'EXPIRED') {
-    return { label: 'abgelaufen', nextAction: 'neues Angebot vorbereiten', exceptionNote: 'Abgelaufene Offers bleiben historisch sichtbar, sind aber operativ abgeschlossen.' };
+    return { label: 'abgelaufen', nextAction: 'neues Angebot vorbereiten', exceptionNote: 'Abgelaufene Angebote bleiben historisch sichtbar, sind aber operativ abgeschlossen.' };
   }
   if (offer.status === 'PENDING') {
-    return { label: 'wartet auf Antwort', nextAction: 'direkt annehmen, ablehnen oder Antwortstatus eng verfolgen', exceptionNote: 'Offer kann jetzt direkt aus der Hospital-Oberfläche beantwortet werden.' };
+    return { label: 'wartet auf Antwort', nextAction: 'direkt annehmen, ablehnen oder Antwortstatus eng verfolgen', exceptionNote: 'Angebot kann jetzt direkt aus der Krankenhausoberfläche beantwortet werden.' };
   }
   return { label: 'operativ beobachten', nextAction: 'Kontext prüfen', exceptionNote: 'Sonderfall manuell prüfen.' };
 }
@@ -25,16 +25,16 @@ export function interpretContractState(lifecycle: ContractLifecycle | null, exec
     return { label: 'vollständig ausgeführt', nextAction: lifecycle.invoice ? 'Abrechnung und PDF prüfen' : 'Rechnungserstellung beobachten' };
   }
   if (lifecycle.status === 'SIGNED' && lifecycle.executionStatus === 'PENDING_NURSE_SIGNATURE') {
-    return { label: 'wartet auf Nurse-Signatur', nextAction: 'Signaturstatus überwachen oder nachfassen' };
+    return { label: 'wartet auf Pflegekraft-Signatur', nextAction: 'Signaturstatus überwachen oder nachfassen' };
   }
   if (lifecycle.status === 'SIGNED' && lifecycle.executionStatus === 'PENDING_HOSPITAL_SIGNATURE') {
-    return { label: 'wartet auf Hospital-Signatur', nextAction: 'Execution signieren' };
+    return { label: 'wartet auf Klinik-Signatur', nextAction: 'Ausführung signieren' };
   }
   if (lifecycle.status === 'PENDING') {
-    return { label: 'Offer noch offen', nextAction: 'Offer im Hospital-Kontext direkt beantworten oder Antwortstatus prüfen' };
+    return { label: 'Angebot noch offen', nextAction: 'Angebot im Krankenhauskontext direkt beantworten oder Antwortstatus prüfen' };
   }
   if (lifecycle.status === 'DECLINED') {
-    return { label: 'durch Pflegekraft beendet', nextAction: 'Schicht-/Reopen-Entscheidung treffen' };
+    return { label: 'durch Pflegekraft beendet', nextAction: 'Schicht- oder Wiederöffnungsentscheidung treffen' };
   }
   if (lifecycle.status === 'EXPIRED') {
     return { label: 'Angebot abgelaufen', nextAction: 'neues Angebot vorbereiten' };
@@ -43,7 +43,7 @@ export function interpretContractState(lifecycle: ContractLifecycle | null, exec
     return { label: 'abgebrochen', nextAction: 'Historie dokumentieren und Kontext prüfen' };
   }
 
-  return { label: execution ? execution.executionStatus : lifecycle.executionStatus, nextAction: 'Lifecycle-Details prüfen' };
+  return { label: execution ? execution.executionStatus : lifecycle.executionStatus, nextAction: 'Verlaufsdetails prüfen' };
 }
 
 export type InterventionTone = 'success' | 'warning' | 'error' | 'info';
@@ -59,18 +59,18 @@ export function interpretVoidIntervention(lifecycle: ContractLifecycle | null, v
     return null;
   }
   if (voiding?.voidEvent) {
-    return { label: 'bereits voided', blocker: 'Der Vertrag wurde bereits beendet und dokumentiert.', tone: 'info' as const };
+    return { label: 'bereits beendet', blocker: 'Der Vertrag wurde bereits beendet und dokumentiert.', tone: 'info' as const };
   }
   if (lifecycle.executionStatus === 'FULLY_EXECUTED') {
-    return { label: 'Void blockiert', blocker: 'Vollständig ausgeführte Verträge können über diesen Flow nicht voided werden.', tone: 'error' as const };
+    return { label: 'Beendigung blockiert', blocker: 'Vollständig ausgeführte Verträge können über diesen Flow nicht beendet werden.', tone: 'error' as const };
   }
   if (lifecycle.invoice?.status === 'PAID') {
-    return { label: 'Void blockiert', blocker: 'Bereits bezahlte Plattformrechnungen blockieren diesen Void-Flow.', tone: 'error' as const };
+    return { label: 'Beendigung blockiert', blocker: 'Bereits bezahlte Plattformrechnungen blockieren diesen Beendigungsflow.', tone: 'error' as const };
   }
   if (lifecycle.status === 'CANCELED') {
     return { label: 'bereits storniert', blocker: 'Dieser Vertrag ist bereits storniert.', tone: 'warning' as const };
   }
-  return { label: 'Void möglich', blocker: 'Kein technischer Blocker sichtbar. Grund sauber dokumentieren.', tone: 'success' as const };
+  return { label: 'Beendigung möglich', blocker: 'Kein technischer Blocker sichtbar. Grund sauber dokumentieren.', tone: 'success' as const };
 }
 
 
@@ -164,20 +164,20 @@ export function buildContractStateSteps(lifecycle: ContractLifecycle | null): Co
   const executionStatus = lifecycle.executionStatus;
 
   const steps: ContractStateStep[] = [
-    { state: 'PENDING', label: 'Offer Pending', isActive: status === 'PENDING', isTerminal: false },
-    { state: 'SIGNED', label: 'Contract Signed', isActive: status === 'SIGNED', isTerminal: false },
-    { state: 'EXECUTING', label: 'In Execution', isActive: status === 'SIGNED' && executionStatus !== 'FULLY_EXECUTED' && executionStatus !== 'VOIDED', isTerminal: false },
-    { state: 'FULLY_EXECUTED', label: 'Fully Executed', isActive: executionStatus === 'FULLY_EXECUTED', isTerminal: true },
+    { state: 'PENDING', label: 'Angebot offen', isActive: status === 'PENDING', isTerminal: false },
+    { state: 'SIGNED', label: 'Vertrag signiert', isActive: status === 'SIGNED', isTerminal: false },
+    { state: 'EXECUTING', label: 'In Ausführung', isActive: status === 'SIGNED' && executionStatus !== 'FULLY_EXECUTED' && executionStatus !== 'VOIDED', isTerminal: false },
+    { state: 'FULLY_EXECUTED', label: 'Vollständig ausgeführt', isActive: executionStatus === 'FULLY_EXECUTED', isTerminal: true },
   ];
 
   if (status === 'DECLINED') {
-    steps.push({ state: 'DECLINED', label: 'Declined', isActive: true, isTerminal: true });
+    steps.push({ state: 'DECLINED', label: 'Abgelehnt', isActive: true, isTerminal: true });
   }
   if (status === 'EXPIRED') {
-    steps.push({ state: 'EXPIRED', label: 'Expired', isActive: true, isTerminal: true });
+    steps.push({ state: 'EXPIRED', label: 'Abgelaufen', isActive: true, isTerminal: true });
   }
   if (executionStatus === 'VOIDED') {
-    steps.push({ state: 'VOIDED', label: 'Voided', isActive: true, isTerminal: true });
+    steps.push({ state: 'VOIDED', label: 'Beendet', isActive: true, isTerminal: true });
   }
 
   return steps;

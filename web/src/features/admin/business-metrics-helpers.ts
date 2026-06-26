@@ -14,22 +14,22 @@ export type MetricInterventionLink = {
 export function getContractMetricInterventions(metrics: BusinessMetrics): MetricInterventionLink[] {
   const links: MetricInterventionLink[] = [];
   if (metrics.contracts.pending > 0) {
-    links.push({ label: 'Pending Offers pruefen', to: '/hospital/offers' });
+    links.push({ label: 'Offene Angebote pruefen', to: '/hospital/offers' });
   }
   if (metrics.contracts.declined > 0 || metrics.contracts.expired > 0) {
-    links.push({ label: 'Offer-Reopen pruefen', to: '/hospital/offers' });
+    links.push({ label: 'Wiederöffnung von Angeboten pruefen', to: '/hospital/offers' });
   }
   return links;
 }
 
 export function getInvoiceMetricInterventions(metrics: BusinessMetrics): MetricInterventionLink[] {
   return metrics.invoices.pending > 0
-    ? [{ label: 'Pending Invoices pruefen', to: '/hospital/billing?status=PENDING' }]
+    ? [{ label: 'Offene Rechnungen pruefen', to: '/hospital/billing?status=PENDING' }]
     : [];
 }
 
 export function getNotificationMetricInterventions(metrics: BusinessMetrics): MetricInterventionLink[] {
   return metrics.notifications.failed > 0
-    ? [{ label: 'Delivery Failures pruefen', to: '/admin/ops?failureQueue=whatsapp' }]
+    ? [{ label: 'Zustellfehler pruefen', to: '/admin/ops?failureQueue=whatsapp' }]
     : [];
 }

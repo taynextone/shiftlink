@@ -3,7 +3,7 @@ import { ActionBar } from './ActionBar';
 import { api, type HybridSignatureStatus as HybridSigStatus } from '../lib/api';
 import { FeedbackMessage } from './FeedbackMessage';
 import { SectionCard } from './SectionCard';
-import { StatusBadge } from './StatusBadge';
+import { formatStatusLabel } from './StatusBadge';
 
 type HybridStatusCardProps = {
   contractId: string;
@@ -27,7 +27,7 @@ export function HybridStatusCard({ contractId, onUpdatePaperStatus }: HybridStat
     setFeedback(null);
     try {
       await onUpdatePaperStatus(newStatus);
-      setFeedback({ tone: 'success', message: `Papiervertrag-Status aktualisiert: ${newStatus}` });
+      setFeedback({ tone: 'success', message: `Papiervertrag-Status aktualisiert: ${formatStatusLabel(newStatus)}` });
     } catch (err) {
       setFeedback({ tone: 'error', message: err instanceof Error ? err.message : 'Aktualisierung fehlgeschlagen' });
     } finally {
@@ -38,7 +38,7 @@ export function HybridStatusCard({ contractId, onUpdatePaperStatus }: HybridStat
   return (
     <SectionCard
       title="Vertrags-Status (EES + Papier)"
-      description="Hybrid-Workflow: Digitale Unterschrift per Screen + Papiervertrag vor Ort"
+      description="Hybrider Ablauf: digitale Unterschrift per Bildschirm plus Papiervertrag vor Ort"
     >
       <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

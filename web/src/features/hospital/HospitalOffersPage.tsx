@@ -69,7 +69,7 @@ export function HospitalOffersPage() {
     const result = await api.listHospitalOffers(targetShiftId);
     setOffers(normalizeOffers(result.offers ?? [], result.jobShift));
     setActiveShift(result.jobShift);
-    setStatus({ tone: 'success', message: `Offers für ${result.jobShift.title ?? result.jobShift.id} geladen.` });
+    setStatus({ tone: 'success', message: `Angebote für ${result.jobShift.title ?? result.jobShift.id} geladen.` });
   }
 
   async function handleLoadOffers(event: React.FormEvent) {
@@ -84,7 +84,7 @@ export function HospitalOffersPage() {
     try {
       await loadOffers(jobShiftId);
     } catch (err) {
-      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Offers konnten nicht geladen werden' });
+      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Angebote konnten nicht geladen werden' });
     } finally {
       setSubmitting(false);
     }
@@ -112,10 +112,10 @@ export function HospitalOffersPage() {
   function handleRespondToOffer(matchContractId: string, action: 'ACCEPT' | 'DECLINE') {
     const actionLabel = action === 'ACCEPT' ? 'annehmen' : 'ablehnen';
     setConfirmAction({
-      title: `Offer ${actionLabel}`,
+      title: `Angebot ${actionLabel}`,
       message: action === 'ACCEPT'
-        ? `Offer wirklich annehmen?\n\nContract: ${matchContractId}`
-        : `Offer wirklich ablehnen?\n\nContract: ${matchContractId}\n\nNurse-Offer wird beendet. Ggf. neue Schicht oder Reopen prüfen.`,
+        ? `Angebot wirklich annehmen?\n\nVertrag: ${matchContractId}`
+        : `Angebot wirklich ablehnen?\n\nVertrag: ${matchContractId}\n\nDas Angebot wird beendet. Ggf. neue Schicht oder Wiederöffnung prüfen.`,
       tone: action === 'ACCEPT' ? 'warning' : 'danger',
       onConfirm: async () => {
         setConfirmAction(null);
@@ -126,11 +126,11 @@ export function HospitalOffersPage() {
           const doneLabel = action === 'ACCEPT' ? 'angenommen' : 'abgelehnt';
           const nextStep = action === 'ACCEPT'
             ? 'Vertragskontext prüfen.'
-            : 'Nurse-Offer beendet. Ggf. neue Schicht oder Reopen prüfen.';
+            : 'Angebot beendet. Ggf. neue Schicht oder Wiederöffnung prüfen.';
           setOffers((prev) => prev.map((offer) => offer.id === matchContractId ? { ...offer, ...result.matchContract } : offer));
-          setStatus({ tone: 'success', message: `Offer ${doneLabel}. ${nextStep}` });
+          setStatus({ tone: 'success', message: `Angebot ${doneLabel}. ${nextStep}` });
         } catch (error) {
-          const message = error instanceof Error ? error.message : 'Offer-Antwort fehlgeschlagen';
+          const message = error instanceof Error ? error.message : 'Angebotsantwort fehlgeschlagen';
           setStatus({ tone: 'error', message });
         } finally {
           setSubmitting(false);
@@ -159,8 +159,8 @@ export function HospitalOffersPage() {
 
   function handleExtendOfferExpiry(matchContractId: string) {
     setConfirmAction({
-      title: 'Offer verlängern',
-      message: `Abgelaufenes Offer verlängern?\n\nContract: ${matchContractId}\n\nDas Offer wird auf PENDING gesetzt und ein neues Ablaufdatum erhält.`,
+      title: 'Angebot verlängern',
+      message: `Abgelaufenes Angebot verlängern?\n\nVertrag: ${matchContractId}\n\nDas Angebot wird wieder auf offen gesetzt und erhält ein neues Ablaufdatum.`,
       tone: 'warning',
       onConfirm: async () => {
         setConfirmAction(null);
@@ -169,9 +169,9 @@ export function HospitalOffersPage() {
         try {
           const result = await api.extendOfferExpiry({ matchContractId });
           setOffers((prev) => prev.map((offer) => offer.id === matchContractId ? { ...offer, ...result.matchContract } : offer));
-          setStatus({ tone: 'success', message: `Offer verlängert: ${result.matchContract.id}. Neues Ablaufdatum gesetzt.` });
+          setStatus({ tone: 'success', message: `Angebot verlängert: ${result.matchContract.id}. Neues Ablaufdatum gesetzt.` });
         } catch (error) {
-          const message = error instanceof Error ? error.message : 'Offer-Verlängerung fehlgeschlagen';
+          const message = error instanceof Error ? error.message : 'Angebotsverlängerung fehlgeschlagen';
           setStatus({ tone: 'error', message });
         } finally {
           setSubmitting(false);
@@ -182,8 +182,8 @@ export function HospitalOffersPage() {
 
   function handleReopenOffer(matchContractId: string) {
     setConfirmAction({
-      title: 'Offer erneut öffnen',
-      message: `Offer wirklich erneut öffnen?\n\nContract: ${matchContractId}\n\nBei Opt-in wird die WhatsApp-Kommunikation erneut angestoßen.`,
+      title: 'Angebot erneut öffnen',
+      message: `Angebot wirklich erneut öffnen?\n\nVertrag: ${matchContractId}\n\nBei Opt-in wird die WhatsApp-Kommunikation erneut angestoßen.`,
       tone: 'warning',
       onConfirm: async () => {
         setConfirmAction(null);
@@ -192,9 +192,9 @@ export function HospitalOffersPage() {
         try {
           const result = await api.reopenOffer({ matchContractId });
           setOffers((prev) => prev.map((offer) => offer.id === matchContractId ? { ...offer, ...result.matchContract } : offer));
-          setStatus({ tone: 'success', message: `Offer erneut geöffnet: ${result.matchContract.id}. Kommunikation wurde ggf. neu angestoßen.` });
+          setStatus({ tone: 'success', message: `Angebot erneut geöffnet: ${result.matchContract.id}. Kommunikation wurde ggf. neu angestoßen.` });
         } catch (error) {
-          const message = error instanceof Error ? error.message : 'Offer-Reopen fehlgeschlagen';
+          const message = error instanceof Error ? error.message : 'Wiederöffnung des Angebots fehlgeschlagen';
           setStatus({ tone: 'error', message });
         } finally {
           setSubmitting(false);
@@ -212,7 +212,7 @@ export function HospitalOffersPage() {
     setStatus(null);
     void loadOffers(initialJobShiftId)
       .catch((err) => {
-        setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Offers konnten nicht geladen werden' });
+        setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Angebote konnten nicht geladen werden' });
       })
       .finally(() => setSubmitting(false));
   }, [initialJobShiftId]);
@@ -240,9 +240,9 @@ export function HospitalOffersPage() {
       } else {
         await loadOffers(jobShiftId);
       }
-      setStatus({ tone: 'success', message: `Offer erstellt: ${result.matchContract.id}` });
+      setStatus({ tone: 'success', message: `Angebot erstellt: ${result.matchContract.id}` });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Offer konnte nicht erstellt werden';
+      const message = err instanceof Error ? err.message : 'Angebot konnte nicht erstellt werden';
       setLastOfferFailure({ nurseProfileId, message });
       setStatus({ tone: 'error', message });
     } finally {
@@ -254,11 +254,11 @@ export function HospitalOffersPage() {
     <section className="stack page-stack">
       <PageHeader
         eyebrow="Krankenhaus"
-        title="Offers & Kandidatensteuerung"
+        title="Angebote & Kandidatensteuerung"
         description="Professionelle Arbeitsfläche für Kandidatensuche und Angebotsauslösung. Fokus auf belastbare operative Schritte statt visuellem Spielzeug."
       />
       <div className="content-grid master-detail-grid">
-        <SectionCard title="Schichten" description="Wähle einen vorhandenen Bedarf als Arbeitskontext für Offers und Kandidaten.">
+        <SectionCard title="Schichten" description="Wähle einen vorhandenen Bedarf als Arbeitskontext für Angebote und Kandidaten.">
           <AsyncState loading={shiftsLoading} error={shiftsError} isEmpty={availableShifts.length === 0} emptyMessage="Noch keine Schichten vorhanden.">
             <div className="selection-list">
               {availableShifts.map((shift) => {
@@ -284,11 +284,11 @@ export function HospitalOffersPage() {
 
         <div className="stack">
           <form className="panel form-panel stack" onSubmit={handleLoadOffers}>
-            <FormSection title="Operativer Kontext" description="Die ausgewählte Schicht steuert Kandidatensuche und Offer-Liste in einem gemeinsamen Arbeitsraum.">
+            <FormSection title="Operativer Kontext" description="Die ausgewählte Schicht steuert Kandidatensuche und Angebotsliste in einem gemeinsamen Arbeitsraum.">
               <label>
-                <span>Job Shift auswählen</span>
+                <span>Schicht auswählen</span>
                 <select value={jobShiftId} onChange={(event) => setJobShiftId(event.target.value)}>
-                  <option value="">— Shift auswählen —</option>
+                  <option value="">— Schicht auswählen —</option>
                   {availableShifts.map((shift) => (
                     <option key={shift.id} value={shift.id}>
                       {shift.title ?? 'Pflegeeinsatz'} · {shift.locationCity ?? 'ohne Ort'} · {new Date(shift.startTime).toLocaleDateString('de-DE')}
@@ -296,7 +296,7 @@ export function HospitalOffersPage() {
                   ))}
                 </select>
               </label>
-              {focusNurseProfileId ? <p className="hint">Gefiltert auf Nurse Profile ID: {focusNurseProfileId}</p> : null}
+              {focusNurseProfileId ? <p className="hint">Gefiltert auf Pflegekraft-Profil-ID: {focusNurseProfileId}</p> : null}
               {selectedShift ? (
                 <>
                   <InfoList
@@ -309,24 +309,24 @@ export function HospitalOffersPage() {
                   />
                   <MetricList
                     items={[
-                      { label: 'Offers gesamt', value: offerSummary.total },
-                      { label: 'Pending', value: offerSummary.PENDING ?? 0 },
-                      { label: 'Signed', value: offerSummary.SIGNED ?? 0 },
-                      { label: 'Declined', value: offerSummary.DECLINED ?? 0 },
-                      { label: 'Expired', value: offerSummary.EXPIRED ?? 0 },
-                      { label: 'Invoiced', value: offerSummary.invoiced },
+                      { label: 'Angebote gesamt', value: offerSummary.total },
+                      { label: 'Offen', value: offerSummary.PENDING ?? 0 },
+                      { label: 'Signiert', value: offerSummary.SIGNED ?? 0 },
+                      { label: 'Abgelehnt', value: offerSummary.DECLINED ?? 0 },
+                      { label: 'Abgelaufen', value: offerSummary.EXPIRED ?? 0 },
+                      { label: 'Abgerechnet', value: offerSummary.invoiced },
                     ]}
                   />
                   <ol className="ordered-list compact-ordered-list">
-                    <li>Pending Offers zuerst beantworten oder sauber nachhalten</li>
-                    <li>Signed Offers direkt in Contract- und Dossier-Kontext weiterführen</li>
-                    <li>Declined / Expired Offers nur noch für Reopen- oder Historienentscheidungen prüfen</li>
+                    <li>Offene Angebote zuerst beantworten oder sauber nachhalten</li>
+                    <li>Signierte Angebote direkt in Vertrags- und Dossierkontext weiterführen</li>
+                    <li>Abgelehnte oder abgelaufene Angebote nur noch für Wiederöffnungs- oder Historienentscheidungen prüfen</li>
                   </ol>
                 </>
               ) : null}
             </FormSection>
             <ActionBar>
-              <button type="submit" disabled={submitting || !jobShiftId}>{submitting ? 'Lädt…' : 'Offers laden'}</button>
+              <button type="submit" disabled={submitting || !jobShiftId}>{submitting ? 'Lädt…' : 'Angebote laden'}</button>
               <button type="button" className="secondary" disabled={submitting || !jobShiftId} onClick={() => void handleLoadCandidates()}>
                 {submitting ? 'Bitte warten…' : 'Kandidaten suchen'}
               </button>
@@ -352,17 +352,17 @@ export function HospitalOffersPage() {
                   >
                     <InfoList
                       items={[
-                        { label: 'Nurse Profile ID', value: candidate.nurseProfileId },
-                        { label: 'Min. Rate', value: `${candidate.minHourlyRate} €` },
+                        { label: 'Pflegekraft-Profil-ID', value: candidate.nurseProfileId },
+                        { label: 'Mindestsatz', value: `${candidate.minHourlyRate} €` },
                         { label: 'Match-Fit', value: candidate.preferredTagMatches },
-                        { label: 'Availability Block', value: candidate.matchingAvailabilityBlockId },
-                        { label: 'Letzter Offer-Blocker', value: candidateFailure ?? 'kein letzter Fehler gespeichert' },
+                        { label: 'Verfügbarkeitsblock', value: candidate.matchingAvailabilityBlockId },
+                        { label: 'Letzter Angebotsblocker', value: candidateFailure ?? 'kein letzter Fehler gespeichert' },
                       ]}
                     />
                     <ActionBar>
                       <Link to={`/hospital/dossier?nurseProfileId=${encodeURIComponent(candidate.nurseProfileId)}`}>Dossier öffnen</Link>
                       <button disabled={submitting} onClick={() => void handleCreateOffer(candidate.nurseProfileId)}>
-                        {submitting ? 'Bitte warten…' : 'Offer erstellen'}
+                        {submitting ? 'Bitte warten…' : 'Angebot erstellen'}
                       </button>
                     </ActionBar>
                   </SectionCard>
@@ -372,7 +372,7 @@ export function HospitalOffersPage() {
             </section>
             <section className="stack">
               <div className="section-heading-row">
-                <h2 className="section-heading">Offers</h2>
+                <h2 className="section-heading">Angebote</h2>
                 <StatusBadge value={`${focusedOffers.length} active`} />
               </div>
               {focusedOffers.map((offer) => {
@@ -386,40 +386,40 @@ export function HospitalOffersPage() {
                   >
                     <InfoList
                       items={[
-                        { label: 'Offer ID', value: offer.id },
-                        { label: 'Nurse Profile ID', value: offer.nurseProfileId ?? '—' },
-                        { label: 'Min. Rate', value: `${offer.nurse.minHourlyRate} €` },
+                        { label: 'Angebots-ID', value: offer.id },
+                        { label: 'Pflegekraft-Profil-ID', value: offer.nurseProfileId ?? '—' },
+                        { label: 'Mindestsatz', value: `${offer.nurse.minHourlyRate} €` },
                         { label: 'Nächster Schritt', value: health.nextAction },
                         { label: 'Exception-Hinweis', value: health.exceptionNote },
                         { label: 'Kommunikation', value: offer.nurse.whatsappOptIn ? 'WhatsApp Opt-in aktiv' : 'kein WhatsApp Opt-in' },
-                        { label: 'Expires At', value: offer.expiresAt ? new Date(offer.expiresAt).toLocaleString('de-DE') : '—' },
-                        { label: 'Responded At', value: offer.respondedAt ? new Date(offer.respondedAt).toLocaleString('de-DE') : '—' },
-                        { label: 'Signed At', value: offer.signedAt ? new Date(offer.signedAt).toLocaleString('de-DE') : '—' },
-                        { label: 'Invoice', value: offer.invoiceId ?? 'noch keine Rechnung' },
+                        { label: 'Läuft ab am', value: offer.expiresAt ? new Date(offer.expiresAt).toLocaleString('de-DE') : '—' },
+                        { label: 'Beantwortet am', value: offer.respondedAt ? new Date(offer.respondedAt).toLocaleString('de-DE') : '—' },
+                        { label: 'Signiert am', value: offer.signedAt ? new Date(offer.signedAt).toLocaleString('de-DE') : '—' },
+                        { label: 'Rechnung', value: offer.invoiceId ?? 'noch keine Rechnung' },
                       ]}
                     />
                     <ActionBar>
                       {offer.nurseProfileId ? <Link to={`/hospital/dossier?nurseProfileId=${encodeURIComponent(offer.nurseProfileId)}&contractId=${encodeURIComponent(offer.id)}`}>Dossier öffnen</Link> : null}
-                      <Link to={`/hospital/contracts?contractId=${encodeURIComponent(offer.id)}`}>Contract öffnen</Link>
-                      {offer.invoiceId ? <Link to={getInvoiceBillingPath(offer.invoiceId)}>Invoice öffnen</Link> : null}
+                      <Link to={`/hospital/contracts?contractId=${encodeURIComponent(offer.id)}`}>Vertrag öffnen</Link>
+                      {offer.invoiceId ? <Link to={getInvoiceBillingPath(offer.invoiceId)}>Rechnung öffnen</Link> : null}
                       {offer.status === 'PENDING' ? (
                         <>
                           <button disabled={submitting} onClick={() => void handleRespondToOffer(offer.id, 'ACCEPT')}>
-                            {submitting ? '…' : 'Offer annehmen'}
+                            {submitting ? '…' : 'Angebot annehmen'}
                           </button>
                           <button className="secondary" disabled={submitting} onClick={() => void handleRespondToOffer(offer.id, 'DECLINE')}>
-                            {submitting ? '…' : 'Offer ablehnen'}
+                            {submitting ? '…' : 'Angebot ablehnen'}
                           </button>
                         </>
                       ) : null}
                       {offer.status === 'DECLINED' || offer.status === 'EXPIRED' ? (
                         <button className="secondary" disabled={submitting} onClick={() => void handleReopenOffer(offer.id)}>
-                          {submitting ? '…' : 'Offer erneut öffnen'}
+                          {submitting ? '…' : 'Angebot erneut öffnen'}
                         </button>
                       ) : null}
                       {offer.status === 'EXPIRED' ? (
                         <button className="secondary" disabled={submitting} onClick={() => void handleExtendOfferExpiry(offer.id)}>
-                          {submitting ? '…' : 'Offer verlängern'}
+                          {submitting ? '…' : 'Angebot verlängern'}
                         </button>
                       ) : null}
                       <button
@@ -460,7 +460,7 @@ export function HospitalOffersPage() {
                   </SectionCard>
                 );
               })}
-              {focusedOffers.length === 0 ? <div className="panel empty">Noch keine Offers geladen.</div> : null}
+              {focusedOffers.length === 0 ? <div className="panel empty">Noch keine Angebote geladen.</div> : null}
             </section>
           </div>
         </div>

@@ -37,22 +37,22 @@ export function describeAsyncFailure(failure: AsyncProcessFailureRow) {
 
   if (failure.queueName === 'billing') {
     return {
-      label: 'Billing-Fehler priorisieren',
-      detail: `${attemptText}; Gebühren- oder Rechnungsprozess prüfen, bevor weitere Contract-Governance-Aktionen laufen.`,
+      label: 'Abrechnungsfehler priorisieren',
+      detail: `${attemptText}; Gebühren- oder Rechnungsprozess prüfen, bevor weitere Vertragssteuerungs-Aktionen laufen.`,
     };
   }
 
   if (failure.queueName === 'webhook') {
     return {
-      label: 'Webhook-Failure beobachten',
-      detail: `${attemptText}; Delivery-Kontext, Zielsystem und letzte Fehlermeldung gemeinsam prüfen.`,
+      label: 'Webhook-Fehler beobachten',
+      detail: `${attemptText}; Zustellkontext, Zielsystem und letzte Fehlermeldung gemeinsam prüfen.`,
     };
   }
 
   if (failure.queueName === 'whatsapp') {
     return {
       label: 'Kommunikationsfehler nachhalten',
-      detail: `${attemptText}; Zustellung, Nummernkontext und eventuelle Folgeauswirkungen für Offer-/Contract-Kommunikation prüfen.`,
+      detail: `${attemptText}; Zustellung, Nummernkontext und eventuelle Folgeauswirkungen für Angebots- und Vertragskommunikation prüfen.`,
     };
   }
 
@@ -105,18 +105,18 @@ export function getAsyncFailureDestination(failure: AsyncProcessFailureRow, mode
 
 export function getAsyncFailureActionLabel(failure: AsyncProcessFailureRow) {
   if (failure.queueName === 'billing') {
-    return failure.relatedEntityId ? 'Zum betroffenen Contract' : 'Zu Billing-Intervention';
+    return failure.relatedEntityId ? 'Zum betroffenen Vertrag' : 'Zur Abrechnungsintervention';
   }
 
   if (failure.queueName === 'webhook') {
-    return 'Zu Webhook-Ops';
+    return 'Zur Webhook-Steuerung';
   }
 
   if (failure.queueName === 'whatsapp') {
-    return failure.relatedEntityId ? 'Zum betroffenen Contract' : 'Zu Contract-Kommunikation';
+    return failure.relatedEntityId ? 'Zum betroffenen Vertrag' : 'Zur Vertragskommunikation';
   }
 
-  return 'Zu Ops-Übersicht';
+  return 'Zur Betriebsübersicht';
 }
 
 export function buildInterventionHotspots(input: {
@@ -136,19 +136,19 @@ export function buildInterventionHotspots(input: {
 
   const hotspots = [
     failedWebhookEvents.length > 0
-      ? { label: 'Webhook Delivery', value: `${failedWebhookEvents.length} Probleme`, action: isSuperAdmin ? getSuperadminFailureBoardPath('webhook') : '/hospital', hint: 'fehlgeschlagene oder hängende Webhook-Zustellungen im Processing-Bereich prüfen', priority: 2 }
+      ? { label: 'Webhook-Zustellung', value: `${failedWebhookEvents.length} Probleme`, action: isSuperAdmin ? getSuperadminFailureBoardPath('webhook') : '/hospital', hint: 'fehlgeschlagene oder hängende Webhook-Zustellungen im Verarbeitungsbereich prüfen', priority: 2 }
       : null,
     criticalAsyncFailures.length > 0
-      ? { label: 'Async Worker Failures', value: `${criticalAsyncFailures.length} kritisch`, action: isSuperAdmin ? getSuperadminFailureBoardPath(criticalFailureQueue) : '/hospital', hint: isSuperAdmin ? 'kritische Worker-Fehler aus der Superadmin-Control-Plane priorisieren' : 'kritische Worker-Fehler erfordern Superadmin-Einbezug', priority: 1 }
+      ? { label: 'Worker-Fehler', value: `${criticalAsyncFailures.length} kritisch`, action: isSuperAdmin ? getSuperadminFailureBoardPath(criticalFailureQueue) : '/hospital', hint: isSuperAdmin ? 'kritische Worker-Fehler aus der Superadmin-Steuerfläche priorisieren' : 'kritische Worker-Fehler erfordern Superadmin-Einbezug', priority: 1 }
       : null,
     totalPendingOffers > 0
-      ? { label: 'Pending Offers', value: `${totalPendingOffers} offen`, action: firstPendingOfferShift ? `/hospital/offers?jobShiftId=${encodeURIComponent(firstPendingOfferShift.id)}` : '/hospital/offers', hint: 'Antwortlage und Blocker im Offer-Flow prüfen', priority: 3 }
+      ? { label: 'Offene Angebote', value: `${totalPendingOffers} offen`, action: firstPendingOfferShift ? `/hospital/offers?jobShiftId=${encodeURIComponent(firstPendingOfferShift.id)}` : '/hospital/offers', hint: 'Antwortlage und Blocker im Angebotsfluss prüfen', priority: 3 }
       : null,
     importBlockedShifts.length > 0
-      ? { label: 'Shift Import Blockers', value: `${importBlockedShifts.length} betroffen`, action: firstBlockedShift ? `/hospital/shifts?focusShiftId=${encodeURIComponent(firstBlockedShift.id)}` : '/hospital/shifts', hint: 'offene/pending/signed Lagen blockieren Re-Imports', priority: 4 }
+      ? { label: 'Importblocker für Schichten', value: `${importBlockedShifts.length} betroffen`, action: firstBlockedShift ? `/hospital/shifts?focusShiftId=${encodeURIComponent(firstBlockedShift.id)}` : '/hospital/shifts', hint: 'offene oder signierte Lagen blockieren erneute Importe', priority: 4 }
       : null,
     billing && billing.pendingInvoiceAmount > 0
-      ? { label: 'Pending Fees', value: `${billing.pendingInvoiceAmount} €`, action: '/hospital/billing?status=PENDING', hint: 'offene Gebühren und Rechnungsfälle operativ nachhalten', priority: 5 }
+      ? { label: 'Offene Gebühren', value: `${billing.pendingInvoiceAmount} €`, action: '/hospital/billing?status=PENDING', hint: 'offene Gebühren und Rechnungsfälle operativ nachhalten', priority: 5 }
       : null,
   ].filter((item): item is { label: string; value: string; action: string; hint: string; priority: number } => Boolean(item));
 

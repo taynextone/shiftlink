@@ -20,32 +20,32 @@ export function BusinessMetricsDashboard() {
   const contractFunnel = useMemo(() => {
     if (!metrics) return [];
     return [
-      { label: 'Total Offers', value: metrics.contracts.total },
-      { label: 'Signed', value: metrics.contracts.signed },
-      { label: 'Pending', value: metrics.contracts.pending },
-      { label: 'Declined', value: metrics.contracts.declined },
-      { label: 'Expired', value: metrics.contracts.expired },
-      { label: 'Conversion Rate', value: `${metrics.contracts.conversionRate}%` },
+      { label: 'Angebote gesamt', value: metrics.contracts.total },
+      { label: 'Signiert', value: metrics.contracts.signed },
+      { label: 'Offen', value: metrics.contracts.pending },
+      { label: 'Abgelehnt', value: metrics.contracts.declined },
+      { label: 'Abgelaufen', value: metrics.contracts.expired },
+      { label: 'Konversionsrate', value: `${metrics.contracts.conversionRate}%` },
     ];
   }, [metrics]);
 
   const invoicePipeline = useMemo(() => {
     if (!metrics) return [];
     return [
-      { label: 'Total Invoices', value: metrics.invoices.total },
-      { label: 'Paid', value: metrics.invoices.paid },
-      { label: 'Pending', value: metrics.invoices.pending },
-      { label: 'Payment Rate', value: `${metrics.invoices.paymentRate}%` },
+      { label: 'Rechnungen gesamt', value: metrics.invoices.total },
+      { label: 'Bezahlt', value: metrics.invoices.paid },
+      { label: 'Offen', value: metrics.invoices.pending },
+      { label: 'Zahlungsquote', value: `${metrics.invoices.paymentRate}%` },
     ];
   }, [metrics]);
 
   const notificationStats = useMemo(() => {
     if (!metrics) return [];
     return [
-      { label: 'Total Messages', value: metrics.notifications.total },
-      { label: 'Delivered', value: metrics.notifications.delivered },
-      { label: 'Failed', value: metrics.notifications.failed },
-      { label: 'Delivery Rate', value: `${metrics.notifications.deliveryRate}%` },
+      { label: 'Nachrichten gesamt', value: metrics.notifications.total },
+      { label: 'Zugestellt', value: metrics.notifications.delivered },
+      { label: 'Fehlgeschlagen', value: metrics.notifications.failed },
+      { label: 'Zustellquote', value: `${metrics.notifications.deliveryRate}%` },
     ];
   }, [metrics]);
   const contractInterventions = useMemo(() => (metrics ? getContractMetricInterventions(metrics) : []), [metrics]);
@@ -55,7 +55,7 @@ export function BusinessMetricsDashboard() {
   return (
     <div className="stack">
       <SectionCard
-        title="Business KPIs"
+        title="Geschäftskennzahlen"
         description="Überblick über die wichtigsten Geschäftsmetriken."
         actions={
           <button type="button" className="secondary" onClick={() => void reload()}>
@@ -92,7 +92,7 @@ export function BusinessMetricsDashboard() {
 
       {metrics && metrics.invoices.total > 0 ? (
         <SectionCard
-          title="Invoice Pipeline"
+          title="Rechnungspipeline"
           description="Aktuelle Rechnungs- und Zahlungslage."
           actions={invoiceInterventions.length > 0 ? (
             <ActionBar>

@@ -6,7 +6,7 @@ import { KpiCard } from '../../components/KpiCard';
 import { MetricList } from '../../components/MetricList';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
-import { StatusBadge } from '../../components/StatusBadge';
+import { formatStatusLabel, StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { api } from '../../lib/api';
 
@@ -33,13 +33,13 @@ export function NurseDashboardPage() {
     <section className="stack page-stack">
       <PageHeader
         eyebrow="Pflegekraft"
-        title="Dashboard"
+        title="Übersicht"
         description="Überblick über Verifikation, Verfügbarkeit und aktive Verträge."
       />
 
       {error ? <FeedbackMessage tone="error" message={error} /> : null}
 
-      <AsyncState loading={loading} isEmpty={!dashboard} emptyMessage="Lade Dashboard…">
+      <AsyncState loading={loading} isEmpty={!dashboard} emptyMessage="Lade Übersicht…">
         {dashboard && (
           <>
             {/* Onboarding progress */}
@@ -47,7 +47,7 @@ export function NurseDashboardPage() {
               title={dashboard.onboarding.isComplete ? '✅ Profil vollständig' : `Onboarding (${dashboard.onboarding.completedSteps}/${dashboard.onboarding.totalSteps})`}
               description={dashboard.onboarding.isComplete
                 ? 'Alle Schritte abgeschlossen. Du bist einsatzbereit.'
-                : 'Vervollständige diese Schritte, um auf dem Marketplace sichtbar zu sein.'}
+                : 'Vervollständige diese Schritte, um auf dem Marktplatz sichtbar zu sein.'}
             >
               <div className="onboarding-steps">
                 {dashboard.onboarding.steps.map((step) => (
@@ -100,7 +100,7 @@ export function NurseDashboardPage() {
                             {contract.jobShift.locationCity} · {new Date(contract.jobShift.startTime).toLocaleDateString('de-DE')}
                           </p>
                           {contract.latestInvoice && (
-                            <p className="hint">Rechnung: {contract.latestInvoice.status} · {contract.latestInvoice.amount} €</p>
+                            <p className="hint">Rechnung: {formatStatusLabel(contract.latestInvoice.status)} · {contract.latestInvoice.amount} €</p>
                           )}
                         </div>
                         <StatusBadge value={contract.status} />

@@ -65,7 +65,7 @@ export function LoginPage() {
       <div className="stack">
         <PageHeader
           eyebrow="Zugang"
-          title="Sign in to Shiftlink"
+          title="Bei Shiftlink anmelden"
           description="Professioneller Zugangspunkt für Plattformnutzer. Klar, reduziert und ohne generische Template-Ästhetik."
         />
         <form className="panel form-panel narrow stack" onSubmit={handleSubmit}>
@@ -104,7 +104,7 @@ export function LoginPage() {
       </div>
       <EmptyState
         title="Zugangslogik"
-        description="Login schützt role-aware Produktbereiche. Nach erfolgreicher Authentifizierung führt Shiftlink Nutzer direkt in ihren operativen Arbeitskontext."
+        description="Der Login schützt rollenbasierte Produktbereiche. Nach erfolgreicher Authentifizierung führt Shiftlink Nutzer direkt in ihren operativen Arbeitskontext."
       />
     </section>
   );

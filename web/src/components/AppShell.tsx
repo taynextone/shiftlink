@@ -7,7 +7,7 @@ const navGroups = [
     label: 'Pflegekraft',
     roles: ['NURSE'],
     items: [
-      { to: '/nurse', label: 'Dashboard', caption: 'Status & Überblick' },
+      { to: '/nurse', label: 'Übersicht', caption: 'Status & Überblick' },
       { to: '/nurse/jobs', label: 'Einsätze', caption: 'Verfügbare Bedarfe' },
       { to: '/nurse/availability', label: 'Verfügbarkeiten', caption: 'Matching-Zeitfenster' },
       { to: '/nurse/matches', label: 'Angebote', caption: 'Anfragen & Antworten' },
@@ -19,11 +19,11 @@ const navGroups = [
     label: 'Krankenhaus',
     roles: ['HOSPITAL_ADMIN', 'SUPER_ADMIN'],
     items: [
-      { to: '/hospital', label: 'Dashboard', caption: 'Operativer Überblick' },
+      { to: '/hospital', label: 'Übersicht', caption: 'Operativer Überblick' },
       { to: '/hospital/shifts', label: 'Schichten', caption: 'Bedarfe & Import' },
       { to: '/hospital/offers', label: 'Angebote', caption: 'Kandidaten & Zusagen' },
       { to: '/hospital/dossier', label: 'Dossiers', caption: 'Verifizierte Profile' },
-      { to: '/hospital/contracts', label: 'Verträge', caption: 'Lifecycle & Aktionen' },
+      { to: '/hospital/contracts', label: 'Verträge', caption: 'Verlauf & Aktionen' },
       { to: '/hospital/billing', label: 'Abrechnung', caption: 'Gebühren & Exporte' },
     ],
   },

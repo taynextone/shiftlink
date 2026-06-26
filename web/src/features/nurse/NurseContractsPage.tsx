@@ -5,7 +5,7 @@ import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { InfoList } from '../../components/InfoList';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
-import { StatusBadge } from '../../components/StatusBadge';
+import { formatStatusLabel, StatusBadge } from '../../components/StatusBadge';
 import { SignatureDialog } from '../../components/SignatureDialog';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { api } from '../../lib/api';
@@ -67,7 +67,7 @@ export function NurseContractsPage() {
                   items={[
                     { label: 'Start', value: new Date(contract.jobShift.startTime).toLocaleString('de-DE') },
                     { label: 'Ende', value: new Date(contract.jobShift.endTime).toLocaleString('de-DE') },
-                    { label: 'Status', value: contract.status },
+                    { label: 'Status', value: formatStatusLabel(contract.status) },
                   ]}
                 />
               </SectionCard>
@@ -83,7 +83,7 @@ export function NurseContractsPage() {
                 items={[
                   { label: 'Vertrag', value: activeContract.id },
                   { label: 'Klinik', value: activeContract.jobShift.hospitalProfile.clinicName },
-                  { label: 'Status', value: activeContract.status },
+                  { label: 'Status', value: formatStatusLabel(activeContract.status) },
                   { label: 'Start', value: new Date(activeContract.jobShift.startTime).toLocaleString('de-DE') },
                   { label: 'Ende', value: new Date(activeContract.jobShift.endTime).toLocaleString('de-DE') },
                   { label: 'Geplante Stunden', value: `${(activeContract.jobShift as any).totalPlannedHours ?? '—'}h` },

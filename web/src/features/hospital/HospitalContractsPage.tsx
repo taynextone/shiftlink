@@ -7,7 +7,7 @@ import { InfoList } from '../../components/InfoList';
 import { MetricList } from '../../components/MetricList';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
-import { StatusBadge } from '../../components/StatusBadge';
+import { formatStatusLabel, StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, type ContractExecutionOverview, type ContractLifecycle, type ContractPdfResponse, type ContractSnapshotResponse, type ContractVoidOverview, type HospitalOffer } from '../../lib/api';
@@ -63,7 +63,7 @@ export function HospitalContractsPage() {
       setStatus(null);
       void Promise.all([loadLifecycle(linkedContractId), loadExecution(linkedContractId), loadVoiding(linkedContractId)])
         .catch((error) => {
-          setStatus({ tone: 'error', message: error instanceof Error ? error.message : 'Contract-Kontext konnte nicht geladen werden' });
+          setStatus({ tone: 'error', message: error instanceof Error ? error.message : 'Vertragskontext konnte nicht geladen werden' });
         })
         .finally(() => setSubmitting(false));
     }
@@ -82,7 +82,7 @@ export function HospitalContractsPage() {
   const contractStateSteps = useMemo(() => buildContractStateSteps(lifecycle), [lifecycle]);
   const canSignExecution = Boolean(contractId) && lifecycle?.status === 'SIGNED' && lifecycle.executionStatus !== 'FULLY_EXECUTED' && lifecycle.executionStatus !== 'VOIDED';
   const [confirmAction, setConfirmAction] = useState<null | { title: string; message: string; tone: 'danger' | 'warning' | 'neutral'; onConfirm: () => void | Promise<void> }>(null);
-  const canVoidContract = Boolean(contractId) && voidIntervention?.label === 'Void möglich' && billingConflict?.tone !== 'error' && voidReason.trim().length > 0;
+  const canVoidContract = Boolean(contractId) && voidIntervention?.label === 'Beendigung möglich' && billingConflict?.tone !== 'error' && voidReason.trim().length > 0;
   const canReportNoShow = Boolean(contractId) && (lifecycle?.status === 'SIGNED' || lifecycle?.status === 'ACTIVE');
   const canCancelByHospital = Boolean(contractId) && (lifecycle?.status === 'SIGNED' || lifecycle?.status === 'ACTIVE');
   const canComplete = Boolean(contractId) && lifecycle?.status === 'ACTIVE';
@@ -122,9 +122,9 @@ export function HospitalContractsPage() {
     try {
       const result = await api.listHospitalOffers(jobShiftId);
       setOffers(result.offers ?? []);
-      setStatus({ tone: 'success', message: 'Offers für die ausgewählte Schicht geladen.' });
+      setStatus({ tone: 'success', message: 'Angebote für die ausgewählte Schicht geladen.' });
     } catch (err) {
-      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Offers konnten nicht geladen werden' });
+      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Angebote konnten nicht geladen werden' });
     } finally {
       setSubmitting(false);
     }
@@ -133,7 +133,7 @@ export function HospitalContractsPage() {
   async function handleLoadLifecycle(event: React.FormEvent) {
     event.preventDefault();
     if (!contractId) {
-      setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
+      setStatus({ tone: 'error', message: 'Bitte zuerst einen Vertrag auswählen oder eingeben.' });
       return;
     }
 
@@ -141,9 +141,9 @@ export function HospitalContractsPage() {
     setStatus(null);
     try {
       await Promise.all([loadLifecycle(contractId), loadExecution(contractId), loadVoiding(contractId)]);
-      setStatus({ tone: 'success', message: 'Contract-Kontext geladen.' });
+      setStatus({ tone: 'success', message: 'Vertragskontext geladen.' });
     } catch (err) {
-      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Lifecycle konnte nicht geladen werden' });
+      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Verlauf konnte nicht geladen werden' });
     } finally {
       setSubmitting(false);
     }
@@ -151,7 +151,7 @@ export function HospitalContractsPage() {
 
   async function handleLoadExecutionOverview() {
     if (!contractId) {
-      setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
+      setStatus({ tone: 'error', message: 'Bitte zuerst einen Vertrag auswählen oder eingeben.' });
       return;
     }
 
@@ -159,9 +159,9 @@ export function HospitalContractsPage() {
     setStatus(null);
     try {
       await loadExecution(contractId);
-      setStatus({ tone: 'success', message: 'Execution Overview geladen.' });
+      setStatus({ tone: 'success', message: 'Ausführungsübersicht geladen.' });
     } catch (err) {
-      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Execution Overview konnte nicht geladen werden' });
+      setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Ausführungsübersicht konnte nicht geladen werden' });
     } finally {
       setSubmitting(false);
     }
@@ -169,7 +169,7 @@ export function HospitalContractsPage() {
 
   async function handleLoadSnapshot() {
     if (!contractId) {
-      setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
+      setStatus({ tone: 'error', message: 'Bitte zuerst einen Vertrag auswählen oder eingeben.' });
       return;
     }
 
@@ -178,7 +178,7 @@ export function HospitalContractsPage() {
     try {
       const result = await api.getContractSnapshot(contractId);
       setSnapshot(result.contractSnapshot);
-      setStatus({ tone: 'success', message: 'Contract Snapshot geladen.' });
+      setStatus({ tone: 'success', message: 'Vertragssnapshot geladen.' });
     } catch (err) {
       setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Snapshot konnte nicht geladen werden' });
     } finally {
@@ -188,7 +188,7 @@ export function HospitalContractsPage() {
 
   async function handleLoadPdf() {
     if (!contractId) {
-      setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
+      setStatus({ tone: 'error', message: 'Bitte zuerst einen Vertrag auswählen oder eingeben.' });
       return;
     }
 
@@ -197,7 +197,7 @@ export function HospitalContractsPage() {
     try {
       const result = await api.getContractPdf(contractId);
       setPdf(result.contractPdf);
-      setStatus({ tone: 'success', message: 'Contract PDF geladen.' });
+      setStatus({ tone: 'success', message: 'Vertrags-PDF geladen.' });
     } catch (err) {
       setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'PDF konnte nicht geladen werden' });
     } finally {
@@ -207,12 +207,12 @@ export function HospitalContractsPage() {
 
   function handleExecutionSign() {
     if (!contractId) {
-      setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
+      setStatus({ tone: 'error', message: 'Bitte zuerst einen Vertrag auswählen oder eingeben.' });
       return;
     }
     setConfirmAction({
-      title: 'Execution signieren',
-      message: `Execution wirklich signieren?\n\nContract: ${contractId}`,
+      title: 'Ausführung signieren',
+      message: `Ausführung wirklich signieren?\n\nVertrag: ${contractId}`,
       tone: 'warning',
       onConfirm: async () => {
         setConfirmAction(null);
@@ -221,9 +221,9 @@ export function HospitalContractsPage() {
         try {
           const result = await api.signContractExecution(contractId);
           await Promise.all([loadLifecycle(contractId), loadExecution(contractId), loadVoiding(contractId)]);
-          setStatus({ tone: 'success', message: `Execution signiert. Neuer Status: ${result.execution.executionStatus}` });
+          setStatus({ tone: 'success', message: `Ausführung signiert. Neuer Status: ${formatStatusLabel(result.execution.executionStatus)}` });
         } catch (err) {
-          setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Execution konnte nicht signiert werden' });
+          setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Ausführung konnte nicht signiert werden' });
         } finally {
           setSubmitting(false);
         }
@@ -255,12 +255,12 @@ export function HospitalContractsPage() {
 
   function handleReportNoShow() {
     if (!contractId) {
-      setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
+      setStatus({ tone: 'error', message: 'Bitte zuerst einen Vertrag auswählen oder eingeben.' });
       return;
     }
     setConfirmAction({
       title: 'No-Show melden',
-      message: `No-Show für diesen Contract wirklich melden?\n\nContract: ${contractId}`,
+      message: `No-Show für diesen Vertrag wirklich melden?\n\nVertrag: ${contractId}`,
       tone: 'warning',
       onConfirm: async () => {
         setConfirmAction(null);
@@ -281,7 +281,7 @@ export function HospitalContractsPage() {
 
   function handleCancelByHospital() {
     if (!contractId) {
-      setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
+      setStatus({ tone: 'error', message: 'Bitte zuerst einen Vertrag auswählen oder eingeben.' });
       return;
     }
     if (!cancelReason.trim()) {
@@ -289,8 +289,8 @@ export function HospitalContractsPage() {
       return;
     }
     setConfirmAction({
-      title: 'Contract durch Klinik kündigen',
-      message: `Contract wirklich durch die Klinik kündigen?\n\nContract: ${contractId}\nGrund: ${cancelReason.trim()}`,
+      title: 'Vertrag durch Klinik kündigen',
+      message: `Vertrag wirklich durch die Klinik kündigen?\n\nVertrag: ${contractId}\nGrund: ${cancelReason.trim()}`,
       tone: 'danger',
       onConfirm: async () => {
         setConfirmAction(null);
@@ -299,7 +299,7 @@ export function HospitalContractsPage() {
         try {
           await api.cancelContractByHospital(contractId, cancelReason.trim());
           await loadLifecycle(contractId);
-          setStatus({ tone: 'success', message: 'Contract wurde gekündigt.' });
+          setStatus({ tone: 'success', message: 'Vertrag wurde gekündigt.' });
         } catch (err) {
           setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Kündigung fehlgeschlagen' });
         } finally {
@@ -311,12 +311,12 @@ export function HospitalContractsPage() {
 
   function handleComplete() {
     if (!contractId) {
-      setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
+      setStatus({ tone: 'error', message: 'Bitte zuerst einen Vertrag auswählen oder eingeben.' });
       return;
     }
     setConfirmAction({
-      title: 'Contract abschließen',
-      message: `Contract wirklich als abgeschlossen markieren?\n\nContract: ${contractId}`,
+      title: 'Vertrag abschließen',
+      message: `Vertrag wirklich als abgeschlossen markieren?\n\nVertrag: ${contractId}`,
       tone: 'warning',
       onConfirm: async () => {
         setConfirmAction(null);
@@ -325,7 +325,7 @@ export function HospitalContractsPage() {
         try {
           await api.completeContract(contractId);
           await loadLifecycle(contractId);
-          setStatus({ tone: 'success', message: 'Contract abgeschlossen.' });
+          setStatus({ tone: 'success', message: 'Vertrag abgeschlossen.' });
         } catch (err) {
           setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Abschluss fehlgeschlagen' });
         } finally {
@@ -337,16 +337,16 @@ export function HospitalContractsPage() {
 
   function handleVoid() {
     if (!contractId) {
-      setStatus({ tone: 'error', message: 'Bitte zuerst einen Contract auswählen oder eingeben.' });
+      setStatus({ tone: 'error', message: 'Bitte zuerst einen Vertrag auswählen oder eingeben.' });
       return;
     }
     if (!voidReason.trim()) {
-      setStatus({ tone: 'error', message: 'Bitte einen Void-Grund angeben.' });
+      setStatus({ tone: 'error', message: 'Bitte einen Beendigungsgrund angeben.' });
       return;
     }
     setConfirmAction({
-      title: 'Contract voiden',
-      message: `Contract wirklich voiden?\n\nContract: ${contractId}\nGrund: ${voidReason.trim()}`,
+      title: 'Vertrag beenden',
+      message: `Vertrag wirklich beenden?\n\nVertrag: ${contractId}\nGrund: ${voidReason.trim()}`,
       tone: 'danger',
       onConfirm: async () => {
         setConfirmAction(null);
@@ -355,9 +355,9 @@ export function HospitalContractsPage() {
         try {
           const result = await api.voidContract(contractId, voidReason.trim());
           await Promise.all([loadLifecycle(contractId), loadExecution(contractId), loadVoiding(contractId)]);
-          setStatus({ tone: 'success', message: `Contract voided: ${result.voiding.executionStatus}` });
+          setStatus({ tone: 'success', message: `Vertrag beendet: ${formatStatusLabel(result.voiding.executionStatus)}` });
         } catch (err) {
-          setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Void-Flow fehlgeschlagen' });
+          setStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Beendigungsflow fehlgeschlagen' });
         } finally {
           setSubmitting(false);
         }
@@ -369,19 +369,19 @@ export function HospitalContractsPage() {
     <section className="stack page-stack">
       <PageHeader
         eyebrow="Krankenhaus"
-        title="Contract Lifecycle & Governance"
-        description="Read-only Audit-Sicht plus streng kontrollierte Aktionen für Execution und Voiding. Professionell, nüchtern und nachvollziehbar gestaltet."
+        title="Vertragsverlauf & Steuerung"
+        description="Auditierbare Lesesicht plus streng kontrollierte Aktionen für Ausführung und Beendigung. Professionell, nüchtern und nachvollziehbar gestaltet."
       />
       <MetricList
         items={[
-          { label: 'Signed Contracts', value: billingSummaryData?.summary.signedContracts ?? '—' },
-          { label: 'Invoices', value: billingSummaryData?.summary.invoiceCount ?? '—' },
-          { label: 'Pending Fees', value: billingSummaryData ? `${billingSummaryData.summary.pendingInvoiceAmount} €` : '—' },
-          { label: 'Paid Fees', value: billingSummaryData ? `${billingSummaryData.summary.paidInvoiceAmount} €` : '—' },
+          { label: 'Signierte Verträge', value: billingSummaryData?.summary.signedContracts ?? '—' },
+          { label: 'Rechnungen', value: billingSummaryData?.summary.invoiceCount ?? '—' },
+          { label: 'Offene Gebühren', value: billingSummaryData ? `${billingSummaryData.summary.pendingInvoiceAmount} €` : '—' },
+          { label: 'Bezahlte Gebühren', value: billingSummaryData ? `${billingSummaryData.summary.paidInvoiceAmount} €` : '—' },
         ]}
       />
       <div className="content-grid master-detail-grid">
-        <SectionCard title="Schichten" description="Wähle einen Bedarf, um dazugehörige Offers und Contracts schneller zu finden.">
+        <SectionCard title="Schichten" description="Wähle einen Bedarf, um dazugehörige Angebote und Verträge schneller zu finden.">
           <AsyncState loading={shiftsLoading} error={shiftsError} isEmpty={availableShifts.length === 0} emptyMessage="Noch keine Schichten vorhanden.">
             <div className="selection-list">
               {availableShifts.map((shift) => {
@@ -407,11 +407,11 @@ export function HospitalContractsPage() {
 
         <div className="stack">
           <form className="panel form-panel stack" onSubmit={handleLoadLifecycle}>
-            <FormSection title="Schichtkontext" description="Optionaler Einstieg: Offers für die ausgewählte Schicht laden und daraus den Contract wählen.">
+            <FormSection title="Schichtkontext" description="Optionaler Einstieg: Angebote für die ausgewählte Schicht laden und daraus den Vertrag wählen.">
               <label>
-                <span>Job Shift auswählen</span>
+                <span>Schicht auswählen</span>
                 <select value={jobShiftId} onChange={(event) => setJobShiftId(event.target.value)}>
-                  <option value="">— Shift auswählen —</option>
+                  <option value="">— Schicht auswählen —</option>
                   {availableShifts.map((shift) => (
                     <option key={shift.id} value={shift.id}>
                       {shift.title ?? 'Pflegeeinsatz'} · {shift.locationCity ?? 'ohne Ort'} · {new Date(shift.startTime).toLocaleDateString('de-DE')}
@@ -425,30 +425,30 @@ export function HospitalContractsPage() {
                     items={[
                       { label: 'Titel', value: selectedShift.title ?? 'Pflegeeinsatz' },
                       { label: 'Ort', value: selectedShift.locationCity ?? '—' },
-                      { label: 'Status', value: selectedShift.status },
+                      { label: 'Status', value: formatStatusLabel(selectedShift.status) },
                     ]}
                   />
                   <MetricList
                     items={[
-                      { label: 'Offers', value: offers.length },
-                      { label: 'Lifecycle geladen', value: lifecycle ? 'Ja' : 'Nein' },
-                      { label: 'Signed Offers', value: selectedShift.offerCounts?.signed ?? '—' },
-                      { label: 'Invoiced', value: selectedShift.offerCounts?.invoiced ?? '—' },
+                      { label: 'Angebote', value: offers.length },
+                      { label: 'Verlauf geladen', value: lifecycle ? 'Ja' : 'Nein' },
+                      { label: 'Signierte Angebote', value: selectedShift.offerCounts?.signed ?? '—' },
+                      { label: 'Abgerechnet', value: selectedShift.offerCounts?.invoiced ?? '—' },
                     ]}
                   />
                 </>
               ) : null}
               <ActionBar>
                 <button type="button" className="secondary" disabled={submitting || !jobShiftId} onClick={() => void handleLoadOffersForShift()}>
-                  {submitting ? 'Bitte warten…' : 'Offers zur Schicht laden'}
+                  {submitting ? 'Bitte warten…' : 'Angebote zur Schicht laden'}
                 </button>
               </ActionBar>
             </FormSection>
-            <FormSection title="Contract-Kontext" description="Die Match Contract ID öffnet den auditierbaren Lifecycle samt kontrollierter Aktionen.">
+            <FormSection title="Vertragskontext" description="Die Match-Contract-ID öffnet den auditierbaren Verlauf samt kontrollierter Aktionen.">
               <label>
-                <span>Contract auswählen</span>
+                <span>Vertrag auswählen</span>
                 <select value={contractId} onChange={(event) => setContractId(event.target.value)}>
-                  <option value="">— Contract auswählen —</option>
+                  <option value="">— Vertrag auswählen —</option>
                   {offers.map((offer) => (
                     <option key={offer.id} value={offer.id}>
                       {offer.nurse.displayName} · {offer.status} · {offer.createdAt ? new Date(offer.createdAt).toLocaleDateString('de-DE') : '—'}
@@ -458,15 +458,15 @@ export function HospitalContractsPage() {
               </label>
             </FormSection>
             <ActionBar>
-              <button type="submit" disabled={submitting || !contractId}>{submitting ? 'Lädt…' : 'Contract-Kontext laden'}</button>
-              <button type="button" className="secondary" disabled={submitting || !contractId} onClick={() => void handleLoadExecutionOverview()}>{submitting ? 'Bitte warten…' : 'Execution laden'}</button>
+              <button type="submit" disabled={submitting || !contractId}>{submitting ? 'Lädt…' : 'Vertragskontext laden'}</button>
+              <button type="button" className="secondary" disabled={submitting || !contractId} onClick={() => void handleLoadExecutionOverview()}>{submitting ? 'Bitte warten…' : 'Ausführung laden'}</button>
               <button type="button" className="secondary" disabled={submitting || !contractId} onClick={() => void handleLoadSnapshot()}>{submitting ? 'Bitte warten…' : 'Snapshot laden'}</button>
               <button type="button" className="secondary" disabled={submitting || !contractId} onClick={() => void handleLoadPdf()}>{submitting ? 'Bitte warten…' : 'PDF laden'}</button>
             </ActionBar>
           </form>
 
           {offers.length > 0 ? (
-            <SectionCard title="Offers der ausgewählten Schicht" description="Kontextnahe Offer-Liste als Einstieg in Contract-Arbeit.">
+            <SectionCard title="Angebote der ausgewählten Schicht" description="Kontextnahe Angebotsliste als Einstieg in die Vertragsarbeit.">
               <div className="record-list compact-list">
                 {offers.map((offer) => (
                   <button
@@ -478,8 +478,8 @@ export function HospitalContractsPage() {
                     <div>
                       <strong>{offer.nurse.displayName}</strong>
                       <p>{offer.status} · {offer.id}</p>
-                      <p>Responded: {formatDateTime(offer.respondedAt)} · Signed: {formatDateTime(offer.signedAt)}</p>
-                      <p>{offer.invoiceId ? `Invoice: ${offer.invoiceId}` : 'Noch keine Rechnung verknüpft'}</p>
+                      <p>Beantwortet: {formatDateTime(offer.respondedAt)} · Signiert: {formatDateTime(offer.signedAt)}</p>
+                      <p>{offer.invoiceId ? `Rechnung: ${offer.invoiceId}` : 'Noch keine Rechnung verknüpft'}</p>
                     </div>
                     <StatusBadge value={offer.status} />
                   </button>
@@ -489,18 +489,18 @@ export function HospitalContractsPage() {
           ) : null}
 
           <div className="content-grid two-columns-equal">
-            <SectionCard title="Aktionen" description="Nur echte Lifecycle-Transitions, keine Frontend-Simulationen.">
-              <FormSection title="Execution" description="Signiert die Execution-Stufe auf dem echten Backend-Lifecycle.">
+            <SectionCard title="Aktionen" description="Nur echte Verlaufswechsel, keine Frontend-Simulationen.">
+              <FormSection title="Ausführung" description="Signiert die Ausführungsstufe auf dem echten Backend-Verlauf.">
                 <ActionBar>
                   <button type="button" disabled={submitting || !canSignExecution} onClick={() => void handleExecutionSign()}>
-                    {submitting ? 'Bitte warten…' : 'Execution signieren'}
+                    {submitting ? 'Bitte warten…' : 'Ausführung signieren'}
                   </button>
                 </ActionBar>
               </FormSection>
-              <FormSection title="Void" description="Beendet den Contract mit dokumentiertem Grund.">
+              <FormSection title="Beendigung" description="Beendet den Vertrag mit dokumentiertem Grund.">
                 <label>
-                  <span>Void Reason</span>
-                  <input value={voidReason} onChange={(event) => setVoidReason(event.target.value)} placeholder="Void reason" />
+                  <span>Beendigungsgrund</span>
+                  <input value={voidReason} onChange={(event) => setVoidReason(event.target.value)} placeholder="Beendigungsgrund" />
                 </label>
                 {voidIntervention ? (
                   <>
@@ -522,45 +522,45 @@ export function HospitalContractsPage() {
                       </ol>
                     ) : null}
                     <ActionBar>
-                      {lifecycle?.invoice?.id ? <Link to={`/hospital/billing?invoiceId=${encodeURIComponent(lifecycle.invoice.id)}`}><button type="button" className="secondary">Billing-Intervention öffnen</button></Link> : null}
+                      {lifecycle?.invoice?.id ? <Link to={`/hospital/billing?invoiceId=${encodeURIComponent(lifecycle.invoice.id)}`}><button type="button" className="secondary">Abrechnungsintervention öffnen</button></Link> : null}
                       {lifecycle ? <Link to={`/hospital/offers?jobShiftId=${encodeURIComponent(lifecycle.jobShiftId)}&focusContractId=${encodeURIComponent(lifecycle.matchContractId)}`}><button type="button" className="secondary">Kommunikation prüfen</button></Link> : null}
                     </ActionBar>
                   </>
                 ) : null}
                 <ActionBar>
                   <button type="button" className="secondary" disabled={submitting || !canVoidContract} onClick={() => void handleVoid()}>
-                    {submitting ? 'Bitte warten…' : 'Contract voiden'}
+                    {submitting ? 'Bitte warten…' : 'Vertrag beenden'}
                   </button>
                 </ActionBar>
               </FormSection>
-              <FormSection title="No-Show" description="Meldet eine No-Show für den Contract.">
+              <FormSection title="No-Show" description="Meldet eine No-Show für den Vertrag.">
                 <ActionBar>
                   <button type="button" className="secondary" disabled={submitting || !canReportNoShow} onClick={() => void handleReportNoShow()}>
                     {submitting ? 'Bitte warten…' : 'No-Show melden'}
                   </button>
                 </ActionBar>
               </FormSection>
-              <FormSection title="Kündigung durch Klinik" description="Kündigt den Contract seitens der Klinik mit Grund.">
+              <FormSection title="Kündigung durch Klinik" description="Kündigt den Vertrag seitens der Klinik mit Grund.">
                 <label>
                   <span>Kündigungsgrund</span>
                   <input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Grund der Kündigung" />
                 </label>
                 <ActionBar>
                   <button type="button" className="secondary" disabled={submitting || !canCancelByHospital || !cancelReason.trim()} onClick={() => void handleCancelByHospital()}>
-                    {submitting ? 'Bitte warten…' : 'Contract kündigen'}
+                    {submitting ? 'Bitte warten…' : 'Vertrag kündigen'}
                   </button>
                 </ActionBar>
               </FormSection>
-              <FormSection title="Abschluss" description="Schließt den Contract nach erfolgreichem Einsatz ab.">
+              <FormSection title="Abschluss" description="Schließt den Vertrag nach erfolgreichem Einsatz ab.">
                 <ActionBar>
                   <button type="button" disabled={submitting || !canComplete} onClick={() => void handleComplete()}>
-                    {submitting ? 'Bitte warten…' : 'Contract abschliessen'}
+                    {submitting ? 'Bitte warten…' : 'Vertrag abschliessen'}
                   </button>
                 </ActionBar>
               </FormSection>
               <FormSection title="eSignatur" description="Elektronische Unterschrift fuer Klinik und Pflegekraft.">
                 <label>
-                  <span>Consent Text</span>
+                  <span>Einwilligungstext</span>
                   <input value={consentText} onChange={(event) => setConsentText(event.target.value)} placeholder="Ich bestaetige hiermit den Vertrag elektronisch." />
                 </label>
                 <ActionBar>
@@ -583,7 +583,7 @@ export function HospitalContractsPage() {
               />
             ) : null}
             <SectionCard
-              title="Lifecycle Summary"
+              title="Verlaufsübersicht"
               description="Auditierbare Sicht auf Status, Signaturen und Vertragsartefakte."
               actions={lifecycle?.nurse?.nurseProfileId ? <Link to={`/hospital/dossier?nurseProfileId=${encodeURIComponent(lifecycle.nurse.nurseProfileId)}&contractId=${encodeURIComponent(lifecycle.matchContractId)}`}>Dossier öffnen</Link> : undefined}
             >
@@ -591,11 +591,11 @@ export function HospitalContractsPage() {
                 <>
                   <div className="summary-grid">
                     <div className="summary-card">
-                      <span>Contract Status</span>
+                      <span>Vertragsstatus</span>
                       <StatusBadge value={lifecycle.status} />
                     </div>
                     <div className="summary-card">
-                      <span>Execution Status</span>
+                      <span>Ausführungsstatus</span>
                       <StatusBadge value={lifecycle.executionStatus} />
                     </div>
                   </div>
@@ -609,7 +609,7 @@ export function HospitalContractsPage() {
                   ) : null}
                   {contractStateSteps.length > 0 ? (
                     <div style={{ marginTop: '0.75rem' }}>
-                      <strong>State Machine</strong>
+                      <strong>Zustandsmaschine</strong>
                       <div className="state-steps">
                         {contractStateSteps.map((step, index) => (
                           <span
@@ -625,35 +625,35 @@ export function HospitalContractsPage() {
                   {billingConflict ? <FeedbackMessage tone={toFeedbackTone(billingConflict.tone)} message={`${billingConflict.label}: ${billingConflict.detail}`} /> : null}
                   <InfoList
                     items={[
-                      { label: 'Contract ID', value: lifecycle.matchContractId },
+                      { label: 'Vertrags-ID', value: lifecycle.matchContractId },
                       { label: 'Klinik', value: lifecycle.hospital?.clinicName ?? '—' },
                       { label: 'Pflegekraft', value: lifecycle.nurse?.displayName ?? '—' },
                       { label: 'Erstellt am', value: formatDateTime(lifecycle.createdAt) },
                       { label: 'Aktualisiert am', value: formatDateTime(lifecycle.updatedAt) },
                       { label: 'Antwort erhalten', value: formatDateTime(lifecycle.respondedAt) },
-                      { label: 'Offer läuft ab', value: formatDateTime(lifecycle.expiresAt) },
+                      { label: 'Angebot läuft ab', value: formatDateTime(lifecycle.expiresAt) },
                       { label: 'Signiert am', value: formatDateTime(lifecycle.signedAt) },
                       { label: 'Snapshots', value: lifecycle.snapshotSummary.totalSnapshots },
                       { label: 'Aktuelle Snapshot-Version', value: lifecycle.snapshotSummary.currentSnapshotVersion ?? '—' },
                       { label: 'Signaturen', value: lifecycle.signatureSummary.totalSignatures },
                       { label: 'PDF vorhanden', value: lifecycle.contractPdf.available ? 'Ja' : 'Nein' },
-                      { label: 'Invoice Status', value: lifecycle.invoice?.status ?? '—' },
-                      { label: 'Invoice Amount', value: lifecycle.invoice?.amount ? `${lifecycle.invoice.amount} €` : '—' },
+                      { label: 'Rechnungsstatus', value: lifecycle.invoice?.status ? formatStatusLabel(lifecycle.invoice.status) : '—' },
+                      { label: 'Rechnungsbetrag', value: lifecycle.invoice?.amount ? `${lifecycle.invoice.amount} €` : '—' },
                       { label: 'Vollständig ausgeführt', value: formatDateTime(lifecycle.fullyExecutedAt) },
-                      { label: 'Void-Grund', value: lifecycle.voidSummary?.reason ?? '—' },
+                      { label: 'Beendigungsgrund', value: lifecycle.voidSummary?.reason ?? '—' },
                     ]}
                   />
                   <InfoList
                     items={[
-                      { label: 'Billing-Ausnahmezustand', value: invoiceException.label },
-                      { label: 'Billing-Nächster Schritt', value: invoiceException.nextAction },
-                      { label: 'Invoice PDF', value: lifecycle.invoice?.invoicePdfUrl ? <a href={lifecycle.invoice.invoicePdfUrl} target="_blank" rel="noreferrer">Invoice PDF öffnen</a> : '—' },
-                      { label: 'Billing-Intervention', value: lifecycle.invoice?.id ? <Link to={`/hospital/billing?invoiceId=${encodeURIComponent(lifecycle.invoice.id)}`}>Invoice in Billing öffnen</Link> : '—' },
-                      { label: 'Kommunikationsverlauf', value: <Link to={`/hospital/offers?jobShiftId=${encodeURIComponent(lifecycle.jobShiftId)}&focusContractId=${encodeURIComponent(lifecycle.matchContractId)}`}>Offer-Kommunikation öffnen</Link> },
+                      { label: 'Abrechnungsausnahme', value: invoiceException.label },
+                      { label: 'Nächster Abrechnungsschritt', value: invoiceException.nextAction },
+                      { label: 'Rechnungs-PDF', value: lifecycle.invoice?.invoicePdfUrl ? <a href={lifecycle.invoice.invoicePdfUrl} target="_blank" rel="noreferrer">Rechnungs-PDF öffnen</a> : '—' },
+                      { label: 'Abrechnungsintervention', value: lifecycle.invoice?.id ? <Link to={`/hospital/billing?invoiceId=${encodeURIComponent(lifecycle.invoice.id)}`}>Rechnung in Abrechnung öffnen</Link> : '—' },
+                      { label: 'Kommunikationsverlauf', value: <Link to={`/hospital/offers?jobShiftId=${encodeURIComponent(lifecycle.jobShiftId)}&focusContractId=${encodeURIComponent(lifecycle.matchContractId)}`}>Angebotskommunikation öffnen</Link> },
                     ].map((item) => ({ ...item, value: renderListValue(item.value) }))}
                   />
                   {lifecycle.snapshotSummary.versions && lifecycle.snapshotSummary.versions.length > 0 ? (
-                    <SectionCard title="Snapshot-Historie" description="Versionen und Summaries des aktuellen Vertragsverlaufs.">
+                    <SectionCard title="Snapshot-Historie" description="Versionen und Zusammenfassungen des aktuellen Vertragsverlaufs.">
                       <div className="record-list compact-list">
                         {lifecycle.snapshotSummary.versions.map((version) => (
                           <div className="panel subpanel" key={version.id}>
@@ -680,18 +680,18 @@ export function HospitalContractsPage() {
                   ) : null}
                 </>
               ) : (
-                <p className="hint">Noch kein Lifecycle geladen.</p>
+                <p className="hint">Noch kein Verlauf geladen.</p>
               )}
             </SectionCard>
           </div>
 
           {execution ? (
-            <SectionCard title="Execution Detail" description="Signaturfortschritt und Rollenverteilung der Execution-Stufe.">
+            <SectionCard title="Ausführungsdetail" description="Signaturfortschritt und Rollenverteilung der Ausführungsstufe.">
               <InfoList
                 items={[
-                  { label: 'Execution Status', value: execution.executionStatus },
-                  { label: 'Signature Events', value: execution.signatureEvents.length },
-                  { label: 'Fully Executed At', value: formatDateTime(execution.fullyExecutedAt) },
+                  { label: 'Ausführungsstatus', value: formatStatusLabel(execution.executionStatus) },
+                  { label: 'Signaturereignisse', value: execution.signatureEvents.length },
+                  { label: 'Vollständig ausgeführt am', value: formatDateTime(execution.fullyExecutedAt) },
                 ]}
               />
               <div className="record-list compact-list">
@@ -707,38 +707,38 @@ export function HospitalContractsPage() {
           ) : null}
 
           {voiding ? (
-            <SectionCard title="Void Detail" description="Dokumentierte Void-Lage und Interventionskontext.">
+            <SectionCard title="Beendigungsdetail" description="Dokumentierte Beendigungslage und Interventionskontext.">
               <InfoList
                 items={[
-                  { label: 'Contract Status', value: voiding.status },
-                  { label: 'Execution Status', value: voiding.executionStatus },
-                  { label: 'Void vorhanden', value: voiding.voidEvent ? 'Ja' : 'Nein' },
-                  { label: 'Void Actor', value: voiding.voidEvent?.actorRole ?? '—' },
-                  { label: 'Void At', value: formatDateTime(voiding.voidEvent?.createdAt) },
-                  { label: 'Void Reason', value: voiding.voidEvent?.reason ?? '—' },
+                  { label: 'Vertragsstatus', value: formatStatusLabel(voiding.status) },
+                  { label: 'Ausführungsstatus', value: formatStatusLabel(voiding.executionStatus) },
+                  { label: 'Beendigung vorhanden', value: voiding.voidEvent ? 'Ja' : 'Nein' },
+                  { label: 'Beendet durch', value: voiding.voidEvent?.actorRole ? formatStatusLabel(voiding.voidEvent.actorRole) : '—' },
+                  { label: 'Beendet am', value: formatDateTime(voiding.voidEvent?.createdAt) },
+                  { label: 'Beendigungsgrund', value: voiding.voidEvent?.reason ?? '—' },
                 ]}
               />
             </SectionCard>
           ) : null}
 
           {snapshot ? (
-            <SectionCard title="Snapshot Detail" description="Aktuell geladene Vertrags-Snapshot-Version.">
+            <SectionCard title="Snapshot-Detail" description="Aktuell geladene Vertrags-Snapshot-Version.">
               <InfoList
                 items={[
                   { label: 'Snapshot ID', value: snapshot.snapshotId },
                   { label: 'Version', value: snapshot.version },
-                  { label: 'Summary', value: snapshot.summaryText },
+                  { label: 'Zusammenfassung', value: snapshot.summaryText },
                 ]}
               />
             </SectionCard>
           ) : null}
 
           {pdf ? (
-            <SectionCard title="PDF Artifact" description="Temporärer Download-Kontext für das Vertrags-PDF.">
+            <SectionCard title="PDF-Artefakt" description="Temporärer Download-Kontext für das Vertrags-PDF.">
               <InfoList
                 items={[
-                  { label: 'Object Key', value: pdf.objectKey },
-                  { label: 'Expires In', value: `${pdf.expiresIn} s` },
+                  { label: 'Objektschlüssel', value: pdf.objectKey },
+                  { label: 'Läuft ab in', value: `${pdf.expiresIn} s` },
                   { label: 'Download', value: <a href={pdf.fileUrl} target="_blank" rel="noreferrer">PDF öffnen</a> },
                 ]}
               />

@@ -8,7 +8,7 @@ import { Field } from '../../components/Field';
 import { MetricList } from '../../components/MetricList';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
-import { StatusBadge } from '../../components/StatusBadge';
+import { formatStatusLabel, StatusBadge } from '../../components/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { api, type HospitalBillingExportRow } from '../../lib/api';
 import { exportRowsAsCsv } from '../../lib/export';
@@ -18,10 +18,10 @@ import { getLinkedBillingExportStatus, parseBillingStatusFilter, type BillingSta
 
 function getBillingRowIntervention(row: HospitalBillingExportRow) {
   if (row.invoiceStatus === 'PENDING' && row.matchStatus === 'SIGNED') {
-    return { label: 'offene Rechnung bei aktivem Vertrag', detail: 'Invoice-Detail laden und Zahlungsnachverfolgung priorisieren.', tone: 'error' as const };
+    return { label: 'offene Rechnung bei aktivem Vertrag', detail: 'Rechnungsdetail laden und Zahlungsnachverfolgung priorisieren.', tone: 'error' as const };
   }
   if (row.invoiceStatus === 'PENDING') {
-    return { label: 'offene Rechnung beobachten', detail: 'Contract-Kontext und nächste Billing-Aktion gemeinsam prüfen.', tone: 'warning' as const };
+    return { label: 'offene Rechnung beobachten', detail: 'Vertragskontext und nächste Abrechnungsaktion gemeinsam prüfen.', tone: 'warning' as const };
   }
   return { label: 'historischer Nachweis', detail: 'Nur noch Nachweis, PDF und Vertragshistorie kontrollieren.', tone: 'success' as const };
 }
@@ -68,9 +68,9 @@ export function HospitalBillingPage() {
     try {
       const response = await api.exportHospitalBilling({ status: targetStatus || undefined, format: 'json', limit: 50 });
       setRows(response.rows);
-      setFeedback({ tone: 'success', message: 'Billing export geladen.' });
+      setFeedback({ tone: 'success', message: 'Abrechnungsexport geladen.' });
     } catch (error) {
-      setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Billing export fehlgeschlagen' });
+      setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Abrechnungsexport fehlgeschlagen' });
     } finally {
       setSubmitting(false);
     }
@@ -83,7 +83,7 @@ export function HospitalBillingPage() {
       const detail = await api.getInvoiceDetail(invoiceId);
       setInvoiceDetail(detail);
     } catch (error) {
-      setInvoiceFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Invoice-Detail konnte nicht geladen werden.' });
+      setInvoiceFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Rechnungsdetail konnte nicht geladen werden.' });
     }
   }, []);
 
@@ -102,9 +102,9 @@ export function HospitalBillingPage() {
           setInvoiceFeedback({ tone: 'success', message: 'Rechnung wurde als bezahlt markiert.' });
           setInvoiceDetail((prev) => prev ? { ...prev, status: 'PAID' } : prev);
           setRows((prev) => prev.map((row) => row.invoiceId === invoiceDetail.id ? { ...row, invoiceStatus: 'PAID' } : row));
-          setFeedback({ tone: 'success', message: `Invoice ${invoiceDetail.id} wurde in der Export-Ansicht auf PAID aktualisiert.` });
+          setFeedback({ tone: 'success', message: `Rechnung ${invoiceDetail.id} wurde in der Export-Ansicht auf bezahlt aktualisiert.` });
         } catch (error) {
-          setInvoiceFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Mark-Paid fehlgeschlagen' });
+          setInvoiceFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Bezahlmarkierung fehlgeschlagen' });
         } finally {
           setMarkingPaid(false);
         }
@@ -142,61 +142,61 @@ export function HospitalBillingPage() {
     <section className="stack page-stack">
       <PageHeader
         eyebrow="Krankenhaus"
-        title="Billing Operations"
-        description="Operativer Zugriff auf Gebührenübersicht und Rechnungsdaten für Hospital-Administratoren. Fokus auf Zahlungsdruck, Nachverfolgung und Vertragsbezug."
+        title="Abrechnungssteuerung"
+        description="Operativer Zugriff auf Gebührenübersicht und Rechnungsdaten für Krankenhaus-Administratoren. Fokus auf Zahlungsdruck, Nachverfolgung und Vertragsbezug."
       />
-      <AsyncState loading={loading} error={error} isEmpty={!summary} emptyMessage="Noch keine Billing Summary verfügbar.">
+      <AsyncState loading={loading} error={error} isEmpty={!summary} emptyMessage="Noch keine Abrechnungsübersicht verfügbar.">
         {summary ? (
           <MetricList
             items={[
-              { label: 'Signed Contracts', value: summary.signedContracts },
-              { label: 'Invoices', value: summary.invoiceCount },
-              { label: 'Total Amount', value: `${summary.totalInvoiceAmount} €` },
-              { label: 'Pending Amount', value: `${summary.pendingInvoiceAmount} €` },
+              { label: 'Signierte Verträge', value: summary.signedContracts },
+              { label: 'Rechnungen', value: summary.invoiceCount },
+              { label: 'Gesamtbetrag', value: `${summary.totalInvoiceAmount} €` },
+              { label: 'Offener Betrag', value: `${summary.pendingInvoiceAmount} €` },
             ]}
           />
         ) : null}
       </AsyncState>
 
-      <SectionCard title="Billing Fokus" description="Zuerst operative Spannung, dann Detailarbeit im Export.">
+      <SectionCard title="Abrechnungsfokus" description="Zuerst operative Spannung, dann Detailarbeit im Export.">
         <MetricList
           items={[
-            { label: 'Pending Rows', value: pendingRows.length },
-            { label: 'Paid Rows', value: paidRows.length },
+            { label: 'Offene Zeilen', value: pendingRows.length },
+            { label: 'Bezahlte Zeilen', value: paidRows.length },
             { label: 'Rows mit Signaturdatum', value: rowsWithArtifacts.length },
             { label: 'Offene Gebühren', value: summary ? `${summary.pendingInvoiceAmount} €` : '—' },
             { label: 'Bereits bezahlt', value: summary ? `${summary.paidInvoiceAmount} €` : '—' },
           ]}
         />
         <ol className="ordered-list compact-ordered-list">
-          <li>Pending Invoices zuerst prüfen</li>
-          <li>Bei Unklarheit direkt in den verknüpften Contract springen</li>
+          <li>Offene Rechnungen zuerst prüfen</li>
+          <li>Bei Unklarheit direkt in den verknüpften Vertrag springen</li>
           <li>Nur danach bezahlte Historie kontrollieren</li>
         </ol>
       </SectionCard>
 
-      <SectionCard title="Billing Export" description="Lädt die aktuellen Rechnungszeilen aus dem echten Export-Endpoint als Arbeitsansicht.">
+      <SectionCard title="Abrechnungsexport" description="Lädt die aktuellen Rechnungszeilen aus dem echten Export-Endpunkt als Arbeitsansicht.">
         <MetricList
           items={[
-            { label: 'Geladene Rows', value: rows.length },
-            { label: 'Pending im Export', value: pendingRows.length },
-            { label: 'Paid im Export', value: paidRows.length },
-            { label: 'Filter', value: statusFilter || 'Alle' },
+            { label: 'Geladene Zeilen', value: rows.length },
+            { label: 'Offen im Export', value: pendingRows.length },
+            { label: 'Bezahlt im Export', value: paidRows.length },
+            { label: 'Filter', value: statusFilter ? formatStatusLabel(statusFilter) : 'Alle' },
           ]}
         />
         <div className="form-grid two">
           <Field label="Statusfilter">
             <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as BillingStatusFilter)}>
               <option value="">Alle</option>
-              <option value="PENDING">PENDING</option>
-              <option value="PAID">PAID</option>
+              <option value="PENDING">Offen</option>
+              <option value="PAID">Bezahlt</option>
             </select>
           </Field>
         </div>
         <ActionBar>
           <button type="button" disabled={submitting} onClick={() => void handleLoadExport()}>{submitting ? 'Lädt…' : 'Export laden'}</button>
             {rows.length > 0 ? (
-              <button type="button" className="secondary" onClick={() => exportRowsAsCsv(rows, 'billing-export')}>CSV Export</button>
+              <button type="button" className="secondary" onClick={() => exportRowsAsCsv(rows, 'billing-export')}>CSV-Export</button>
             ) : null}
         </ActionBar>
         {feedback ? <FeedbackMessage tone={feedback.tone} message={feedback.message} /> : null}
@@ -211,32 +211,32 @@ export function HospitalBillingPage() {
               </div>
               <p>{row.nurseDisplayName} · {row.nursePublicId}</p>
               <p>{row.locationCity || 'ohne Ort'} · {row.invoiceAmount} €</p>
-              <p>Invoice erstellt: {new Date(row.createdAt).toLocaleString('de-DE')}</p>
-              <p>Contract: {row.matchContractId}</p>
-              <p>Signed At: {row.signedAt ? new Date(row.signedAt).toLocaleString('de-DE') : '—'}</p>
-              <p>Shift Status: {row.matchStatus}</p>
+              <p>Rechnung erstellt: {new Date(row.createdAt).toLocaleString('de-DE')}</p>
+              <p>Vertrag: {row.matchContractId}</p>
+              <p>Signiert am: {row.signedAt ? new Date(row.signedAt).toLocaleString('de-DE') : '—'}</p>
+              <p>Schichtstatus: {formatStatusLabel(row.matchStatus)}</p>
               <p><strong>{intervention.label}</strong></p>
               <p>{intervention.detail}</p>
               <ActionBar>
-                <button type="button" className="secondary" onClick={() => void handleSelectInvoice(row.invoiceId)}>{selectedInvoiceId === row.invoiceId ? 'Detail sichtbar' : 'Invoice-Detail'}</button>
-                <Link to={`/hospital/contracts?contractId=${encodeURIComponent(row.matchContractId)}`}>Contract öffnen</Link>
+                <button type="button" className="secondary" onClick={() => void handleSelectInvoice(row.invoiceId)}>{selectedInvoiceId === row.invoiceId ? 'Detail sichtbar' : 'Rechnungsdetail'}</button>
+                <Link to={`/hospital/contracts?contractId=${encodeURIComponent(row.matchContractId)}`}>Vertrag öffnen</Link>
               </ActionBar>
             </div>
           );})}
-          {rows.length === 0 ? <p className="hint">{statusFilter ? `Kein Billing-Export für Filter ${statusFilter} geladen oder gefunden.` : 'Noch kein Export geladen.'}</p> : null}
+          {rows.length === 0 ? <p className="hint">{statusFilter ? `Kein Abrechnungsexport für Filter ${formatStatusLabel(statusFilter)} geladen oder gefunden.` : 'Noch kein Export geladen.'}</p> : null}
         </div>
       </SectionCard>
 
       {invoiceDetail ? (
         <SectionCard
-          title={`Invoice Detail — ${invoiceDetail.id}`}
+          title={`Rechnungsdetail — ${invoiceDetail.id}`}
           description={`Rechnung für ${invoiceDetail.nurseDisplayName} · ${invoiceDetail.jobShiftTitle || 'Pflegeeinsatz'}`}
         >
           <MetricList
             items={[
               { label: 'Status', value: invoiceDetail.status },
               { label: 'Betrag', value: `${invoiceDetail.amount} €` },
-              { label: 'Contract', value: invoiceDetail.contractStatus },
+              { label: 'Vertrag', value: formatStatusLabel(invoiceDetail.contractStatus) },
               { label: 'Erstellt', value: new Date(invoiceDetail.createdAt).toLocaleString('de-DE') },
               { label: 'Pflegekraft', value: `${invoiceDetail.nurseDisplayName} (${invoiceDetail.nursePublicId})` },
               { label: 'Ort', value: invoiceDetail.jobShiftLocation || '—' },
@@ -252,7 +252,7 @@ export function HospitalBillingPage() {
               <span className="hint">Diese Rechnung ist bereits bezahlt.</span>
             )}
             <Link to={`/hospital/contracts?contractId=${encodeURIComponent(invoiceDetail.contractId)}`}>
-              <button type="button" className="secondary">Contract öffnen</button>
+              <button type="button" className="secondary">Vertrag öffnen</button>
             </Link>
             <button type="button" className="secondary" onClick={() => { setSelectedInvoiceId(null); setInvoiceDetail(null); setInvoiceFeedback(null); }}>Schließen</button>
           </ActionBar>
@@ -266,7 +266,7 @@ export function HospitalBillingPage() {
         >
           <MetricList
             items={[
-              { label: 'Geladene Rows', value: payrollExportData.length },
+              { label: 'Geladene Zeilen', value: payrollExportData.length },
               { label: 'Quelle', value: 'signierte Rechnungsdaten' },
               { label: 'Systemgrenze', value: 'kein Payout, keine Zeiterfassung' },
             ]}
@@ -277,7 +277,7 @@ export function HospitalBillingPage() {
             </button>
             {payrollExportData.length > 0 ? (
               <button type="button" className="secondary" onClick={() => exportPayrollAsCsv(payrollExportData, 'hr-payroll-export')}>
-                CSV Export
+                CSV-Export
               </button>
             ) : null}
           </ActionBar>

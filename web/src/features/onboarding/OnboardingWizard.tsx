@@ -71,11 +71,11 @@ export function OnboardingWizard() {
         <SectionCard title="Was kommt als Nächstes?">
           <ul className="ordered-list">
             <li>Importiere deine ersten Schichten über die Importfunktion</li>
-            <li>Erstelle Offers für verfügbare Pflegekräfte</li>
-            <li>Verwalte Contracts und Billing über die Ops-Oberfläche</li>
+            <li>Erstelle Angebote für verfügbare Pflegekräfte</li>
+            <li>Verwalte Verträge und Abrechnung über die Betriebsoberfläche</li>
           </ul>
           <ActionBar>
-            <a href="/hospital"><button type="button">Zum Dashboard</button></a>
+            <a href="/hospital"><button type="button">Zur Übersicht</button></a>
           </ActionBar>
         </SectionCard>
       </section>
