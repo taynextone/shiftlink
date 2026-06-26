@@ -132,7 +132,8 @@ export async function getPublicNurseProfileController(req: Request, res: Respons
     throw createHttpError(400, 'Invalid public nurse profile id');
   }
 
-  const profile = await getPublicNurseProfile(publicId);
+  const actor = req.auth ? { userId: req.auth.userId, role: req.auth.role } : null;
+  const profile = await getPublicNurseProfile(publicId, actor);
 
   res.status(200).json({
     nurseProfile: profile,

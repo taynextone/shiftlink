@@ -54,29 +54,36 @@ describe('contract lifecycle service', () => {
 
   describe('reportNoShow', () => {
     it('reports no-show for signed contract', async () => {
-      prisma.matchContract.findUnique.mockResolvedValue({
-        id: 'c1',
-        status: 'SIGNED',
-        noShowDeadline: new Date(Date.now() + 3600000),
-        invoiceId: null,
-        jobShift: { hospitalProfile: { userId: 'h1' } },
-      });
+      prisma.matchContract.findUnique
+        .mockResolvedValueOnce({
+          id: 'c1',
+          status: 'SIGNED',
+          noShowDeadline: new Date(Date.now() + 3600000),
+          invoiceId: null,
+          jobShift: { hospitalProfile: { userId: 'h1' } },
+        })
+        .mockResolvedValueOnce({
+          id: 'c1',
+          status: 'NO_SHOW_REPORTED',
+          invoice: null,
+          jobShift: { hospitalProfile: { userId: 'h1' } },
+        });
       prisma.matchContract.update.mockResolvedValue({ id: 'c1', status: 'NO_SHOW_REPORTED' });
-      prisma.matchContract.findUnique.mockResolvedValueOnce({
-        id: 'c1',
-        status: 'SIGNED',
-        noShowDeadline: new Date(Date.now() + 3600000),
-        invoiceId: null,
-        jobShift: { hospitalProfile: { userId: 'h1' } },
-      }).mockResolvedValueOnce({
-        id: 'c1',
-        status: 'NO_SHOW_REPORTED',
-        invoice: null,
-      });
 
       const result = await reportNoShow('c1', { userId: 'h1', role: 'HOSPITAL_ADMIN' });
 
       expect(result.status).toBe('NO_SHOW_REPORTED');
+    });
+
+    it('throws for non-owner actor', async () => {
+      prisma.matchContract.findUnique.mockResolvedValue({
+        id: 'c1',
+        status: 'SIGNED',
+        noShowDeadline: new Date(Date.now() + 3600000),
+        jobShift: { hospitalProfile: { userId: 'other-hospital' } },
+      });
+
+      await expect(reportNoShow('c1', { userId: 'h1', role: 'HOSPITAL_ADMIN' })).rejects.toThrow('not allowed');
     });
 
     it('throws when deadline passed', async () => {
@@ -92,36 +99,89 @@ describe('contract lifecycle service', () => {
   });
 
   describe('cancelByHospital', () => {
+    const adminActor = { userId: 'h1', role: 'HOSPITAL_ADMIN' };
+
     it('cancels an active contract', async () => {
-      prisma.matchContract.findUnique.mockResolvedValue({ id: 'c1', status: 'ACTIVE' });
+      prisma.matchContract.findUnique.mockResolvedValue({
+        id: 'c1',
+        status: 'ACTIVE',
+        jobShift: { hospitalProfile: { userId: 'h1' } },
+      });
       prisma.matchContract.update.mockResolvedValue({ id: 'c1', status: 'CANCELED_BY_HOSPITAL' });
 
-      const result = await cancelByHospital('c1', 'Pflegekrraft krank');
+      const result = await cancelByHospital('c1', 'Pflegekrraft krank', adminActor);
+
+      expect(result.status).toBe('CANCELED_BY_HOSPITAL');
+    });
+
+    it('throws for non-owner hospital admin', async () => {
+      prisma.matchContract.findUnique.mockResolvedValue({
+        id: 'c1',
+        status: 'ACTIVE',
+        jobShift: { hospitalProfile: { userId: 'other-hospital' } },
+      });
+
+      await expect(cancelByHospital('c1', 'reason', { userId: 'h1', role: 'HOSPITAL_ADMIN' })).rejects.toThrow('not allowed');
+    });
+
+    it('allows super admin to cancel', async () => {
+      prisma.matchContract.findUnique.mockResolvedValue({
+        id: 'c1',
+        status: 'ACTIVE',
+        jobShift: { hospitalProfile: { userId: 'other-hospital' } },
+      });
+      prisma.matchContract.update.mockResolvedValue({ id: 'c1', status: 'CANCELED_BY_HOSPITAL' });
+
+      const result = await cancelByHospital('c1', 'reason', { userId: 'super1', role: 'SUPER_ADMIN' });
 
       expect(result.status).toBe('CANCELED_BY_HOSPITAL');
     });
 
     it('throws for non-active contract', async () => {
-      prisma.matchContract.findUnique.mockResolvedValue({ id: 'c1', status: 'PENDING' });
+      prisma.matchContract.findUnique.mockResolvedValue({
+        id: 'c1',
+        status: 'PENDING',
+        jobShift: { hospitalProfile: { userId: 'h1' } },
+      });
 
-      await expect(cancelByHospital('c1', 'reason')).rejects.toThrow('signed or active');
+      await expect(cancelByHospital('c1', 'reason', adminActor)).rejects.toThrow('signed or active');
     });
   });
 
   describe('completeContract', () => {
+    const adminActor = { userId: 'h1', role: 'HOSPITAL_ADMIN' };
+
     it('completes an active contract', async () => {
-      prisma.matchContract.findUnique.mockResolvedValue({ id: 'c1', status: 'ACTIVE' });
+      prisma.matchContract.findUnique.mockResolvedValue({
+        id: 'c1',
+        status: 'ACTIVE',
+        jobShift: { hospitalProfile: { userId: 'h1' } },
+      });
       prisma.matchContract.update.mockResolvedValue({ id: 'c1', status: 'COMPLETED' });
 
-      const result = await completeContract('c1');
+      const result = await completeContract('c1', adminActor);
 
       expect(result.status).toBe('COMPLETED');
     });
 
-    it('throws for non-active contract', async () => {
-      prisma.matchContract.findUnique.mockResolvedValue({ id: 'c1', status: 'SIGNED' });
+    it('throws for non-owner hospital admin', async () => {
+      prisma.matchContract.findUnique.mockResolvedValue({
+        id: 'c1',
+        status: 'ACTIVE',
+        jobShift: { hospitalProfile: { userId: 'other-hospital' } },
+      });
 
-      await expect(completeContract('c1')).rejects.toThrow('Only active contracts');
+      await expect(completeContract('c1', { userId: 'h1', role: 'HOSPITAL_ADMIN' })).rejects.toThrow('not allowed');
+    });
+
+    it('throws for non-active contract', async () => {
+      prisma.matchContract.findUnique.mockResolvedValue({
+        id: 'c1',
+        status: 'SIGNED',
+        jobShift: { hospitalProfile: { userId: 'h1' } },
+      });
+
+      await expect(completeContract('c1', adminActor)).rejects.toThrow('Only active contracts');
     });
   });
 

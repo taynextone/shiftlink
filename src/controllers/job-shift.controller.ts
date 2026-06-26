@@ -238,7 +238,7 @@ export async function cancelByHospitalController(req: Request, res: Response): P
   if (!req.auth) throw createHttpError(401, 'Auth required');
   const id = typeof req.params.id === 'string' ? req.params.id : '';
   if (!id) throw createHttpError(400, 'Contract ID is required');
-  const result = await cancelByHospital(id, req.body.reason);
+  const result = await cancelByHospital(id, req.body.reason, req.auth);
   res.status(200).json(result);
 }
 
@@ -246,7 +246,7 @@ export async function completeContractController(req: Request, res: Response): P
   if (!req.auth) throw createHttpError(401, 'Auth required');
   const id = typeof req.params.id === 'string' ? req.params.id : '';
   if (!id) throw createHttpError(400, 'Contract ID is required');
-  const result = await completeContract(id);
+  const result = await completeContract(id, req.auth);
   res.status(200).json(result);
 }
 

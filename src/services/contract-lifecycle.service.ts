@@ -36,6 +36,13 @@ export async function reportNoShow(contractId: string, actor: { userId: string; 
     throw createHttpError(404, 'Contract not found');
   }
 
+  const isHospitalOwner = contract.jobShift.hospitalProfile.userId === actor.userId;
+  const isSuperAdmin = actor.role === 'SUPER_ADMIN';
+
+  if (!isHospitalOwner && !isSuperAdmin) {
+    throw createHttpError(403, 'You are not allowed to report no-show for this contract');
+  }
+
   if (contract.status !== 'SIGNED' && contract.status !== 'ACTIVE') {
     throw createHttpError(409, 'Can only report no-show for signed or active contracts');
   }
@@ -63,13 +70,31 @@ export async function reportNoShow(contractId: string, actor: { userId: string; 
   return updated;
 }
 
-export async function cancelByHospital(contractId: string, reason: string) {
+export async function cancelByHospital(
+  contractId: string,
+  reason: string,
+  actor: { userId: string; role: string },
+) {
   const contract = await prisma.matchContract.findUnique({
     where: { id: contractId },
+    include: {
+      jobShift: {
+        include: {
+          hospitalProfile: true,
+        },
+      },
+    },
   });
 
   if (!contract) {
     throw createHttpError(404, 'Contract not found');
+  }
+
+  const isHospitalOwner = contract.jobShift.hospitalProfile.userId === actor.userId;
+  const isSuperAdmin = actor.role === 'SUPER_ADMIN';
+
+  if (!isHospitalOwner && !isSuperAdmin) {
+    throw createHttpError(403, 'You are not allowed to cancel this contract');
   }
 
   if (!['SIGNED', 'ACTIVE'].includes(contract.status)) {
@@ -94,13 +119,30 @@ export async function cancelByHospital(contractId: string, reason: string) {
   return updated;
 }
 
-export async function completeContract(contractId: string) {
+export async function completeContract(
+  contractId: string,
+  actor: { userId: string; role: string },
+) {
   const contract = await prisma.matchContract.findUnique({
     where: { id: contractId },
+    include: {
+      jobShift: {
+        include: {
+          hospitalProfile: true,
+        },
+      },
+    },
   });
 
   if (!contract) {
     throw createHttpError(404, 'Contract not found');
+  }
+
+  const isHospitalOwner = contract.jobShift.hospitalProfile.userId === actor.userId;
+  const isSuperAdmin = actor.role === 'SUPER_ADMIN';
+
+  if (!isHospitalOwner && !isSuperAdmin) {
+    throw createHttpError(403, 'You are not allowed to complete this contract');
   }
 
   if (contract.status !== 'ACTIVE') {

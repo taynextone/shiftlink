@@ -104,9 +104,17 @@ export const reviewVerificationDocumentSchema = z.object({
 
 export type UpdateNurseProfileInput = z.infer<typeof updateNurseProfileSchema>;
 
+const safeFileName = z
+  .string()
+  .trim()
+  .min(1)
+  .max(255)
+  .regex(/^[a-zA-Z0-9._-]+$/, 'fileName must contain only alphanumeric characters, dots, hyphens, and underscores')
+  .transform((val) => val.replace(/\.{2,}/g, '.'));
+
 export const uploadDocumentSchema = z.object({
   documentType: z.enum(['EXAMEN', 'OCCUPATIONAL_HEALTH_CLEARANCE']),
-  fileName: z.string().trim().min(1).max(255),
+  fileName: safeFileName,
   contentType: z.string().trim().min(1),
   fileSize: z.number().int().positive().max(10 * 1024 * 1024),
 });

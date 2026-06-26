@@ -314,7 +314,9 @@ export async function getSuperadminVerificationOverviewByPublicId(
   };
 }
 
-export async function getPublicNurseProfile(publicId: string) {
+type PublicProfileActor = { userId: string; role: UserRole } | null;
+
+export async function getPublicNurseProfile(publicId: string, actor?: PublicProfileActor) {
   const profile = await prisma.nurseProfile.findUnique({
     where: { publicId },
     include: {
@@ -335,29 +337,40 @@ export async function getPublicNurseProfile(publicId: string) {
     throw createHttpError(404, 'Nurse profile not found');
   }
 
+  const isPrivileged =
+    actor?.role === UserRole.HOSPITAL_ADMIN || actor?.role === UserRole.SUPER_ADMIN;
+
   return {
     publicId: profile.publicId,
     displayName: profile.displayName,
-    minHourlyRate: profile.minHourlyRate,
-    preferredShiftType: profile.preferredShiftType,
-    minAssignmentHours: profile.minAssignmentHours,
-    maxAssignmentHours: profile.maxAssignmentHours,
-    preferredRegionsNote: profile.preferredRegionsNote,
-    isReleasedForMatching: profile.isReleasedForMatching,
-    hasVerifiedExamen: profile.verificationDocuments.some(
-      (document: { documentType: string; status: string }) => document.documentType === VerificationDocumentType.EXAMEN && document.status === VerificationDocumentStatus.VERIFIED,
-    ),
     specializations: profile.specializations.map((item: { tag: string }) => item.tag),
-    availabilityBlocks: profile.availabilityBlocks.map((block: { id: string; title: string | null; city: string; postalCode: string | null; radiusKm: number; startTime: Date; endTime: Date; notes: string | null }) => ({
-      id: block.id,
-      title: block.title,
-      city: block.city,
-      postalCode: block.postalCode,
-      radiusKm: block.radiusKm,
-      startTime: block.startTime.toISOString(),
-      endTime: block.endTime.toISOString(),
-      notes: block.notes,
-    })),
+    ...(isPrivileged
+      ? {
+          minHourlyRate: profile.minHourlyRate,
+          preferredShiftType: profile.preferredShiftType,
+          minAssignmentHours: profile.minAssignmentHours,
+          maxAssignmentHours: profile.maxAssignmentHours,
+          preferredRegionsNote: profile.preferredRegionsNote,
+          isReleasedForMatching: profile.isReleasedForMatching,
+          hasVerifiedExamen: profile.verificationDocuments.some(
+            (document: { documentType: string; status: string }) =>
+              document.documentType === VerificationDocumentType.EXAMEN &&
+              document.status === VerificationDocumentStatus.VERIFIED,
+          ),
+          availabilityBlocks: profile.availabilityBlocks.map(
+            (block: { id: string; title: string | null; city: string; postalCode: string | null; radiusKm: number; startTime: Date; endTime: Date; notes: string | null }) => ({
+              id: block.id,
+              title: block.title,
+              city: block.city,
+              postalCode: block.postalCode,
+              radiusKm: block.radiusKm,
+              startTime: block.startTime.toISOString(),
+              endTime: block.endTime.toISOString(),
+              notes: block.notes,
+            }),
+          ),
+        }
+      : {}),
   };
 }
 
