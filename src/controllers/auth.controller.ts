@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
-import { PrismaClient, UserRole } from '@prisma/client';
+import createHttpError from 'http-errors';
+import { UserRole } from '@prisma/client';
 import { registerUser, loginUser } from '../services/auth.service';
 import { signAuthToken } from '../utils/jwt';
 import { setAuthCookie, clearAuthCookie, AUTH_COOKIE_NAME } from '../utils/cookies';
 import { env } from '../config/env';
-
-const prisma = new PrismaClient();
+import { prisma } from '../config/prisma';
 
 const DEMO_NURSE_EMAIL = 'demo.nurse@shiftlink.dev';
 const DEMO_HOSPITAL_EMAIL = 'demo.hospital@shiftlink.dev';
@@ -20,13 +20,16 @@ function buildAuthResponse(user: {
   hospitalProfile: unknown;
 }) {
   return {
-    user: {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      verificationStatus: user.verificationStatus,
-      nurseProfile: user.nurseProfile,
-      hospitalProfile: user.hospitalProfile,
+    auth: {
+      cookieName: AUTH_COOKIE_NAME,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        verificationStatus: user.verificationStatus,
+        nurseProfile: user.nurseProfile,
+        hospitalProfile: user.hospitalProfile,
+      },
     },
   };
 }
@@ -59,13 +62,23 @@ export async function logoutController(_req: Request, res: Response): Promise<vo
 }
 
 export async function meController(req: Request, res: Response): Promise<void> {
-  res.status(200).json({
-    auth: {
-      userId: req.auth?.userId,
-      role: req.auth?.role,
-      cookieName: AUTH_COOKIE_NAME,
+  if (!req.auth) {
+    throw createHttpError(401, 'Authentication required');
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: req.auth.userId },
+    include: {
+      nurseProfile: true,
+      hospitalProfile: true,
     },
   });
+
+  if (!user) {
+    throw createHttpError(401, 'Authenticated user no longer exists');
+  }
+
+  res.status(200).json(buildAuthResponse(user));
 }
 
 export async function demoLoginController(req: Request, res: Response): Promise<void> {

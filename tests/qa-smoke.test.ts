@@ -18,8 +18,9 @@ process.env.WHATSAPP_PROVIDER = 'mock';
 process.env.NURSE_LOGIN_URL = 'https://app.shiftlink.example/login';
 
 import request from 'supertest';
-import { UserRole } from '@prisma/client';
+import { UserRole, VerificationStatus } from '@prisma/client';
 import { createApp } from '../src/app';
+import { prisma } from '../src/config/prisma';
 import { signAuthToken } from '../src/utils/jwt';
 import { AUTH_COOKIE_NAME } from '../src/utils/cookies';
 import {
@@ -112,6 +113,15 @@ describe('phase 7 top workflow smoke coverage', () => {
   });
 
   it('keeps authenticated sessions introspectable for browser smoke tests', async () => {
+    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+      id: 'nurse_user',
+      email: 'nurse@example.com',
+      role: UserRole.NURSE,
+      verificationStatus: VerificationStatus.PENDING,
+      nurseProfile: { id: 'nurse_1', displayName: 'NurseNova' },
+      hospitalProfile: null,
+    });
+
     const response = await request(app)
       .get('/api/v1/auth/me')
       .set('Cookie', authCookie(UserRole.NURSE));
@@ -119,8 +129,11 @@ describe('phase 7 top workflow smoke coverage', () => {
     expect(response.status).toBe(200);
     expect(response.body.auth).toEqual(
       expect.objectContaining({
-        role: UserRole.NURSE,
         cookieName: AUTH_COOKIE_NAME,
+        user: expect.objectContaining({
+          email: 'nurse@example.com',
+          role: UserRole.NURSE,
+        }),
       }),
     );
   });

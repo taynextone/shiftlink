@@ -86,9 +86,10 @@
 - `useApiError` stellt deutsche Fehlermeldungen und Login-Redirect bei 401 bereit
 - **Erledigt:** 2026-06-26
 
-### 3.3 AuthContext erntet User separat
+### 3.3 AuthContext erntet User separat ✅
 - `setAuthenticatedUser` + `refreshSession` — doppelter State für Auth/User
-- **Fix:** Konsolidieren, User in AuthState inkludieren
+- **Fix:** Auth-Responses liefern jetzt `auth.user`; `AuthContext` hält nur noch einen konsolidierten Session-State und leitet `user` daraus ab
+- **Erledigt:** 2026-06-27
 
 ### 3.4 Tailwind ohne Konfiguration
 - CSS-Klassen wie `app-shell`, `sidebar`, `content` — wo ist die Tailwind-Config? Wird nicht gefunden.

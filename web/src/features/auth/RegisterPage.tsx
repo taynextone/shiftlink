@@ -9,7 +9,7 @@ import { useAuth } from '../../state/AuthContext';
 
 export function RegisterPage() {
   const navigate = useNavigate();
-  const { setAuthenticatedUser } = useAuth();
+  const { setAuthenticatedSession } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -60,7 +60,7 @@ export function RegisterPage() {
           whatsappOptIn: true,
         },
       });
-      await setAuthenticatedUser(result.user);
+      setAuthenticatedSession(result.auth);
       setStatus({ tone: 'success', message: 'Registrierung erfolgreich.' });
       navigate('/nurse');
     } catch (error) {

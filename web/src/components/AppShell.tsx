@@ -43,7 +43,7 @@ export function AppShell({ children }: PropsWithChildren) {
   const [navOpen, setNavOpen] = useState(false);
 
   const visibleGroups = session
-    ? navGroups.filter((group) => group.roles.includes(session.role))
+    ? navGroups.filter((group) => group.roles.includes(session.user.role))
     : [];
 
   return (
@@ -75,8 +75,8 @@ export function AppShell({ children }: PropsWithChildren) {
           </div>
           <div className="workspace-card session-card">
             <span className="workspace-label">Sitzung</span>
-            <strong>{session ? (user?.email ?? session.role) : 'Nicht eingeloggt'}</strong>
-            <p>{session ? (session.role === 'NURSE' ? 'Pflegekraft' : session.role === 'HOSPITAL_ADMIN' ? 'Krankenhaus' : 'Superadmin') : 'Bitte anmelden, um geschützte Produktbereiche zu öffnen.'}</p>
+            <strong>{session ? user?.email : 'Nicht eingeloggt'}</strong>
+            <p>{session ? (session.user.role === 'NURSE' ? 'Pflegekraft' : session.user.role === 'HOSPITAL_ADMIN' ? 'Krankenhaus' : 'Superadmin') : 'Bitte anmelden, um geschützte Produktbereiche zu öffnen.'}</p>
             {session ? <button className="secondary ghost-button" onClick={() => void logout()}>Abmelden</button> : null}
           </div>
         </div>

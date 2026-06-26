@@ -209,7 +209,7 @@ describe('hospital integration and scalable match flow', () => {
       });
 
     expect(response.status).toBe(201);
-    expect(response.body.user.nurseProfile.publicId).toBe('NUR-AB12CD34');
+    expect(response.body.auth.user.nurseProfile.publicId).toBe('NUR-AB12CD34');
   });
 
   it('logs in a user and returns an auth cookie', async () => {

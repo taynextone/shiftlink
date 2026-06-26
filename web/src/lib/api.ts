@@ -10,9 +10,8 @@ export type AuthUser = {
 };
 
 export type AuthState = {
-  userId: string;
-  role: string;
   cookieName: string;
+  user: AuthUser;
 };
 
 
@@ -544,17 +543,17 @@ export async function request<T>(path: string, init: ApiRequestInit = {}): Promi
 
 export const api = {
   login: (input: { email: string; password: string }) =>
-    request<{ user: AuthUser }>('/auth/login', {
+    request<{ auth: AuthState }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(input),
     }),
   demoLogin: (role: 'NURSE' | 'HOSPITAL_ADMIN') =>
-    request<{ user: AuthUser }>('/auth/demo-login', {
+    request<{ auth: AuthState }>('/auth/demo-login', {
       method: 'POST',
       body: JSON.stringify({ role }),
     }),
   registerNurse: (input: Record<string, unknown>) =>
-    request<{ user: AuthUser }>('/auth/register', {
+    request<{ auth: AuthState }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(input),
     }),

@@ -9,7 +9,12 @@ describe('api request errors', () => {
   });
 
   it('returns parsed JSON from successful requests', async () => {
-    const payload = { auth: { userId: 'user-1', role: 'NURSE', cookieName: 'sid' } };
+    const payload = {
+      auth: {
+        cookieName: 'sid',
+        user: { id: 'user-1', email: 'nurse@example.com', role: 'NURSE' },
+      },
+    };
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,

@@ -6,7 +6,7 @@ type AuthContextValue = {
   user: AuthUser | null;
   loading: boolean;
   refreshSession: () => Promise<void>;
-  setAuthenticatedUser: (user: AuthUser | null) => Promise<void>;
+  setAuthenticatedSession: (auth: AuthState | null) => void;
   logout: () => Promise<void>;
 };
 
@@ -14,19 +14,14 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<AuthState | null>(null);
-  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refreshSession = useCallback(async () => {
     try {
       const result = await api.getSession();
       setSession(result.auth);
-      setUser((current) =>
-        current && current.id === result.auth.userId ? current : current
-      );
     } catch {
       setSession(null);
-      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -36,23 +31,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
     void refreshSession();
   }, [refreshSession]);
 
-  const setAuthenticatedUser = useCallback(async (nextUser: AuthUser | null) => {
-    setUser(nextUser);
-    if (nextUser) {
-      await refreshSession();
-    }
-  }, [refreshSession]);
+  const setAuthenticatedSession = useCallback((auth: AuthState | null) => {
+    setSession(auth);
+    setLoading(false);
+  }, []);
 
   const logout = useCallback(async () => {
     await api.logout();
     setSession(null);
-    setUser(null);
     window.location.href = '/login';
   }, []);
 
   const value = useMemo(
-    () => ({ session, user, loading, refreshSession, setAuthenticatedUser, logout }),
-    [session, user, loading, refreshSession, setAuthenticatedUser, logout],
+    () => ({ session, user: session?.user ?? null, loading, refreshSession, setAuthenticatedSession, logout }),
+    [session, loading, refreshSession, setAuthenticatedSession, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -9,7 +9,7 @@ import { useAuth } from '../../state/AuthContext';
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { setAuthenticatedUser } = useAuth();
+  const { setAuthenticatedSession } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
@@ -35,9 +35,9 @@ export function LoginPage() {
 
     try {
       const result = await api.login({ email, password });
-      await setAuthenticatedUser(result.user);
+      setAuthenticatedSession(result.auth);
       setStatus({ tone: 'success', message: 'Login erfolgreich.' });
-      navigate(result.user.role === 'HOSPITAL_ADMIN' ? '/hospital' : '/nurse');
+      navigate(result.auth.user.role === 'HOSPITAL_ADMIN' ? '/hospital' : '/nurse');
     } catch (error) {
       setStatus({ tone: 'error', message: error instanceof Error ? error.message : 'Login fehlgeschlagen' });
     } finally {
@@ -50,7 +50,7 @@ export function LoginPage() {
     setStatus(null);
     try {
       const result = await api.demoLogin(role);
-      await setAuthenticatedUser(result.user);
+      setAuthenticatedSession(result.auth);
       setStatus({ tone: 'success', message: `Demo-Login als ${role === 'NURSE' ? 'Pflegekraft' : 'Krankenhaus'} erfolgreich.` });
       navigate(role === 'HOSPITAL_ADMIN' ? '/hospital' : '/nurse');
     } catch (error) {

@@ -46,7 +46,7 @@ export function HospitalBillingPage() {
   const [payrollExportData, setPayrollExportData] = useState<Array<{ nurseDisplayName: string; nursePublicId: string; contractId: string; jobShiftTitle: string; jobShiftStartDate: string; jobShiftEndDate: string; agreedHours: number; hourlyRate: number; totalAmount: string; invoiceStatus: string; invoiceId: string }>>([]);
   const [payrollLoading, setPayrollLoading] = useState(false);
   const [payrollFeedback, setPayrollFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
-  const canExportPayroll = session?.role === 'HOSPITAL_ADMIN';
+  const canExportPayroll = session?.user.role === 'HOSPITAL_ADMIN';
   const pendingRows = useMemo(() => rows.filter((row) => row.invoiceStatus === 'PENDING'), [rows]);
   const paidRows = useMemo(() => rows.filter((row) => row.invoiceStatus === 'PAID'), [rows]);
   const rowsWithArtifacts = useMemo(() => rows.filter((row) => row.signedAt), [rows]);

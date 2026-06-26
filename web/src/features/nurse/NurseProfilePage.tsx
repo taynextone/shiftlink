@@ -61,7 +61,7 @@ function VerificationTimeline({ documents }: { documents: Array<{ id: string; do
 
 export function NurseProfilePage() {
   const navigate = useNavigate();
-  const { setAuthenticatedUser } = useAuth();
+  const { setAuthenticatedSession } = useAuth();
   const { data, loading, error, reload } = useAsyncData(() => api.getVerificationOverview(), []);
   const verification = data?.verification ?? null;
   const [uploading, setUploading] = useState(false);
@@ -106,7 +106,7 @@ export function NurseProfilePage() {
     setDeleting(true);
     try {
       await api.deleteAccount();
-      await setAuthenticatedUser(null);
+      setAuthenticatedSession(null);
       navigate('/');
     } catch (err) {
       setUploadStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Account-Löschung fehlgeschlagen' });

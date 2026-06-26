@@ -20,7 +20,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
   const [searchParams] = useSearchParams();
   const linkedFailureQueueFilter = parseFailureQueueFilter(searchParams.get('failureQueue'));
   const [failureQueueFilter, setFailureQueueFilter] = useState<FailureQueueFilter>(linkedFailureQueueFilter);
-  const isSuperAdmin = session?.role === 'SUPER_ADMIN';
+  const isSuperAdmin = session?.user.role === 'SUPER_ADMIN';
 
   const { data: shiftData } = useAsyncData(() => api.listHospitalJobShifts(), []);
   const { data: billingData } = useAsyncData(() => api.getHospitalBillingSummary(), []);
@@ -210,7 +210,7 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
           <div className="record-list compact-list">
             {rankedWebhookEvents.slice(0, 5).map((event) => {
               const status = describeWebhookStatus(event);
-              const canRetry = event.status === 'FAILED_OR_PENDING_RETRY' && (mode === 'superadmin' || session?.role === 'HOSPITAL_ADMIN');
+              const canRetry = event.status === 'FAILED_OR_PENDING_RETRY' && (mode === 'superadmin' || session?.user.role === 'HOSPITAL_ADMIN');
               return (
                 <div className="panel subpanel" key={event.id}>
                   <div style={{ flex: 1 }}>

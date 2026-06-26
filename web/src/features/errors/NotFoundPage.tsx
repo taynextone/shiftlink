@@ -4,7 +4,7 @@ import { useAuth } from '../../state/AuthContext';
 export function NotFoundPage() {
   const { session } = useAuth();
   const homePath = session
-    ? session.role === 'NURSE'
+    ? session.user.role === 'NURSE'
       ? '/nurse'
       : '/hospital'
     : '/';

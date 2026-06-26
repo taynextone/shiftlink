@@ -23,8 +23,8 @@ export function ProtectedRoute({ children, allowedRoles, redirectTo = '/login' }
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(session.role)) {
-    const fallback = session.role === 'HOSPITAL_ADMIN' || session.role === 'SUPER_ADMIN' ? '/hospital' : '/nurse';
+  if (allowedRoles && !allowedRoles.includes(session.user.role)) {
+    const fallback = session.user.role === 'HOSPITAL_ADMIN' || session.user.role === 'SUPER_ADMIN' ? '/hospital' : '/nurse';
     return <Navigate to={redirectTo === '/login' ? fallback : redirectTo} replace />;
   }
 
