@@ -91,9 +91,10 @@
 - **Fix:** Auth-Responses liefern jetzt `auth.user`; `AuthContext` hält nur noch einen konsolidierten Session-State und leitet `user` daraus ab
 - **Erledigt:** 2026-06-27
 
-### 3.4 Tailwind ohne Konfiguration
+### 3.4 Tailwind ohne Konfiguration ✅
 - CSS-Klassen wie `app-shell`, `sidebar`, `content` — wo ist die Tailwind-Config? Wird nicht gefunden.
-- **Fix:** `tailwind.config.js` prüfen/erstellen, Custom-Klassen als `@layer` definieren oder auf Tailwind-Standard setzen
+- **Fix:** Tailwind/PostCSS-Konfiguration im Web-Paket ergänzt, Tailwind-Directives aktiviert und bestehende Base-/Komponenten-Styles in `@layer` einsortiert
+- **Erledigt:** 2026-06-27
 
 ### 3.5 `register` Route ohne Registrierungsflow für Krankenhäuser
 - Registrierung ist nur für Nurses — Hospital-Registrierung fehlt
