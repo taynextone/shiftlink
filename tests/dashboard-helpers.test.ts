@@ -30,7 +30,7 @@ describe('dashboard ops helpers', () => {
 
     expect(hotspots).toEqual([
       expect.objectContaining({
-        label: 'Shift Import Blockers',
+        label: 'Importblocker für Schichten',
         action: '/hospital/shifts?focusShiftId=shift_pending',
       }),
     ]);
@@ -53,7 +53,7 @@ describe('dashboard ops helpers', () => {
 
     expect(hotspots).toEqual([
       expect.objectContaining({
-        label: 'Pending Offers',
+        label: 'Offene Angebote',
         action: '/hospital/offers?jobShiftId=shift_pending',
       }),
     ]);
@@ -71,7 +71,7 @@ describe('dashboard ops helpers', () => {
 
     expect(hotspots).toEqual([
       expect.objectContaining({
-        label: 'Webhook Delivery',
+        label: 'Webhook-Zustellung',
         action: '/admin/ops?failureQueue=webhook',
       }),
     ]);
@@ -92,7 +92,7 @@ describe('dashboard ops helpers', () => {
 
     expect(hotspots).toEqual([
       expect.objectContaining({
-        label: 'Async Worker Failures',
+        label: 'Worker-Fehler',
         action: '/admin/ops?failureQueue=billing',
       }),
     ]);
@@ -111,7 +111,7 @@ describe('dashboard ops helpers', () => {
 
     expect(hotspots).toEqual([
       expect.objectContaining({
-        label: 'Pending Fees',
+        label: 'Offene Gebühren',
         action: '/hospital/billing?status=PENDING',
       }),
     ]);
@@ -131,20 +131,20 @@ describe('dashboard ops helpers', () => {
     const failure = { queueName: 'billing', relatedEntityId: 'contract_1' } as any;
 
     expect(getAsyncFailureDestination(failure, 'superadmin')).toBe('/hospital/contracts?contractId=contract_1');
-    expect(getAsyncFailureActionLabel(failure)).toBe('Zum betroffenen Contract');
+    expect(getAsyncFailureActionLabel(failure)).toBe('Zum betroffenen Vertrag');
   });
 
   it('keeps billing worker failures without entity context in billing ops', () => {
     const failure = { queueName: 'billing', relatedEntityId: null } as any;
 
     expect(getAsyncFailureDestination(failure, 'superadmin')).toBe('/hospital/billing');
-    expect(getAsyncFailureActionLabel(failure)).toBe('Zu Billing-Intervention');
+    expect(getAsyncFailureActionLabel(failure)).toBe('Zur Abrechnungsintervention');
   });
 
   it('keeps webhook failures in the superadmin control plane', () => {
     const failure = { queueName: 'webhook', relatedEntityId: 'event_1' } as any;
 
     expect(getAsyncFailureDestination(failure, 'superadmin')).toBe('/admin/ops');
-    expect(getAsyncFailureActionLabel(failure)).toBe('Zu Webhook-Ops');
+    expect(getAsyncFailureActionLabel(failure)).toBe('Zur Webhook-Steuerung');
   });
 });

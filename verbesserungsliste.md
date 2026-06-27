@@ -192,6 +192,12 @@
 - `secure: true` nur in Production, `sameSite: 'lax'`
 - **Erledigt:** 2026-06-06 (bereits korrekt)
 
+### 4.7 Test-Strings nach Lokalisierung aktualisiert ✅
+- Unit-Tests für ops-helpers, dashboard-helpers und business-metrics-helpers auf deutsche Strings aktualisiert
+- Englische/Deutsche Mischstrings in ops-helpers.ts Source korrigiert (Void→Beendigung, Billing→Abrechnung)
+- 178 Tests green (14 Suites)
+- **Erledigt:** 2026-06-27
+
 ---
 
 Priorisierung:

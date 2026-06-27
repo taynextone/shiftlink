@@ -23,21 +23,21 @@ describe('business metrics helper interventions', () => {
     }));
 
     expect(links).toEqual([
-      { label: 'Pending Offers pruefen', to: '/hospital/offers' },
-      { label: 'Offer-Reopen pruefen', to: '/hospital/offers' },
+      { label: 'Offene Angebote pruefen', to: '/hospital/offers' },
+      { label: 'Wiederöffnung von Angeboten pruefen', to: '/hospital/offers' },
     ]);
   });
 
   it('routes pending invoices into billing operations', () => {
     expect(getInvoiceMetricInterventions(metrics({
       invoices: { total: 4, paid: 2, pending: 2, paymentRate: 50 },
-    }))).toEqual([{ label: 'Pending Invoices pruefen', to: '/hospital/billing?status=PENDING' }]);
+    }))).toEqual([{ label: 'Offene Rechnungen pruefen', to: '/hospital/billing?status=PENDING' }]);
   });
 
   it('routes failed delivery metrics into the superadmin control plane', () => {
     expect(getNotificationMetricInterventions(metrics({
       notifications: { total: 5, delivered: 3, failed: 2, deliveryRate: 60 },
-    }))).toEqual([{ label: 'Delivery Failures pruefen', to: '/admin/ops?failureQueue=whatsapp' }]);
+    }))).toEqual([{ label: 'Zustellfehler pruefen', to: '/admin/ops?failureQueue=whatsapp' }]);
   });
 
   it('keeps healthy metrics free of intervention links', () => {

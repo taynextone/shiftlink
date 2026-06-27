@@ -13,7 +13,7 @@ describe('hospital ops helpers', () => {
     expect(computeOfferHealth({ status: 'SIGNED' } as any)).toEqual({
       label: 'vertraglich gebunden',
       nextAction: 'Vertrag / Dossier prüfen',
-      exceptionNote: 'Offer ist bereits im Vertragskontext gebunden.',
+      exceptionNote: 'Angebot ist bereits im Vertragskontext gebunden.',
     });
   });
 
@@ -24,7 +24,7 @@ describe('hospital ops helpers', () => {
     } as any;
 
     expect(interpretContractState(lifecycle, null)).toEqual({
-      label: 'wartet auf Nurse-Signatur',
+      label: 'wartet auf Pflegekraft-Signatur',
       nextAction: 'Signaturstatus überwachen oder nachfassen',
     });
   });
@@ -37,12 +37,12 @@ describe('hospital ops helpers', () => {
     } as any;
 
     expect(interpretVoidIntervention(lifecycle, null)).toEqual({
-      label: 'Void blockiert',
-      blocker: 'Bereits bezahlte Plattformrechnungen blockieren diesen Void-Flow.',
+      label: 'Beendigung blockiert',
+      blocker: 'Bereits bezahlte Plattformrechnungen blockieren diesen Beendigungsflow.',
       tone: 'error',
     });
     expect(buildVoidEscalationChecklist(lifecycle)).toEqual([
-      'Billing-Intervention öffnen und Zahlungsstatus / Nachweise prüfen.',
+      'Abrechnungsintervention öffnen und Zahlungsstatus / Nachweise prüfen.',
       'Kommunikationsverlauf prüfen, ob bereits Follow-up oder Zusagen dokumentiert sind.',
       'Danach erst entscheiden, ob manueller Support-/Governance-Eingriff nötig ist.',
     ]);
@@ -56,13 +56,13 @@ describe('hospital ops helpers', () => {
     } as any;
 
     expect(interpretInvoiceException(lifecycle)).toEqual({
-      label: 'Void mit Billing-Kontext',
-      nextAction: 'Rechnung, Void-Grund und weitere Governance gemeinsam prüfen',
+      label: 'Beendigung mit Abrechnungskontext',
+      nextAction: 'Rechnung, Beendigungsgrund und weitere Governance gemeinsam prüfen',
     });
     expect(interpretBillingConflict(lifecycle)).toEqual({
       tone: 'error',
-      label: 'Offene Rechnung trotz Void-Kontext',
-      detail: 'Der Vertrag wurde bereits beendet, aber eine Rechnung ist weiterhin sichtbar. Billing-Status und Artefakte jetzt gemeinsam prüfen.',
+      label: 'Offene Rechnung trotz Beendigungskontext',
+      detail: 'Der Vertrag wurde bereits beendet, aber eine Rechnung ist weiterhin sichtbar. Abrechnungsstatus und Artefakte jetzt gemeinsam prüfen.',
     });
   });
 
@@ -73,11 +73,11 @@ describe('hospital ops helpers', () => {
     } as any;
 
     expect(buildContractStateSteps(lifecycle)).toEqual([
-      { state: 'PENDING', label: 'Offer Pending', isActive: false, isTerminal: false },
-      { state: 'SIGNED', label: 'Contract Signed', isActive: true, isTerminal: false },
-      { state: 'EXECUTING', label: 'In Execution', isActive: false, isTerminal: false },
-      { state: 'FULLY_EXECUTED', label: 'Fully Executed', isActive: false, isTerminal: true },
-      { state: 'VOIDED', label: 'Voided', isActive: true, isTerminal: true },
+      { state: 'PENDING', label: 'Angebot offen', isActive: false, isTerminal: false },
+      { state: 'SIGNED', label: 'Vertrag signiert', isActive: true, isTerminal: false },
+      { state: 'EXECUTING', label: 'In Ausführung', isActive: false, isTerminal: false },
+      { state: 'FULLY_EXECUTED', label: 'Vollständig ausgeführt', isActive: false, isTerminal: true },
+      { state: 'VOIDED', label: 'Beendet', isActive: true, isTerminal: true },
     ]);
   });
 });

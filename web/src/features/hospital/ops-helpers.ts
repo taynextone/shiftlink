@@ -84,7 +84,7 @@ export function interpretInvoiceException(lifecycle: ContractLifecycle | null) {
   }
 
   if (lifecycle.voidSummary?.reason) {
-    return { label: 'Void mit Billing-Kontext', nextAction: 'Rechnung, Void-Grund und weitere Governance gemeinsam prüfen' };
+    return { label: 'Beendigung mit Abrechnungskontext', nextAction: 'Rechnung, Beendigungsgrund und weitere Governance gemeinsam prüfen' };
   }
 
   if (lifecycle.fullyExecutedAt) {
@@ -110,8 +110,8 @@ export function interpretBillingConflict(lifecycle: ContractLifecycle | null): B
   if (lifecycle.voidSummary?.reason) {
     return {
       tone: 'error' as const,
-      label: 'Offene Rechnung trotz Void-Kontext',
-      detail: 'Der Vertrag wurde bereits beendet, aber eine Rechnung ist weiterhin sichtbar. Billing-Status und Artefakte jetzt gemeinsam prüfen.',
+      label: 'Offene Rechnung trotz Beendigungskontext',
+      detail: 'Der Vertrag wurde bereits beendet, aber eine Rechnung ist weiterhin sichtbar. Abrechnungsstatus und Artefakte jetzt gemeinsam prüfen.',
     };
   }
 
@@ -196,7 +196,7 @@ export function buildVoidEscalationChecklist(lifecycle: ContractLifecycle | null
 
   if (lifecycle.invoice?.status === 'PAID') {
     return [
-      'Billing-Intervention öffnen und Zahlungsstatus / Nachweise prüfen.',
+      'Abrechnungsintervention öffnen und Zahlungsstatus / Nachweise prüfen.',
       'Kommunikationsverlauf prüfen, ob bereits Follow-up oder Zusagen dokumentiert sind.',
       'Danach erst entscheiden, ob manueller Support-/Governance-Eingriff nötig ist.',
     ];
