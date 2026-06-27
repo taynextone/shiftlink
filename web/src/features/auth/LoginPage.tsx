@@ -70,15 +70,15 @@ export function LoginPage() {
         />
         <form className="panel form-panel narrow stack" onSubmit={handleSubmit}>
           <Field label="E-Mail" helpText="Nutze die E-Mail deines bestehenden Plattformkontos." error={errors.email}>
-            <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="E-Mail" type="email" />
+            <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="E-Mail" type="email" aria-label="E-Mail-Adresse" aria-invalid={!!errors.email} aria-describedby={errors.email ? 'email-error' : undefined} />
           </Field>
           <Field label="Passwort" helpText="Mindestens 8 Zeichen." error={errors.password}>
-            <input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Passwort" type="password" />
+            <input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Passwort" type="password" aria-label="Passwort" aria-invalid={!!errors.password} />
           </Field>
-          <button type="submit" disabled={submitting || !canSubmit}>{submitting ? 'Einloggen…' : 'Einloggen'}</button>
+          <button type="submit" disabled={submitting || !canSubmit} aria-busy={submitting}>{submitting ? 'Einloggen…' : 'Einloggen'}</button>
         </form>
         <div className="panel form-panel narrow stack">
-          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginBottom: '0.75rem' }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginBottom: '0.75rem' }} role="group" aria-label="Demo-Zugang">
             Schnellzugang ohne Registrierung:
           </p>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>

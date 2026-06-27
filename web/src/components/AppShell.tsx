@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useState, type PropsWithChildren } from 'react';
+import { useState, useRef, useEffect, type PropsWithChildren } from 'react';
 import { useAuth } from '../state/AuthContext';
 
 const navGroups = [
@@ -46,9 +46,20 @@ export function AppShell({ children }: PropsWithChildren) {
     ? navGroups.filter((group) => group.roles.includes(session.user.role))
     : [];
 
+  const navRef = useRef<HTMLElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (navOpen && navRef.current) {
+      const firstLink = navRef.current.querySelector('a');
+      firstLink?.focus();
+    }
+  }, [navOpen]);
+
   return (
     <div className="app-shell">
-      <aside className={navOpen ? 'sidebar sidebar-open' : 'sidebar'}>
+      <a href="#main-content" className="skip-link">Zum Hauptinhalt springen</a>
+      <aside ref={navRef} className={navOpen ? 'sidebar sidebar-open' : 'sidebar'} role="navigation" aria-label="Hauptnavigation">
         <div className="sidebar-top">
           <div className="brand-card">
             <div className="brand-mark">S</div>
@@ -92,6 +103,7 @@ export function AppShell({ children }: PropsWithChildren) {
                       key={item.to}
                       className={active ? 'nav-link active' : 'nav-link'}
                       to={item.to}
+                      aria-current={active ? 'page' : undefined}
                       onClick={() => setNavOpen(false)}
                     >
                       <span className="nav-link-title">{item.label}</span>
@@ -123,7 +135,7 @@ export function AppShell({ children }: PropsWithChildren) {
           ) : null}
         </nav>
       </aside>
-      <main className="content">
+      <main id="main-content" className="content" tabIndex={-1}>
         <div className="content-inner">{children}</div>
       </main>
     </div>

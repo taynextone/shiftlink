@@ -125,9 +125,15 @@
 - `@page` margins, `.page-break-before/after` Hilfsklassen
 - **Erledigt:** 2026-06-27
 
-### 4.5 Keine Keyboard-Navigation / A11y
-- Sidebar-Links might not be fully keyboard accessible
-- **Fix:** `tabindex`, `aria-label`s, skip-links
+### 4.5 Keine Keyboard-Navigation / A11y ✅
+- Skip-Link zum Hauptinhalt hinzugefügt (`.skip-link` + `#main-content`)
+- Sidebar: `role="navigation"`, `aria-label`, Fokus auf erste Link bei Öffnen
+- Nav-Links: `aria-current="page"` für aktive Route
+- Main: `tabIndex={-1}` für Fokus-Sprung via Skip-Link
+- Login-Inputs: `aria-label`, `aria-invalid`, `aria-busy` bei Submit
+- FeedbackMessage: `role="alert"` + `aria-live="polite"`/`assertive"
+- Globale `:focus-visible` Styles für sichtbare Tastatur-Fokusse
+- **Erledigt:** 2026-06-27
 
 ### 4.6 Unused Imports Found ✅
 - `HybridStatusCard` imported but unlucky sure if used → verified used
