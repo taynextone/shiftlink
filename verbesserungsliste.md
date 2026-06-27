@@ -117,9 +117,13 @@
 - Tests für lokalisierte Statusanzeige ergänzt
 - **Erledigt:** 2026-06-27
 
-### 4.4 Konnte kein Print-Stylesheet finden
-- Für PDF-Druck von Verträgen/Billing-Seiten
-- **Fix:** `@media print` Styles
+### 4.4 Print-Stylesheet ✅
+- `@media print` Styles in `web/src/styles/global.css`
+- Versteckt Navigation, Sidebar, Buttons, Modals
+- Panels, Cards, Badges, Timeline sind druckbar mit `break-inside: avoid`
+- Landing Page Dunkeldruck → Weiß, Links zeigen URL
+- `@page` margins, `.page-break-before/after` Hilfsklassen
+- **Erledigt:** 2026-06-27
 
 ### 4.5 Keine Keyboard-Navigation / A11y
 - Sidebar-Links might not be fully keyboard accessible
