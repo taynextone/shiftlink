@@ -12,6 +12,8 @@ type HybridStatusCardProps = {
 
 export function HybridStatusCard({ contractId, onUpdatePaperStatus }: HybridStatusCardProps) {
   const [status, setStatus] = useState<HybridSigStatus | null>(null);
+  const [pending, setPending] = useState(false);
+  const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     if (!contractId) return;
@@ -19,8 +21,6 @@ export function HybridStatusCard({ contractId, onUpdatePaperStatus }: HybridStat
   }, [contractId]);
 
   if (!status) return <SectionCard title="Vertrags-Status" description="Lade Signatur-Status…"><p className="hint">Lade…</p></SectionCard>;
-  const [pending, setPending] = useState(false);
-  const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
 
   async function handlePaperAction(newStatus: 'PENDING' | 'SIGNED' | 'WAIVED') {
     setPending(true);

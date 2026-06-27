@@ -129,10 +129,16 @@
 - Sidebar-Links might not be fully keyboard accessible
 - **Fix:** `tabindex`, `aria-label`s, skip-links
 
-### 4.6 Unused Imports Found
-- `HybridStatusCard` imported but unlucky sure if used
-- `StatCard` / `KpiCard` / `MetricList` — verify all used
-- **Fix:** Cleanup unused exports
+### 4.6 Unused Imports Found ✅
+- `HybridStatusCard` imported but unlucky sure if used → verified used
+- `StatCard` was unused → deleted
+- `KpiCard` / `MetricList` verified used
+- Removed unused `InterventionTone` import from HospitalContractsPage
+- Removed unused `AsyncState` import from HospitalShiftsPage
+- Removed unused `MetricList` import from NurseDashboardPage
+- Removed stray `src/context/AuthContext.tsx` (duplicate of `web/src/state/AuthContext.tsx`)
+- Moved `useState` hooks above early return in HybridStatusCard (React rules-of-hooks compliance)
+- **Erledigt:** 2026-06-27
 
 ## 5. Tests — Lücken
 

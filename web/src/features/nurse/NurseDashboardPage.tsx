@@ -3,7 +3,6 @@ import { useMemo } from 'react';
 import { AsyncState } from '../../components/AsyncState';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { KpiCard } from '../../components/KpiCard';
-import { MetricList } from '../../components/MetricList';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
 import { formatStatusLabel, StatusBadge } from '../../components/StatusBadge';

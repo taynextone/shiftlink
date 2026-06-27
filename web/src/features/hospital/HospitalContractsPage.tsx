@@ -15,7 +15,7 @@ import { api, type ContractExecutionOverview, type ContractLifecycle, type Contr
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { SignatureDialog } from '../../components/SignatureDialog';
 import { HybridStatusCard } from '../../components/HybridStatusCard';
-import { buildContractStateSteps, buildVoidEscalationChecklist, interpretBillingConflict, interpretContractState, interpretInvoiceException, interpretVoidIntervention, type InterventionTone } from './ops-helpers';
+import { buildContractStateSteps, buildVoidEscalationChecklist, interpretBillingConflict, interpretContractState, interpretInvoiceException, interpretVoidIntervention } from './ops-helpers';
 
 function formatDateTime(value?: string | null) {
   return value ? new Date(value).toLocaleString('de-DE') : '—';
