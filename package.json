@@ -29,7 +29,8 @@
     "db:seed": "npx tsx prisma/seed.ts",
     "db:migrate-prod": "bash prisma/migrate-prod.sh",
     "web:dev": "vite --config web/vite.config.ts",
-    "web:build": "npm --prefix web run build"
+    "web:build": "npm --prefix web run build",
+    "test:integration": "jest --config jest.integration.config.js --forceExit"
   },
   "repository": {
     "type": "git",

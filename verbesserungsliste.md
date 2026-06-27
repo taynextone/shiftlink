@@ -157,9 +157,13 @@
 - Jest + etwas Code für Browser-QA aber kein Playwright/Puppeteer
 - **Fix:** Playwright setup für Core-Flows (Login, Dashboard, Offer-Flow)
 
-### 5.3 Keine API-Integration-Tests
+### 5.3 Keine API-Integration-Tests ✅
 - Controller-Tests Mock alles. kein Supertest/Integration-Test gegen echte API
-- **Fix:** Supertest + test-DB für kritische Endpunkte
+- **Fix:** Supertest + Jest integration config + Test-Suite für Health, Auth (Login/Register/Me)
+- Tests für Validierung (400), Auth-required (401), Credential-Check
+- Läuft gegen docker-compose.dev.yml Infrastruktur (DB + Redis)
+- npm script: `test:integration`
+- **Erledigt:** 2026-06-27
 
 ## 6. Sicherheit — Vor Produktion
 
