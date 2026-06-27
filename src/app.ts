@@ -22,15 +22,22 @@ export function createApp() {
   const app = express();
 
   app.disable('x-powered-by');
+  const isProd = env.NODE_ENV === 'production';
   app.use(
     helmet({
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", ...(env.NODE_ENV !== 'production' ? ['localhost:*'] : [])],
-          styleSrc: ["'self'", "'unsafe-inline'", ...(env.NODE_ENV !== 'production' ? ['localhost:*'] : [])],
-          imgSrc: ["'self'", 'data:', 'blob:', ...(env.NODE_ENV !== 'production' ? ['localhost:*'] : [])],
-          connectSrc: ["'self'", ...(env.NODE_ENV !== 'production' ? ['localhost:*', 'ws://localhost:*'] : [])],
+          scriptSrc: [
+            "'self'",
+            ...(isProd ? [] : ["'unsafe-inline'", "'unsafe-eval'", 'localhost:*']),
+          ],
+          styleSrc: [
+            "'self'",
+            ...(isProd ? [] : ["'unsafe-inline'", 'localhost:*']),
+          ],
+          imgSrc: ["'self'", 'data:', 'blob:', ...(isProd ? [] : ['localhost:*'])],
+          connectSrc: ["'self'", ...(isProd ? [] : ['localhost:*', 'ws://localhost:*'])],
           fontSrc: ["'self'"],
           objectSrc: ["'none'"],
           mediaSrc: ["'self'"],
@@ -76,7 +83,7 @@ export function createApp() {
     }),
   );
   app.use(express.json({ limit: '1mb' }));
-  app.use(express.urlencoded({ extended: true }));
+  app.use(express.urlencoded({ extended: true, limit: '1mb' }));
   app.use(cookieParser());
 
   // Health check without rate limiting

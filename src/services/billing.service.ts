@@ -1,5 +1,5 @@
 import createHttpError from 'http-errors';
-import { Prisma } from '@prisma/client';
+import { Prisma, UserRole } from '@prisma/client';
 import { prisma } from '../config/prisma';
 
 const PLATFORM_FEE_PER_HOUR = new Prisma.Decimal(3);
@@ -31,13 +31,18 @@ export async function createInvoiceForSignedContract(matchContractId: string) {
   });
 }
 
-export async function getInvoiceDetail(invoiceId: string) {
+export async function getInvoiceDetail(
+  invoiceId: string,
+  actor: { userId: string; role: UserRole },
+) {
   const invoice = await prisma.invoice.findUnique({
     where: { id: invoiceId },
     include: {
       matchContract: {
         include: {
-          jobShift: true,
+          jobShift: {
+            include: { hospitalProfile: true },
+          },
           nurseProfile: true,
         },
       },
@@ -46,6 +51,13 @@ export async function getInvoiceDetail(invoiceId: string) {
 
   if (!invoice) {
     throw createHttpError(404, `Invoice ${invoiceId} not found`);
+  }
+
+  const isSuperAdmin = actor.role === UserRole.SUPER_ADMIN;
+  const isHospitalOwner = invoice.matchContract.jobShift.hospitalProfile.userId === actor.userId;
+
+  if (!isSuperAdmin && !isHospitalOwner) {
+    throw createHttpError(403, 'You are not allowed to view this invoice');
   }
 
   return {
@@ -64,13 +76,32 @@ export async function getInvoiceDetail(invoiceId: string) {
   };
 }
 
-export async function markInvoicePaid(invoiceId: string) {
+export async function markInvoicePaid(
+  invoiceId: string,
+  actor: { userId: string; role: UserRole },
+) {
   const invoice = await prisma.invoice.findUnique({
     where: { id: invoiceId },
+    include: {
+      matchContract: {
+        include: {
+          jobShift: {
+            include: { hospitalProfile: true },
+          },
+        },
+      },
+    },
   });
 
   if (!invoice) {
     throw createHttpError(404, `Invoice ${invoiceId} not found`);
+  }
+
+  const isSuperAdmin = actor.role === UserRole.SUPER_ADMIN;
+  const isHospitalOwner = invoice.matchContract.jobShift.hospitalProfile.userId === actor.userId;
+
+  if (!isSuperAdmin && !isHospitalOwner) {
+    throw createHttpError(403, 'You are not allowed to mark this invoice as paid');
   }
 
   if (invoice.status === 'PAID') {

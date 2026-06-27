@@ -16,7 +16,8 @@ export async function getAuditLogsController(req: Request, res: Response): Promi
   }
 
   const action = typeof req.query.action === 'string' ? req.query.action as AuditAction : undefined;
-  const limit = typeof req.query.limit === 'string' ? Number(req.query.limit) : 50;
+  const rawLimit = typeof req.query.limit === 'string' ? Number(req.query.limit) : 50;
+  const limit = Math.min(Math.max(rawLimit, 1), 100);
 
   const result = await getAuditLogs({ action, limit });
 

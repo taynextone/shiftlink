@@ -193,7 +193,7 @@ export async function getInvoiceDetailController(req: Request, res: Response): P
   }
   const id = typeof req.params.id === 'string' ? req.params.id : '';
   if (!id) throw createHttpError(400, 'Invoice ID is required');
-  const result = await getInvoiceDetail(id);
+  const result = await getInvoiceDetail(id, req.auth);
   res.status(200).json(result);
 }
 
@@ -203,7 +203,7 @@ export async function markInvoicePaidController(req: Request, res: Response): Pr
   }
   const id = typeof req.params.id === 'string' ? req.params.id : '';
   if (!id) throw createHttpError(400, 'Invoice ID is required');
-  const result = await markInvoicePaid(id);
+  const result = await markInvoicePaid(id, req.auth);
   res.status(200).json({ id: result.id, status: result.status });
 }
 
