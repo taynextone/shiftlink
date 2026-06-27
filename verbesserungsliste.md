@@ -153,9 +153,15 @@
 - **Fix:** Vitest + React Testing Library setup + Component-Tests
 - **Erledigt:** Vitest + RTL setup, initial component tests
 
-### 5.2 Keine E2E-Tests
+### 5.2 Keine E2E-Tests ✅
 - Jest + etwas Code für Browser-QA aber kein Playwright/Puppeteer
-- **Fix:** Playwright setup für Core-Flows (Login, Dashboard, Offer-Flow)
+- **Fix:** Playwright setup mit Chromium, Config, 3 Spec-Files
+- Landing Page Tests (Branding, Navigation, Berlin mention)
+- Auth Tests (Form rendering, Validation, Redirect)
+- Demo Login Flow (Nurse + Hospital redirect)
+- npm scripts: `test:e2e`, `test:e2e:install`
+- Chromium binary installiert (~114MB)
+- **Erledigt:** 2026-06-27
 
 ### 5.3 Keine API-Integration-Tests ✅
 - Controller-Tests Mock alles. kein Supertest/Integration-Test gegen echte API

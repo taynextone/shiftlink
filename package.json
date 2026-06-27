@@ -30,7 +30,9 @@
     "db:migrate-prod": "bash prisma/migrate-prod.sh",
     "web:dev": "vite --config web/vite.config.ts",
     "web:build": "npm --prefix web run build",
-    "test:integration": "jest --config jest.integration.config.js --forceExit"
+    "test:integration": "jest --config jest.integration.config.js --forceExit",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium"
   },
   "repository": {
     "type": "git",
@@ -71,6 +73,7 @@
   },
   "private": true,
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
