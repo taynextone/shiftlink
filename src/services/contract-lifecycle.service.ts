@@ -64,7 +64,7 @@ export async function reportNoShow(contractId: string, actor: { userId: string; 
   // No-Refund Policy: Create invoice if not exists
   const freshContract = await prisma.matchContract.findUnique({ where: { id: contractId }, include: { invoice: true } });
   if (!freshContract?.invoice) {
-    await billingQueue.add('create-invoice', { matchContractId: contractId }, { jobId: `invoice:${contractId}` });
+    await billingQueue.add('create-invoice', { matchContractId: contractId }, { jobId: `invoice-${contractId}` });
   }
 
   return updated;
@@ -113,7 +113,7 @@ export async function cancelByHospital(
   // No-Refund Policy: Create invoice if not exists
   const freshContract = await prisma.matchContract.findUnique({ where: { id: contractId }, include: { invoice: true } });
   if (!freshContract?.invoice) {
-    await billingQueue.add('create-invoice', { matchContractId: contractId }, { jobId: `invoice:${contractId}` });
+    await billingQueue.add('create-invoice', { matchContractId: contractId }, { jobId: `invoice-${contractId}` });
   }
 
   return updated;

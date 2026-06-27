@@ -487,7 +487,7 @@ export async function createMatchOffer(
       'new-match-offer-notification',
       buildWhatsappOfferPayload(created),
       {
-        jobId: `new-match-offer:${created.id}`,
+        jobId: `new-match-offer-${created.id}`,
       },
     );
   }
@@ -752,7 +752,7 @@ export async function retryMatchOfferWhatsappNotification(
     {
       removeOnComplete: 100,
       removeOnFail: 200,
-      jobId: `retry-match-offer:${contract.id}:${Date.now()}`,
+      jobId: `retry-match-offer-${contract.id}-${Date.now()}`,
     },
   );
 
@@ -869,7 +869,7 @@ export async function signMatchContract(matchContractId: string, actor: { userId
         matchContractId: hydratedUpdatedContract.id,
       },
       {
-        jobId: `invoice:${hydratedUpdatedContract.id}`,
+        jobId: `invoice-${hydratedUpdatedContract.id}`,
       },
     );
   }

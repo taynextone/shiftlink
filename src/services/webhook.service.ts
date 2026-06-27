@@ -22,7 +22,7 @@ export async function createHospitalWebhookEvent(input: {
     'deliver-webhook-event',
     { webhookEventId: event.id },
     {
-      jobId: `webhook-event:${event.id}`,
+      jobId: `webhook-event-${event.id}`,
       attempts: 5,
       backoff: {
         type: 'exponential',
@@ -126,7 +126,7 @@ export async function retryWebhookEvent(webhookEventId: string): Promise<{ id: s
     'deliver-webhook-event',
     { webhookEventId: event.id },
     {
-      jobId: `webhook-event:${event.id}:retry:${Date.now()}`,
+      jobId: `webhook-event-${event.id}-retry-${Date.now()}`,
       attempts: 5,
       backoff: { type: 'exponential', delay: 30_000 },
       removeOnComplete: 500,

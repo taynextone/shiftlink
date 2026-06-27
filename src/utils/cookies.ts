@@ -6,7 +6,7 @@ const AUTH_COOKIE_NAME = 'shiftlink_token';
 const baseCookieOptions = {
   httpOnly: true,
   secure: env.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
+  sameSite: 'lax' as const,
 };
 
 export function setAuthCookie(res: Response, token: string): void {

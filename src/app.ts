@@ -22,22 +22,15 @@ export function createApp() {
   const app = express();
 
   app.disable('x-powered-by');
-  const isProd = env.NODE_ENV === 'production';
   app.use(
     helmet({
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: [
-            "'self'",
-            ...(isProd ? [] : ["'unsafe-inline'", "'unsafe-eval'", 'localhost:*']),
-          ],
-          styleSrc: [
-            "'self'",
-            ...(isProd ? [] : ["'unsafe-inline'", 'localhost:*']),
-          ],
-          imgSrc: ["'self'", 'data:', 'blob:', ...(isProd ? [] : ['localhost:*'])],
-          connectSrc: ["'self'", ...(isProd ? [] : ['localhost:*', 'ws://localhost:*'])],
+          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'blob:'],
+          connectSrc: ["'self'"],
           fontSrc: ["'self'"],
           objectSrc: ["'none'"],
           mediaSrc: ["'self'"],

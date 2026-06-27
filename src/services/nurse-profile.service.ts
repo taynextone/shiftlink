@@ -465,7 +465,7 @@ export async function getNurseDashboardSummary(actor: { userId: string; role: Us
         take: 5,
         include: {
           jobShift: { select: { title: true, locationCity: true, startTime: true, endTime: true } },
-          invoices: { select: { status: true, amount: true }, orderBy: { createdAt: 'desc' }, take: 1 },
+          invoice: { select: { status: true, amount: true } },
         },
       },
       availabilityBlocks: {
@@ -523,7 +523,7 @@ export async function getNurseDashboardSummary(actor: { userId: string; role: Us
       id: c.id,
       status: c.status,
       jobShift: c.jobShift,
-      latestInvoice: c.invoices[0] ?? null,
+      latestInvoice: c.invoice ?? null,
       createdAt: c.createdAt,
     })),
     upcomingAvailability: profile.availabilityBlocks.map((b) => ({
