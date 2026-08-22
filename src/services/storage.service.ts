@@ -60,3 +60,27 @@ export async function uploadPrivateTextFile(input: {
     objectKey: input.objectKey,
   };
 }
+
+export async function createPresignedUploadUrl(params: {
+  objectKey: string;
+  contentType: string;
+  expiresInSeconds?: number;
+}): Promise<{ uploadUrl: string; expiresIn: number; objectKey: string }> {
+  const expiresIn = params.expiresInSeconds ?? 3600; // 1 hour default
+
+  const command = new PutObjectCommand({
+    Bucket: env.S3_BUCKET,
+    Key: params.objectKey,
+    ContentType: params.contentType,
+  });
+
+  const url = await getSignedUrl(s3, command, {
+    expiresIn,
+  });
+
+  return {
+    uploadUrl: url,
+    expiresIn,
+    objectKey: params.objectKey,
+  };
+}

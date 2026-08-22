@@ -8,6 +8,11 @@ export const apiRateLimit = rateLimit({
   max,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => {
+    const fwd = req.headers['x-forwarded-for'];
+    if (typeof fwd === 'string' && fwd.length > 0) return fwd.split(',')[0].trim();
+    return req.ip || 'unknown';
+  },
   message: {
     message: 'Too many requests, please try again later.',
   },

@@ -106,10 +106,11 @@ services:
       - "9000:9000"
       - "9001:9001"
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "sh", "-c", "curl -sf http://localhost:9000/minio/health/live"]
       interval: 15s
       timeout: 5s
       retries: 5
+      start_period: 15s
     networks:
       - shiftlink-net
     deploy:

@@ -3,6 +3,8 @@ import { Prisma, UserRole, VerificationDocumentStatus, VerificationDocumentType 
 import { prisma } from '../config/prisma';
 import { ReviewVerificationDocumentInput, SetMatchingReleaseInput, UpdateNurseProfileInput, UploadDocumentInput } from '../schemas/nurse-profile.schema';
 import { recordAuditLog } from './audit.service';
+import { env } from '../config/env';
+import { createPresignedUploadUrl } from './storage.service';
 
 const REQUIRED_DOCUMENT_TYPES: VerificationDocumentType[] = [
   VerificationDocumentType.EXAMEN,
@@ -422,15 +424,25 @@ export async function uploadVerificationDocument(
     throw createHttpError(409, 'A pending document of this type already exists. Please wait for review.');
   }
 
+  const objectKey = `verification/${nurseProfile.id}/${input.documentType}/${Date.now()}-${input.fileName}`;
+
+  // Create DB record first (PENDING)
   const document = await prisma.verificationDocument.create({
     data: {
       nurseProfileId: nurseProfile.id,
       documentType: input.documentType as VerificationDocumentType,
-      fileUrl: `verification/${nurseProfile.id}/${input.documentType}/${Date.now()}-${input.fileName}`,
+      fileUrl: `s3://${env.S3_BUCKET}/${objectKey}`,
       status: VerificationDocumentStatus.PENDING,
       fileSize: input.fileSize,
       contentType: input.contentType,
     },
+  });
+
+  // Generate real presigned PUT URL for direct client upload
+  const presigned = await createPresignedUploadUrl({
+    objectKey,
+    contentType: input.contentType,
+    expiresInSeconds: 3600,
   });
 
   void recordAuditLog({
@@ -439,7 +451,7 @@ export async function uploadVerificationDocument(
     actorRole: actor.role,
     targetEntityType: 'VerificationDocument',
     targetEntityId: document.id,
-    metadata: { documentType: input.documentType, fileName: input.fileName },
+    metadata: { documentType: input.documentType, fileName: input.fileName, objectKey },
   });
 
   return {
@@ -447,7 +459,9 @@ export async function uploadVerificationDocument(
     documentType: document.documentType,
     status: document.status,
     fileUrl: document.fileUrl,
-    uploadUrl: `/api/v1/nurse-profiles/me/documents/${document.id}/upload`,
+    uploadUrl: presigned.uploadUrl,
+    uploadExpiresIn: presigned.expiresIn,
+    objectKey: presigned.objectKey,
   };
 }
 

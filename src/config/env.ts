@@ -25,6 +25,7 @@ const envSchema = z.object({
   WHATSAPP_FROM_NUMBER: z.string().min(1).optional(),
   TWILIO_ACCOUNT_SID: z.string().min(1).optional(),
   TWILIO_AUTH_TOKEN: z.string().min(1).optional(),
+  MOS_SERVICE_TOKEN: z.string().min(16).optional(),
 }).superRefine((value, ctx) => {
   if (value.WHATSAPP_PROVIDER === 'twilio') {
     if (!value.WHATSAPP_FROM_NUMBER) {

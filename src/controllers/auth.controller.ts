@@ -151,8 +151,6 @@ export async function demoLoginController(req: Request, res: Response): Promise<
       displayName: 'Demo Nurse',
       firstName: 'Anna',
       lastName: 'Schmidt',
-      iban: 'DE89370400440532013000',
-      minHourlyRate: 45,
       phoneNumber: '+491701234567',
       whatsappOptIn: true,
     });

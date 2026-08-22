@@ -61,23 +61,50 @@ export function OnboardingWizard() {
   }
 
   if (step === 'complete') {
+    const isNurse = !clinicName.trim();
     return (
       <section className="stack page-stack">
         <PageHeader
           eyebrow="Onboarding"
           title="Profil vollständig 🎉"
-          description="Dein Profil ist einsatzbereit. Du kannst jetzt direkt loslegen."
+          description={isNurse ? "Dein Profil ist angelegt. Nächster Schritt: Verifikation." : "Dein Klinikprofil ist bereit."}
         />
-        <SectionCard title="Was kommt als Nächstes?">
-          <ul className="ordered-list">
-            <li>Importiere deine ersten Schichten über die Importfunktion</li>
-            <li>Erstelle Angebote für verfügbare Pflegekräfte</li>
-            <li>Verwalte Verträge und Abrechnung über die Betriebsoberfläche</li>
-          </ul>
-          <ActionBar>
-            <a href="/hospital"><button type="button">Zur Übersicht</button></a>
-          </ActionBar>
-        </SectionCard>
+
+        {/* MOS ecosystem context */}
+        <div className="panel" style={{ border: "1px solid #f2b04a", background: "#fffaf0", padding: "1rem" }}>
+          <strong>Ein Account für alles — MOS</strong>
+          <p style={{ margin: "6px 0" }}>
+            {isNurse
+              ? "Dein Account gilt auch für QualiPass (Zertifikate & Nachweise) und MedBenefit (Exklusiv-Deals). Dein QualiPass ist die Eintrittskarte: Nach erfolgreicher Verifikation werden deine Einsätze freigeschaltet."
+              : "Dein Account gilt auch für QualiPass und MedBenefit. Verifizierte Pflegekräfte erkennst du im Matching an ihrem QualiPass-Status."}
+          </p>
+        </div>
+
+        {isNurse ? (
+          <SectionCard title="Was kommt als Nächstes?">
+            <ul className="ordered-list">
+              <li>Lade deine Verifikationsdokumente hoch (Examen, Arbeitsmedizinischer Nachweis)</li>
+              <li>Nach Prüfung durch den Admin wirst du für Matching freigegeben</li>
+              <li>Dann siehst du passende Einsätze auf einen Blick</li>
+            </ul>
+            <ActionBar>
+              <a href="/nurse/profile"><button type="button">Zur Verifikation</button></a>
+              <a href="/nurse"><button type="button" className="secondary">Zur Übersicht</button></a>
+            </ActionBar>
+          </SectionCard>
+        ) : (
+          <SectionCard title="Was kommt als Nächstes?">
+            <ul className="ordered-list">
+              <li>Lege deine erste Schicht an</li>
+              <li>Matching schlägt dir verifizierte Pflegekräfte vor</li>
+              <li>Sende Angebote und verwalte Verträge direkt in der Plattform</li>
+            </ul>
+            <ActionBar>
+              <a href="/hospital/shifts"><button type="button">Erste Schicht anlegen</button></a>
+              <a href="/hospital"><button type="button" className="secondary">Zur Übersicht</button></a>
+            </ActionBar>
+          </SectionCard>
+        )}
       </section>
     );
   }

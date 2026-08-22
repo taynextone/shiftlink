@@ -49,7 +49,15 @@ export function NurseMatchesPage() {
         description="Offer-Entscheidungen werden kontrolliert über den Backend-Lifecycle geführt. Diese Ansicht macht Status und Aktion professionell nachvollziehbar."
       />
       {status ? <FeedbackMessage tone={status.tone} message={status.message} /> : null}
-      <AsyncState loading={loading} error={error} isEmpty={contracts.length === 0} emptyMessage="Noch keine Angebote vorhanden.">
+      <AsyncState loading={loading} error={error} isEmpty={contracts.length === 0}>
+        {contracts.length === 0 && (
+          <div className="panel" style={{ border: "2px solid #f2b04a", background: "#fffaf0", padding: "1rem", marginBottom: "1rem" }}>
+            <strong>Keine Angebote sichtbar.</strong>
+            <p>Du erhältst hier Angebote, sobald dein Profil für Matching freigegeben ist.</p>
+            <a href="/nurse/profile" style={{ fontWeight: 600 }}>→ Zu Profil &amp; Verifikation</a>
+          </div>
+        )}
+
         <div className="record-list">
           {contracts.map((contract) => {
             const pending = activeId === contract.id;

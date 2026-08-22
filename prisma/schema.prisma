@@ -106,7 +106,7 @@ model NurseProfile {
   displayName             String
   firstName               String
   lastName                String
-  iban                    String
+  iban                    String?
   minHourlyRate           Decimal                  @default(42.00) @db.Decimal(10, 2)
   phoneNumber             String
   whatsappOptIn           Boolean                  @default(false)

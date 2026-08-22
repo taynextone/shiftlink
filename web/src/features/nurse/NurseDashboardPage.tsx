@@ -41,6 +41,25 @@ export function NurseDashboardPage() {
       <AsyncState loading={loading} isEmpty={!dashboard} emptyMessage="Lade Übersicht…">
         {dashboard && (
           <>
+            {/* Verification gate - prominent banner when not released */}
+            {!dashboard.nurseProfile.isReleasedForMatching && (
+              <div className="panel" style={{ border: "2px solid #f2b04a", background: "#fffaf0", padding: "1rem", marginBottom: "1rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{ fontSize: 24 }}>🔒</span>
+                  <div>
+                    <strong>Dein Profil ist noch nicht für Matching freigegeben.</strong>
+                    <p style={{ margin: "4px 0 0" }}>
+                      Lade deine Verifikationsdokumente (Examen, Arbeitsmedizinischer Nachweis) hoch. 
+                      Nach erfolgreicher Prüfung durch den Admin wirst du freigeschaltet.
+                    </p>
+                    <a href="/nurse/profile" style={{ display: "inline-block", marginTop: 8, fontWeight: 600 }}>
+                      → Zu Profil &amp; Verifikation
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Onboarding progress */}
             <SectionCard
               title={dashboard.onboarding.isComplete ? '✅ Profil vollständig' : `Onboarding (${dashboard.onboarding.completedSteps}/${dashboard.onboarding.totalSteps})`}

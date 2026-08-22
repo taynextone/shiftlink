@@ -19,9 +19,18 @@ export function NurseJobsPage() {
         description="Nur freigegebene Pflegekräfte sehen hier passende Bedarfe. Die Liste bildet reale Produktrestriktionen ab, keine Dummy-Marktplatzromantik."
       />
       {error ? <FeedbackMessage tone="error" message={error} /> : null}
-      <AsyncState loading={loading} isEmpty={jobShifts.length === 0} emptyMessage="Aktuell keine sichtbaren Einsätze.">
-        <div className="record-list">
-          {jobShifts.map((shift) => (
+      <AsyncState loading={loading} isEmpty={jobShifts.length === 0}>
+        {jobShifts.length === 0 ? (
+          <div className="panel" style={{ border: "2px solid #f2b04a", background: "#fffaf0", padding: "1rem" }}>
+            <strong>Keine Einsätze sichtbar.</strong>
+            <p>
+              Du siehst hier nur Einsätze, wenn dein Profil für Matching freigegeben ist (nach erfolgreicher Verifikation).
+            </p>
+            <a href="/nurse/profile" style={{ fontWeight: 600 }}>→ Zu Profil &amp; Verifikation</a>
+          </div>
+        ) : (
+          <div className="record-list">
+            {jobShifts.map((shift) => (
             <SectionCard
               key={shift.id}
               title={shift.title ?? 'Pflegeeinsatz'}
@@ -42,8 +51,9 @@ export function NurseJobsPage() {
                 ]}
               />
             </SectionCard>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </AsyncState>
     </section>
   );

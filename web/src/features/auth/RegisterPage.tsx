@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { EmptyState } from '../../components/EmptyState';
 import { Field } from '../../components/Field';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
@@ -12,7 +12,13 @@ type RegisterRole = 'NURSE' | 'HOSPITAL_ADMIN';
 export function RegisterPage() {
   const navigate = useNavigate();
   const { setAuthenticatedSession } = useAuth();
-  const [role, setRole] = useState<RegisterRole>('NURSE');
+  const [searchParams] = useSearchParams();
+
+  // Support pre-selection from Landing page CTAs (?role=HOSPITAL_ADMIN)
+  const initialRole: RegisterRole =
+    searchParams.get('role') === 'HOSPITAL_ADMIN' ? 'HOSPITAL_ADMIN' : 'NURSE';
+
+  const [role, setRole] = useState<RegisterRole>(initialRole);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -71,10 +77,7 @@ export function RegisterPage() {
                 displayName: displayName.trim(),
                 firstName: firstName.trim(),
                 lastName: lastName.trim(),
-                iban: 'DE89370400440532013000',
-                minHourlyRate: 42,
-                phoneNumber: '+491701234567',
-                whatsappOptIn: true,
+                whatsappOptIn: false,
               },
             }
           : {
@@ -87,7 +90,8 @@ export function RegisterPage() {
       });
       setAuthenticatedSession(result.auth);
       setStatus({ tone: 'success', message: 'Registrierung erfolgreich.' });
-      navigate(role === 'HOSPITAL_ADMIN' ? '/hospital' : '/nurse');
+      // New accounts go through onboarding first (profile completion + MOS context)
+      navigate('/onboarding');
     } catch (error) {
       setStatus({ tone: 'error', message: error instanceof Error ? error.message : 'Registrierung fehlgeschlagen' });
     } finally {

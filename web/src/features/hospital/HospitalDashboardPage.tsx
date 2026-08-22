@@ -153,6 +153,17 @@ export function HospitalDashboardPage({ mode = 'hospital' }: { mode?: 'hospital'
         description={mode === 'superadmin' ? 'Zentrale Superadmin-Sicht auf operative Hotspots, Failures und Governance-nahe Interventionen.' : 'Zentrale operative Startseite für Bedarfe, Offers, Verträge und Billing. Fokus auf echtem Backend-Status statt Platzhalter-Widgets.'}
       />
       {interventionFeedback ? <FeedbackMessage tone={interventionFeedback.tone} message={interventionFeedback.message} /> : null}
+      {/* First-run guidance: no shifts yet */}
+      {shiftData !== undefined && shiftData !== null && shifts.length === 0 && mode === 'hospital' && (
+        <div className="panel" style={{ border: "2px solid #f2b04a", background: "#fffaf0", padding: "1rem", marginBottom: "1rem" }}>
+          <strong>🚀 Willkommen bei Shiftlink — dein erster Schritt</strong>
+          <p style={{ margin: "6px 0" }}>
+            Lege deine erste Schicht an. Das Matching schlägt dir automatisch verifizierte Pflegekräfte vor —
+            du sendest Angebote und verwaltest Verträge direkt hier in der Plattform.
+          </p>
+          <Link to="/hospital/shifts" style={{ fontWeight: 600 }}>→ Erste Schicht anlegen</Link>
+        </div>
+      )}
       <div className="stats-grid">
         <KpiCard label="Offene Schichten" value={String(openShifts.length)} helper="Bedarfe, die aktiv in Kandidaten- und Offer-Arbeit gezogen werden können." />
         <KpiCard label="Pending Offers" value={String(totalPendingOffers)} helper="Angebote, bei denen operatives Follow-up oder Beobachtung nötig ist." />
