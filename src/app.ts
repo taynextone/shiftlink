@@ -42,8 +42,11 @@ export function createApp() {
           ...(env.APP_ORIGIN.startsWith('https') ? { upgradeInsecureRequests: [] } : {}),
         },
       },
-      crossOriginEmbedderPolicy: true,
-      crossOriginOpenerPolicy: true,
+      // COEP require-corp breaks module loading on plain-HTTP IP access (LAN
+      // testing): the browser refuses scripts without CORP headers on cross-
+      // origin-ish contexts. Enable only for real HTTPS deployments.
+      crossOriginEmbedderPolicy: env.APP_ORIGIN.startsWith('https'),
+      crossOriginOpenerPolicy: env.APP_ORIGIN.startsWith('https'),
       crossOriginResourcePolicy: { policy: 'same-origin' },
       referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
       strictTransportSecurity: env.NODE_ENV === 'production' ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
