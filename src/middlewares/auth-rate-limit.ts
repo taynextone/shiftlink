@@ -25,3 +25,20 @@ export const authRateLimit = rateLimit({
     message: 'Too many auth requests, please try again later.',
   },
 });
+
+/**
+ * Strengeres Limit für den MOS-Connect-Endpoint: hier werden MOS-Credentials
+ * geprüft, also Brute-Force-Schutz deutlich enger als beim normalen Login.
+ * Fehlversuche zählen pro IP; erfolgreiche Verbindungen konsumieren das
+ * Kontingent ebenfalls (einfach & sicher).
+ */
+export const mosConnectRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: () => (env.NODE_ENV !== "production" ? 100 : 5),
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => getClientIp(req),
+  message: {
+    message: "Zu viele Verbindungsversuche. Bitte in 15 Minuten erneut versuchen.",
+  },
+});
