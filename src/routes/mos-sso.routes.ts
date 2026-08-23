@@ -1,3 +1,4 @@
+import { mosSsoRateLimit } from "../middlewares/auth-rate-limit";
 import { Router } from 'express';
 
 import { asyncHandler } from '../utils/async-handler';

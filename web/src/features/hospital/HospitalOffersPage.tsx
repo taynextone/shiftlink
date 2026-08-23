@@ -30,6 +30,7 @@ export function HospitalOffersPage() {
   const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [lastOfferFailure, setLastOfferFailure] = useState<{ nurseProfileId: string; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [onlyVerified, setOnlyVerified] = useState(false);
   const [confirmAction, setConfirmAction] = useState<null | { title: string; message: string; tone: 'danger' | 'warning' | 'neutral'; onConfirm: () => void | Promise<void> }>(null);
   const [expandedCommId, setExpandedCommId] = useState<string | null>(null);
   const [commEvents, setCommEvents] = useState<Record<string, Array<{ id: string; eventType: string; phoneNumber: string; messageText: string; status: string; attemptCount: number; lastError: string | null; deliveredAt: string | null; createdAt: string; updatedAt: string }>>>({});
@@ -42,6 +43,9 @@ export function HospitalOffersPage() {
 
   const focusedOffers = focusNurseProfileId ? offers.filter((offer) => offer.nurseProfileId === focusNurseProfileId) : offers;
   const focusedCandidates = focusNurseProfileId ? candidates.filter((candidate) => candidate.nurseProfileId === focusNurseProfileId) : candidates;
+  const filteredCandidates = onlyVerified
+    ? focusedCandidates.filter((c) => c.qualipassStatus === "VERIFIED")
+    : focusedCandidates;
 
   const offerSummary = useMemo(() => {
     return focusedOffers.reduce(
@@ -339,16 +343,31 @@ export function HospitalOffersPage() {
             <section className="stack">
               <div className="section-heading-row">
                 <h2 className="section-heading">Kandidaten</h2>
-                <StatusBadge value={`${focusedCandidates.length} profile`} />
+                <StatusBadge value={`${filteredCandidates.length} / ${focusedCandidates.length}`} />
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+                  <input
+                    type="checkbox"
+                    checked={onlyVerified}
+                    onChange={(e) => setOnlyVerified(e.target.checked)}
+                  />
+                  Nur verifiziert (QualiPass ✔)
+                </label>
               </div>
-              {focusedCandidates.map((candidate) => {
+              {filteredCandidates.map((candidate) => {
                 const candidateFailure = lastOfferFailure?.nurseProfileId === candidate.nurseProfileId ? lastOfferFailure.message : null;
                 return (
                   <SectionCard
                     key={candidate.nurseProfileId}
                     title={candidate.displayName}
                     description={`${candidate.publicId} · ${candidate.matchingCity}`}
-                    actions={<StatusBadge value={candidate.preferredShiftType} />}
+                    actions={
+                    <>
+                      <StatusBadge value={candidate.preferredShiftType} />
+                      {candidate.qualipassStatus === "VERIFIED" && (
+                        <span style={{ background: "#10b981", color: "white", padding: "1px 6px", borderRadius: 4, fontSize: 10, marginLeft: 4 }}>QualiPass ✔</span>
+                      )}
+                    </>
+                  }
                   >
                     <InfoList
                       items={[

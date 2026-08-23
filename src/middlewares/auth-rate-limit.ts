@@ -42,3 +42,15 @@ export const mosConnectRateLimit = rateLimit({
     message: "Zu viele Verbindungsversuche. Bitte in 15 Minuten erneut versuchen.",
   },
 });
+
+// Strenges Limit für den SSO-Start (öffentlicher Einstiegspunkt für Redirect-Flow)
+export const mosSsoRateLimit = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: () => (env.NODE_ENV !== "production" ? 200 : 20),
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => getClientIp(req),
+  message: {
+    message: "Zu viele SSO-Versuche. Bitte in 10 Minuten erneut versuchen.",
+  },
+});

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../config/prisma';
 import { env } from '../config/env';
 import { requireAuth } from '../middlewares/auth';
+import { invalidateQualipassCache } from '../services/qualipass.service';
 
 /**
  * MOS-Account-Verknüpfung (Stufe 2, siehe docs/MOS-INTEGRATION.md).
@@ -80,6 +81,8 @@ router.post('/mos/connect', requireAuth, async (req, res) => {
 
     await prisma.user.update({ where: { id: userId }, data: { mosUserId: mosUser.userId } });
 
+    await invalidateQualipassCache(mosUser.userId);
+
     return res.json({
       connected: true,
       mosUserId: mosUser.userId,
@@ -102,7 +105,9 @@ router.post('/mos/connect', requireAuth, async (req, res) => {
 router.post('/mos/disconnect', requireAuth, async (req, res) => {
   const userId = (req as unknown as { auth?: { userId: string } }).auth?.userId;
   if (!userId) return res.status(401).json({ message: 'Nicht angemeldet' });
+  const prev = await prisma.user.findUnique({ where: { id: userId }, select: { mosUserId: true } });
   await prisma.user.update({ where: { id: userId }, data: { mosUserId: null } });
+  if (prev?.mosUserId) await invalidateQualipassCache(prev.mosUserId);
   res.json({ connected: false });
 });
 

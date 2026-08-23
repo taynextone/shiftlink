@@ -77,3 +77,18 @@ export async function getQualipassStatus(
     return null;
   }
 }
+
+/**
+ * Cache für einen bestimmten MOS-User invalidieren.
+ * Wird bei connect/disconnect aufgerufen, damit ein neuer/veränderter Status
+ * sofort wirksam wird (z. B. nach Admin-Verifizierung in MOS).
+ */
+export async function invalidateQualipassCache(mosUserId: number | null): Promise<void> {
+  if (!mosUserId) return;
+  const key = cacheKey(mosUserId);
+  try {
+    await redis.del(key);
+  } catch {
+    // Redis-Ausfälle dürfen die Verknüpfung nicht blockieren
+  }
+}

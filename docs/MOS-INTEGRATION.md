@@ -1,6 +1,6 @@
 # MOS ↔ ShiftLink Integration & Einheitlicher Login (Langzeit-Architektur)
 
-Stand: 23.08.2026 · Autor: ox-alpha · Status: BESCHLOSSEN (Umsetzung in Phasen)
+Stand: 23.08.2026 (Early SSO live) · Status: BESCHLOSSEN (Umsetzung in Phasen)
 
 ## 1. Zielbild (das, worauf alles zuläuft)
 
@@ -82,6 +82,18 @@ Wenn beide Produkte öffentlich laufen, bauen wir echtes SSO:
 
 Empfehlung: **Stufe 3A zuerst**, 3B nur wenn Dritte (z. B. Kliniken) eigene
 Integrationen bauen wollen.
+
+## 3.5 Frühe Implementierung von Stufe 3 (Live seit 23.08.2026)
+
+Stufe 3 wurde **vorzeitig** umgesetzt, weil der Nutzen (keine Passwörter mehr im ShiftLink-Frontend, zentraler Login) bereits jetzt hoch ist:
+
+- MOS als Identity Provider: `/api/v1/sso/authorize`, `/api/v1/sso/exchange-login`, `/api/v1/sso/token`
+- Einmalige 60s Codes + state + redirect-Whitelist
+- ShiftLink-Client: `/api/v1/auth/mos/sso/start|callback` + UI-Button "Mit MOS anmelden (SSO)"
+- Rate-Limit auf dem Start-Endpoint (20 req / 10 min in Prod)
+- QualiPass-Status wird direkt mit dem Token zurückgegeben
+
+Das ist **kein volles OIDC**, aber ein sauberer, auditable Service-Auth-Code-Flow, der exakt den Anforderungen von ShiftLink entspricht.
 
 ## 4. Verifikations-Bridge (der fachliche Kern)
 
