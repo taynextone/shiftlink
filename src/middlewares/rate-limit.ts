@@ -14,7 +14,10 @@ export const apiRateLimit = rateLimit({
       // ipKeyGenerator handles IPv6-mapped IPv4 addresses correctly
       return ipKeyGenerator(fwd.split(',')[0].trim());
     }
-    return req.ip || 'unknown';
+    // req.ip can be IPv4-mapped IPv6 (e.g. ::ffff:172.18.0.x from Docker proxy
+    // when no XFF header is present, as with the nginx /assets/ location).
+    // Normalize it too, otherwise express-rate-limit throws ERR_ERL_KEY_GEN_IPV6.
+    return ipKeyGenerator(req.ip ?? 'unknown');
   },
   message: {
     message: 'Too many requests, please try again later.',
