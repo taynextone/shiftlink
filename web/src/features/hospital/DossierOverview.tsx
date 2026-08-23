@@ -11,6 +11,7 @@ type DossierSummary = {
   publicId: string;
   displayName: string;
   isReleasedForMatching: boolean;
+  qualipassStatus?: 'VERIFIED' | 'PARTIALLY_VERIFIED' | 'UNVERIFIED' | null;
   signedAssignmentsCount: number;
   verifiedDocumentsCount: number;
   lastAssignmentDate: string | null;
@@ -47,11 +48,12 @@ export function DossierOverview() {
   }, [dossiers, statusFilter, search]);
 
   const handleExport = useCallback(() => {
-    const headers = ['Public ID', 'Name', 'Status', 'Signed Assignments', 'Verified Docs', 'Last Assignment'];
+    const headers = ['Public ID', 'Name', 'Status', 'QualiPass', 'Signed Assignments', 'Verified Docs', 'Last Assignment'];
     const rows = filtered.map((d) => [
       d.publicId,
       d.displayName,
       d.isReleasedForMatching ? 'Released' : 'Pending',
+      d.qualipassStatus ?? '—',
       d.signedAssignmentsCount,
       d.verifiedDocumentsCount,
       d.lastAssignmentDate ?? '—',
@@ -134,6 +136,11 @@ export function DossierOverview() {
             </div>
             <div className="record-meta">
               <StatusBadge value={dossier.isReleasedForMatching ? 'released' : 'pending'} />
+              {dossier.qualipassStatus === 'VERIFIED' ? (
+                <StatusBadge value="QualiPass ✔" />
+              ) : dossier.qualipassStatus === 'PARTIALLY_VERIFIED' ? (
+                <StatusBadge value="QualiPass ~" />
+              ) : null}
               <span>{dossier.signedAssignmentsCount} Einsätze</span>
               <span>{dossier.verifiedDocumentsCount} Docs</span>
             </div>

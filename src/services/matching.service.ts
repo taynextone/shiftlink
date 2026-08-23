@@ -1,6 +1,7 @@
 import createHttpError from 'http-errors';
 import { UserRole } from '@prisma/client';
 import { prisma } from '../config/prisma';
+import { getQualipassStatus } from './qualipass.service';
 
 function deg2rad(value: number): number {
   return (value * Math.PI) / 180;
@@ -50,6 +51,9 @@ export async function findCandidatesForJobShift(actor: { userId: string; role: U
     include: {
       specializations: true,
       availabilityBlocks: true,
+      user: {
+        select: { mosUserId: true },
+      },
       matchContracts: {
         where: {
           status: 'SIGNED',
@@ -63,6 +67,15 @@ export async function findCandidatesForJobShift(actor: { userId: string; role: U
 
   const requiredTags = jobShift.requirements.filter((r) => r.priority === 'REQUIRED').map((r) => r.tag);
   const preferredTags = jobShift.requirements.filter((r) => r.priority === 'PREFERRED').map((r) => r.tag);
+
+  // QualiPass-Status aller relevanten Nurses parallel abholen (Redis-Cached).
+  const qualipassStatuses = new Map(
+    await Promise.all(
+      nurseProfiles.map(async (nurse) => {
+        return [nurse.id, await getQualipassStatus(nurse.user?.mosUserId ?? null)] as const;
+      }),
+    ),
+  );
 
   const candidates = nurseProfiles
     .map((nurse) => {
@@ -124,6 +137,7 @@ export async function findCandidatesForJobShift(actor: { userId: string; role: U
       }
 
       const preferredTagMatches = preferredTags.filter((tag) => nurseTags.includes(tag)).length;
+      const qualipassStatus = qualipassStatuses.get(nurse.id) ?? null;
 
       return {
         nurseProfileId: nurse.id,
@@ -132,12 +146,20 @@ export async function findCandidatesForJobShift(actor: { userId: string; role: U
         minHourlyRate: nurse.minHourlyRate,
         preferredShiftType: nurse.preferredShiftType,
         preferredTagMatches,
+        qualipassStatus,
         matchingAvailabilityBlockId: matchingBlock.id,
         matchingCity: matchingBlock.city,
       };
     })
     .filter((item): item is NonNullable<typeof item> => item !== null)
     .sort((a, b) => {
+      // 1. Voll verifizierte QualiPass-Nurses zuerst (Kernversprechen des MOS-Ökosystems)
+      const qpRank = (status: string | null) => (status === 'VERIFIED' ? 2 : status === 'PARTIALLY_VERIFIED' ? 1 : 0);
+      const qpDiff = qpRank(b.qualipassStatus) - qpRank(a.qualipassStatus);
+      if (qpDiff !== 0) {
+        return qpDiff;
+      }
+      // 2. Dann nach bevorzugten Tags, 3. dann günstiger
       if (b.preferredTagMatches !== a.preferredTagMatches) {
         return b.preferredTagMatches - a.preferredTagMatches;
       }

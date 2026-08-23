@@ -1,4 +1,5 @@
 import { prisma } from '../config/prisma';
+import { getQualipassStatus } from './qualipass.service';
 
 export async function getHospitalDossierOverview(hospitalProfileId: string) {
   const contracts = await prisma.matchContract.findMany({
@@ -9,12 +10,30 @@ export async function getHospitalDossierOverview(hospitalProfileId: string) {
       nurseProfile: {
         include: {
           verificationDocuments: true,
+          user: {
+            select: { mosUserId: true },
+          },
         },
       },
       jobShift: true,
     },
     orderBy: { createdAt: 'desc' },
   });
+
+  // QualiPass-Status parallel (Redis-Cached) abholen
+  const uniqueNurses = new Map<string, number | null>();
+  for (const contract of contracts) {
+    if (!uniqueNurses.has(contract.nurseProfileId)) {
+      uniqueNurses.set(contract.nurseProfileId, contract.nurseProfile.user?.mosUserId ?? null);
+    }
+  }
+  const qualipassByNurse = new Map(
+    await Promise.all(
+      [...uniqueNurses.entries()].map(async ([nurseProfileId, mosUserId]) => {
+        return [nurseProfileId, await getQualipassStatus(mosUserId)] as const;
+      }),
+    ),
+  );
 
   // Deduplicate by nurseProfileId, keeping the most recent contract
   const seenNurses = new Set<string>();
@@ -35,6 +54,7 @@ export async function getHospitalDossierOverview(hospitalProfileId: string) {
         publicId: contract.nurseProfile.publicId,
         displayName: contract.nurseProfile.displayName,
         isReleasedForMatching: contract.nurseProfile.isReleasedForMatching,
+        qualipassStatus: qualipassByNurse.get(contract.nurseProfileId) ?? null,
         signedAssignmentsCount: signedAssignments.length,
         verifiedDocumentsCount: contract.nurseProfile.verificationDocuments.filter(
           (d) => d.status === 'VERIFIED',

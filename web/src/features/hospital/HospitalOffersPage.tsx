@@ -354,6 +354,17 @@ export function HospitalOffersPage() {
                       items={[
                         { label: 'Pflegekraft-Profil-ID', value: candidate.nurseProfileId },
                         { label: 'Mindestsatz', value: `${candidate.minHourlyRate} €` },
+                        {
+                          label: 'QualiPass',
+                          value:
+                            candidate.qualipassStatus === 'VERIFIED'
+                              ? '✔ Verifiziert (MOS)'
+                              : candidate.qualipassStatus === 'PARTIALLY_VERIFIED'
+                                ? 'Teilweise verifiziert (MOS)'
+                                : candidate.qualipassStatus === 'UNVERIFIED'
+                                  ? 'Nicht verifiziert (MOS)'
+                                  : 'Kein MOS-Account verknüpft',
+                        },
                         { label: 'Match-Fit', value: candidate.preferredTagMatches },
                         { label: 'Verfügbarkeitsblock', value: candidate.matchingAvailabilityBlockId },
                         { label: 'Letzter Angebotsblocker', value: candidateFailure ?? 'kein letzter Fehler gespeichert' },

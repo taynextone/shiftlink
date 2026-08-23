@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FeedbackMessage } from '../../components/FeedbackMessage';
 import { Field } from '../../components/Field';
 import { PageHeader } from '../../components/PageHeader';
@@ -21,6 +22,8 @@ const QUALIPASS_LABELS: Record<string, string> = {
 };
 
 export function NurseMosConnectPage() {
+  const [searchParams] = useSearchParams();
+  const justConnected = searchParams.get('connected') === '1';
   const { data, loading, error, reload } = useAsyncData<MosStatus>(
     () => api.getMosStatus(),
     [],
@@ -30,6 +33,12 @@ export function NurseMosConnectPage() {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const [qualipassHint, setQualipassHint] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (justConnected) {
+      setFeedback({ tone: 'success', text: 'MOS-Account erfolgreich über SSO verknüpft.' });
+    }
+  }, [justConnected]);
 
   async function handleConnect(e: React.FormEvent) {
     e.preventDefault();
@@ -96,29 +105,39 @@ export function NurseMosConnectPage() {
             Gib einmalig die Zugangsdaten deines MOS-Accounts ein. Wir speichern nur die Verknüpfung —
             niemals dein Passwort. Danach gilt dein QualiPass auch hier in ShiftLink.
           </p>
-          <form onSubmit={handleConnect}>
-            <Field label="MOS E-Mail">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-              />
-            </Field>
-            <Field label="MOS Passwort">
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-              />
-            </Field>
-            <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? 'Verbinde…' : 'Jetzt verbinden'}
-            </button>
-          </form>
+          <a className="btn-primary" href="/api/v1/auth/mos/sso/start">
+            Mit MOS anmelden (SSO)
+          </a>
+          <p className="hint">
+            Du wirst zu MOS weitergeleitet und kommst automatisch zurück — ohne
+            dass du hier Zugangsdaten eingibst.
+          </p>
+          <details>
+            <summary>Alternativ: MOS-Zugangsdaten eingeben</summary>
+            <form onSubmit={handleConnect}>
+              <Field label="MOS E-Mail">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
+              </Field>
+              <Field label="MOS Passwort">
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+              </Field>
+              <button type="submit" className="btn-secondary" disabled={submitting}>
+                {submitting ? 'Verbinde…' : 'Manuell verbinden'}
+              </button>
+            </form>
+          </details>
         </SectionCard>
       )}
     </main>

@@ -230,6 +230,7 @@ export type Candidate = {
   minHourlyRate: string;
   preferredShiftType: string;
   preferredTagMatches: number;
+  qualipassStatus?: 'VERIFIED' | 'PARTIALLY_VERIFIED' | 'UNVERIFIED' | null;
   matchingAvailabilityBlockId: string;
   matchingCity: string;
 };
@@ -758,6 +759,7 @@ export const api = {
       publicId: string;
       displayName: string;
       isReleasedForMatching: boolean;
+      qualipassStatus?: 'VERIFIED' | 'PARTIALLY_VERIFIED' | 'UNVERIFIED' | null;
       signedAssignmentsCount: number;
       verifiedDocumentsCount: number;
       lastAssignmentDate: string | null;
