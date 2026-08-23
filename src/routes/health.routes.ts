@@ -7,6 +7,8 @@ import { getQueueStatus } from '../workers/status';
 const router = Router();
 
 router.get('/health', async (_req: Request, res: Response) => {
+  // Health probes must never be cached - load balancers need the live state.
+  res.set("Cache-Control", "no-store");
   const checks: Record<string, { status: string; latencyMs?: number; error?: string; details?: string }> = {};
 
   // Database check

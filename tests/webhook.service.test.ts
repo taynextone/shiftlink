@@ -15,6 +15,8 @@ process.env.S3_SECRET_KEY = 'minioadmin';
 process.env.S3_FORCE_PATH_STYLE = 'true';
 process.env.S3_SIGNED_URL_TTL_SECONDS = '900';
 
+import { UserRole } from '@prisma/client';
+
 jest.mock('../src/config/prisma', () => ({
   prisma: {
     webhookEvent: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
@@ -56,7 +58,7 @@ describe('webhook delivery flow', () => {
     expect(webhookQueue.add).toHaveBeenCalledWith(
       'deliver-webhook-event',
       { webhookEventId: 'event_1' },
-      expect.objectContaining({ jobId: 'webhook-event:event_1', attempts: 5 }),
+      expect.objectContaining({ jobId: 'webhook-event-event_1', attempts: 5 }),
     );
   });
 
@@ -181,12 +183,12 @@ describe('billing invoice intervention', () => {
       matchContractId: 'contract_1',
       matchContract: {
         status: 'SIGNED',
-        jobShift: { title: 'Nachtdienst', locationCity: 'Berlin' },
+        jobShift: { title: 'Nachtdienst', locationCity: 'Berlin', hospitalProfile: { userId: 'hospital_user_1' } },
         nurseProfile: { displayName: 'NurseNova', publicId: 'NUR-001' },
       },
     });
 
-    const result = await getInvoiceDetail('inv_1');
+    const result = await getInvoiceDetail('inv_1', { userId: 'hospital_user_1', role: UserRole.HOSPITAL_ADMIN });
 
     expect(result.id).toBe('inv_1');
     expect(result.status).toBe('PENDING');
@@ -203,10 +205,13 @@ describe('billing invoice intervention', () => {
   });
 
   it('marks a pending invoice as paid', async () => {
-    (prisma.invoice.findUnique as jest.Mock).mockResolvedValue({ id: 'inv_1', status: 'PENDING' });
+    (prisma.invoice.findUnique as jest.Mock).mockResolvedValue({
+      id: 'inv_1', status: 'PENDING',
+      matchContract: { jobShift: { hospitalProfile: { userId: 'hospital_user_1' } } },
+    });
     (prisma.invoice.update as jest.Mock).mockResolvedValue({ id: 'inv_1', status: 'PAID' });
 
-    const result = await markInvoicePaid('inv_1');
+    const result = await markInvoicePaid('inv_1', { userId: 'hospital_user_1', role: UserRole.HOSPITAL_ADMIN });
 
     expect(prisma.invoice.update).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: 'inv_1' }, data: { status: 'PAID' } }),
@@ -215,8 +220,11 @@ describe('billing invoice intervention', () => {
   });
 
   it('throws when trying to mark an already paid invoice', async () => {
-    (prisma.invoice.findUnique as jest.Mock).mockResolvedValue({ id: 'inv_1', status: 'PAID' });
+    (prisma.invoice.findUnique as jest.Mock).mockResolvedValue({
+      id: 'inv_1', status: 'PAID',
+      matchContract: { jobShift: { hospitalProfile: { userId: 'hospital_user_1' } } },
+    });
 
-    await expect(markInvoicePaid('inv_1')).rejects.toThrow('already paid');
+    await expect(markInvoicePaid('inv_1', { userId: 'hospital_user_1', role: UserRole.HOSPITAL_ADMIN })).rejects.toThrow('already paid');
   });
 });

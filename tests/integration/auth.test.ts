@@ -9,13 +9,15 @@ describe('POST /api/v1/auth/login', () => {
       .post('/api/v1/auth/login')
       .send({ email: 'test@example.com' });
     expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty('code');
+    // Validation errors return { message, issues } (zod-based error shape)
+    expect(res.body).toHaveProperty('message');
+    expect(res.body).toHaveProperty('issues');
   });
 
   it('rejects invalid email format', async () => {
     const res = await request(app)
       .post('/api/v1/auth/login')
-      .send({ email: 'not-an-email', password: 'password123' });
+      .send({ email: 'not-an-email', password: 'password12345678' });
     expect(res.status).toBe(400);
   });
 
@@ -29,7 +31,7 @@ describe('POST /api/v1/auth/login', () => {
   it('returns 401 for wrong credentials', async () => {
     const res = await request(app)
       .post('/api/v1/auth/login')
-      .send({ email: 'doesnotexist@example.com', password: 'password123' });
+      .send({ email: 'doesnotexist@example.com', password: 'password12345678' });
     expect(res.status).toBe(401);
   });
 });
@@ -52,7 +54,7 @@ describe('POST /api/v1/auth/register', () => {
   it('rejects invalid email for nurse registration', async () => {
     const res = await request(app)
       .post('/api/v1/auth/register')
-      .send({ email: 'invalid', role: 'NURSE', password: 'password123', fullName: 'Test Nurse' });
+      .send({ email: 'invalid', role: 'NURSE', password: 'password12345678', fullName: 'Test Nurse' });
     expect(res.status).toBe(400);
   });
 });
