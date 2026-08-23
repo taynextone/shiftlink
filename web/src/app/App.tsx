@@ -22,6 +22,7 @@ import { NurseMatchesPage } from '../features/nurse/NurseMatchesPage';
 import { OnboardingWizard } from '../features/onboarding/OnboardingWizard';
 import { NurseProfilePage } from '../features/nurse/NurseProfilePage';
 import { NurseContractsPage } from '../features/nurse/NurseContractsPage';
+import { NurseMosConnectPage } from '../features/nurse/NurseMosConnectPage';
 
 const publicPaths = ['/', '/login', '/register'];
 
@@ -54,6 +55,7 @@ function AppRoutes() {
         <Route path="/nurse/availability" element={<ProtectedRoute allowedRoles={['NURSE']}><NurseAvailabilityPage /></ProtectedRoute>} />
         <Route path="/nurse/matches" element={<ProtectedRoute allowedRoles={['NURSE']}><NurseMatchesPage /></ProtectedRoute>} />
         <Route path="/nurse/profile" element={<ProtectedRoute allowedRoles={['NURSE']}><NurseProfilePage /></ProtectedRoute>} />
+        <Route path="/nurse/mos" element={<ProtectedRoute allowedRoles={["NURSE"]}><NurseMosConnectPage /></ProtectedRoute>} />
         <Route path="/nurse/contracts" element={<ProtectedRoute allowedRoles={['NURSE']}><NurseContractsPage /></ProtectedRoute>} />
         <Route path="/onboarding" element={<ProtectedRoute allowedRoles={['NURSE', 'HOSPITAL_ADMIN']}><OnboardingWizard /></ProtectedRoute>} />
         <Route path="/hospital" element={<ProtectedRoute allowedRoles={['HOSPITAL_ADMIN', 'SUPER_ADMIN']}><HospitalDashboardPage /></ProtectedRoute>} />

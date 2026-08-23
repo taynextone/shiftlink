@@ -14,6 +14,7 @@ import jobShiftRoutes from './routes/job-shift.routes';
 import { env } from './config/env';
 import userRoutes from './routes/user.routes';
 import { mosSignalRoutes } from './routes/mos-signal.routes';
+import mosAccountRoutes from './routes/mos-account.routes';
 import path from 'path';
 import { notFoundMiddleware } from './middlewares/not-found';
 import { apiRateLimit } from './middlewares/rate-limit';
@@ -92,6 +93,7 @@ export function createApp() {
   app.use('/api/v1', apiRateLimit);
   app.use('/api/v1', adminRoutes);
   app.use('/api/v1/mos', mosSignalRoutes);
+  app.use('/api/v1', mosAccountRoutes);
   app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1/matches', matchRoutes);
   app.use('/api/v1/documents', documentRoutes);

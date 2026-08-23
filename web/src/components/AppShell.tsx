@@ -13,6 +13,7 @@ const navGroups = [
       { to: '/nurse/matches', label: 'Angebote', caption: 'Anfragen & Antworten' },
       { to: '/nurse/profile', label: 'Profil', caption: 'Verifikation & Freigabe' },
       { to: '/nurse/contracts', label: 'Verträge', caption: 'Meine Verträge & Signatur' },
+      { to: '/nurse/mos', label: 'MOS verbinden', caption: 'QualiPass & MedBenefit' },
     ],
   },
   {

@@ -542,6 +542,14 @@ export async function request<T>(path: string, init: ApiRequestInit = {}): Promi
 }
 
 export const api = {
+  getMosStatus: () => request<{ connected: boolean; mosUserId: number | null }>("/mos/status"),
+  connectMosAccount: (input: { email: string; password: string }) =>
+    request<{ connected: boolean; mosUserId: number; qualipassStatus?: string; message: string }>("/mos/connect", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  disconnectMosAccount: () =>
+    request<{ connected: boolean }>("/mos/disconnect", { method: "POST" }),
   login: (input: { email: string; password: string }) =>
     request<{ auth: AuthState }>('/auth/login', {
       method: 'POST',

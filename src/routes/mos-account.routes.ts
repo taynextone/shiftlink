@@ -42,7 +42,7 @@ async function verifyWithMos(email: string, password: string) {
 
 /** Aktuelle Verknüpfung abfragen. */
 router.get('/mos/status', requireAuth, async (req, res) => {
-  const userId = (req as unknown as { user?: { id: string } }).user?.id;
+  const userId = (req as unknown as { auth?: { userId: string } }).auth?.userId;
   if (!userId) return res.status(401).json({ message: 'Nicht angemeldet' });
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -53,7 +53,7 @@ router.get('/mos/status', requireAuth, async (req, res) => {
 
 /** MOS-Account verbinden. */
 router.post('/mos/connect', requireAuth, async (req, res) => {
-  const userId = (req as unknown as { user?: { id: string } }).user?.id;
+  const userId = (req as unknown as { auth?: { userId: string } }).auth?.userId;
   if (!userId) return res.status(401).json({ message: 'Nicht angemeldet' });
 
   const parsed = connectSchema.safeParse(req.body);
@@ -100,7 +100,7 @@ router.post('/mos/connect', requireAuth, async (req, res) => {
 
 /** Verknüpfung trennen. */
 router.post('/mos/disconnect', requireAuth, async (req, res) => {
-  const userId = (req as unknown as { user?: { id: string } }).user?.id;
+  const userId = (req as unknown as { auth?: { userId: string } }).auth?.userId;
   if (!userId) return res.status(401).json({ message: 'Nicht angemeldet' });
   await prisma.user.update({ where: { id: userId }, data: { mosUserId: null } });
   res.json({ connected: false });
