@@ -1,77 +1,132 @@
-# MOS-Ökosystem Integration (Stand: 23.08.2026)
+# MOS ↔ ShiftLink Integration & Einheitlicher Login (Langzeit-Architektur)
 
-Quelle: `Kimi_Agent_Website-Feedback und Anpassungen für MedBenefit(1).zip`
-(`~/Downloads/`, enthält `Projekt-Handover-MOS-MedBenefit.md`, `mos-modell/`
-Style-Guide und das laufende MOS-Core-Frontend unter `app/`).
+Stand: 23.08.2026 · Autor: ox-alpha · Status: BESCHLOSSEN (Umsetzung in Phasen)
 
-## 1. Klare Produktrolen (aus dem Handover, verbindlich)
+## 1. Zielbild (das, worauf alles zuläuft)
 
-| Produkt | Rolle | Technischer Stand |
+**MOS Core ist die zentrale Identität.** Egal ob sich jemand bei MedBenefit,
+QualiPass oder ShiftLink anmeldet — es gibt genau einen Login (E-Mail +
+Passwort), genau einen Account, und jedes Produkt holt sich die Rechte und
+den Verifikationsstatus aus MOS.
+
+```
+                    ┌──────────────────────────┐
+                    │   MOS Core (Identität)    │
+                    │  users, profiles, audit    │
+                    │  QualiSafe / QualiPass     │
+                    │  MedBenefit Deals          │
+                    └────────────┬─────────────┘
+                                 │
+              ┌──────────────────┼──────────────────┐
+              ▼                  ▼                  ▼
+       MedBenefit Web      QualiPass UI        ShiftLink App
+       (Teil von MOS)      (Teil von MOS)      (eigene App, nutzt MOS-Identity)
+```
+
+## 2. Ist-Zustand (ehrlich)
+
+| Aspekt | MOS Core | ShiftLink |
 |---|---|---|
-| **MOS Core** | Betriebssystem-Fundament (Konto, Profil, Audit, Notifications) | Läuft (React 19 + Hono/tRPC + MySQL/Drizzle, Kimi-OAuth), Port 3000 |
-| **QualiSafe** | Prüf-Seite: Nachweise hochladen + verifizieren lassen | Fertig, E2E-getestet (`/app/documents`, `/verifier`) |
-| **QualiPass** | Anzeige-Seite: verifizierter digitaler Nachweis | Fertig (`/app/pass`), PDF/Wallet fehlt |
-| **MedBenefit** | B2C-Mitgliedschaft mit Deals für verifizierte Fachkräfte | **Landing verkauft es, Deals-Modul FEHLT** (Roadmap #1 im Handover!) |
-| **ShiftLink** | Direktvermittlung kurzer Einsätze (unser Repo) | Backend weit, wird im MOS-Frontend als „In Arbeit"-Placeholder geführt |
+| Auth | E-Mail/Passwort (bcrypt), Session-Cookie `kimi_sid` mit JWT `{userId}` | E-Mail/Passwort (bcrypt), eigener JWT (`Authorization: Bearer`) |
+| User-Tabelle | MySQL `users` (id serial, email unique) | Postgres `User` (cuid, email unique) |
+| Verifikation | QualiSafe-Dokumente + Prüfer → `personProfiles.verificationStatus` | Eigene VerificationDocuments + `User.verificationStatus` |
+| Deployment | Docker Compose (MySQL, Port 8000→3000) | Docker Compose (Postgres, Port 80 via nginx) |
 
-**Wichtig:** „MedBenefit" ist keine eigene App mit eigenem Backend — die
-Landing UND der Member-Bereich sind dieselbe MOS-Core-Anwendung. Das
-Deals-Modul ist dort die offiziell empfohlene nächste Baustein.
+Zwei getrennte Systeme, zwei Logins — funktional gleich, technisch unabhängig.
 
-## 2. Auth-Realität
+## 3. Die drei Stufen zum Ziel
 
-- MOS Core nutzt **Kimi-OAuth** (OpenID Connect), Session = httpOnly-JWT-Cookie
-  (`kimi_sid`, Payload `{unionId, clientId}`).
-- ShiftLink nutzt eigenes JWT-Auth (E-Mail/Passwort).
-- **Es gibt aktuell KEINEN gemeinsamen Login.** „Ein Account für alles" ist
-  heute nur Marketing-Wahrheit, nicht Technik.
+### Stufe 1 — „Gleiche Mechanik" (JETZT, teils fertig)
+Beide Systeme nutzen E-Mail+Passwort mit identischen Regeln:
+- Passwort-Mindestlänge 12 Zeichen ✅ (beide)
+- bcrypt cost ≥ 12 ✅ (beide)
+- Session als httpOnly-JWT-Cookie bzw. Bearer-Token ✅
 
-## 3. Integrationsplan (realistisch, priorisiert)
+**Was noch zu tun ist:** Nichts Technisches. Nur Kommunikation: dem Nutzer
+sagen „Du brauchst pro Produkt einen Account, aber es sind dieselben Daten".
 
-### Phase A — Sofort umsetzbar (ShiftLink-seitig)
-1. `VITE_MEDBENEFIT_URL` / `VITE_QUALIPASS_URL` auf die MOS-Core-Domain
-   zeigen lassen, sobald diese öffentlich erreichbar ist (Env-only,
-   Landing-Kacheln funktionieren dann ohne Code-Change).
-2. QualiPass-Signal-API nutzen (bereits gebaut):
-   `GET /api/v1/mos/qualipass/status/:publicId` mit `x-mos-service-token`.
-   Damit kann MOS Core später ShiftLink-Freigaben abfragen.
+### Stufe 2 — „Account-Verknüpfung" (nächste 1–2 Sessions)
+Nutzer verknüpfen ihre beiden Accounts einmalig manuell:
 
-### Phase B — Verifizierungs-Bridge (der eigentliche Hebel)
-Zwei Richtungen möglich:
-- **A) MOS führt**: MOS Core (QualiPass-Status `VERIFIED`) ist Source of
-  Truth. ShiftLink fragt per Signal-API nach und setzt intern
-  `isReleasedForMatching`. Kein doppelter Upload für Fachkräfte.
-- **B) ShiftLink führt**: ShiftLink-Verifikation (EXAMEN etc.) wird per
-  Webhook an MOS Core gemeldet (dort gibt es noch keinen Inbound — müsste
-  gebaut werden).
+**Konkret:**
+1. ShiftLink bekommt ein Feld `mosUserId` (nullable) in der `User`-Tabelle.
+2. In ShiftLink gibt es unter „Einstellungen → MOS verbinden" ein Formular:
+   „E-Mail + Passwort deines MOS-Accounts".
+3. ShiftLink ruft eine **neue MOS-Route** auf:
+   ```
+   POST /api/v1/auth/verify-credentials   (service-to-service)
+   Header: x-mos-service-token: <MOS_SERVICE_TOKEN>
+   Body: { email, password }
+   Response: { userId, email, verificationStatus } oder 401
+   ```
+4. Bei Erfolg speichert ShiftLink `mosUserId` lokal. Ab dann weiß ShiftLink:
+   *Dieser* ShiftLink-Account gehört zu *jenem* MOS-Account.
 
-Empfehlung: **A**. QualiSafe/Prüferbereich existiert und ist getestet;
-ShiftLink sollte Verifikation NICHT duplizieren. Unser
-Verification-Gate bleibt als Fallback für Nutzer ohne QualiPass.
+**Vorteil:** Kein Bruch im Bestand. Nutzer können jederzeit verbinden.
+ShiftLink bleibt voll nutzbar ohne MOS.
 
-### Phase C — Deals-Modul (in MOS Core bauen, NICHT in ShiftLink)
-Gehört zur MedBenefit-Welt (Handover Roadmap #1): Deal-Liste im
-Member-Hub, Kategorien (Fortbildung, Versicherungen, Equipment),
-Einlösung gekoppelt an QualiPass-Status. Tech: Drizzle-Schema-Erweiterung
-(`deals`, `deal_redemptions`) + tRPC-Router im MOS-Core-Repo.
+### Stufe 3 — „Echter Single Sign-On" (langfristig)
+Wenn beide Produkte öffentlich laufen, bauen wir echtes SSO:
 
-### Phase D — Echter Single Sign-On
-Langfristig: MOS Core als Identity-Provider (OIDC), ShiftLink akzeptiert
-Kimi-OAuth-Session. Bis dahin bleiben zwei Logins — kommunizieren als
-„MOS-Konto" vs. „ShiftLink-Zugang", nicht als ein Login verkaufen.
+**Option A (empfohlen): Shared-JWT mit Audience-Claim**
+- Beide Systeme teilen denselben `APP_SECRET` (oder besser: RSA-Key-Pair).
+- MOS signiert Tokens mit `aud: ["medbenefit","qualipass","shiftlink"]`.
+- ShiftLink akzeptiert Tokens mit passendem Audience-Claim.
+- Login passiert auf einer MOS-Domain (`auth.mos.example.de`), alle
+  Produkte leiten dorthin um.
 
-## 4. Design-Regeln (aus `mos-modell/`, strikt)
+**Option B (später, sauberer): MOS als echter OIDC-Provider**
+- MOS implementiert `/oauth/authorize`, `/oauth/token`, `/userinfo`.
+- ShiftLink wird OIDC-Client (wie jeder andere auch).
+- Aufwändiger, aber Standard-kompatibel.
 
-- Ivory `#F7F5F0`, Graphite `#0C1220`, Indigo `#6157FF` (primäre Aktionen)
-- Emerald `#18A874` NUR für verifiziert-Zustände
-- Amber `#F2B04A` / Text `#B97917` NUR für ShiftLink-/„In Arbeit"-Kontexte
-- Manrope (Headlines) + Inter (Text); editorial, ruhig, Du-Form
-- Unsere LandingPage.tsx folgt bereits diesem System ✅
+Empfehlung: **Stufe 3A zuerst**, 3B nur wenn Dritte (z. B. Kliniken) eigene
+Integrationen bauen wollen.
 
-## 5. Offene Punkte (für Jurica zu klären)
+## 4. Verifikations-Bridge (der fachliche Kern)
 
-1. Wo wird MOS Core gehostet/gehostet werden (Plattform-Versionskarten vs.
-   eigenes Hosting)? Davon hängt ab, wohin die Kacheln zeigen.
-2. Kimi-OAuth ist plattformgebunden — für echtes Self-Hosting bräuchte
-   MOS Core einen alternativen Login (Handover empfiehlt E-Mail/Passwort).
-3. Soll ShiftLink-Verifikation langfristig ganz zu QualiSafe wandern?
+Sobald Stufe 2 umgesetzt ist:
+
+```
+ShiftLink fragt beim Matching:
+  "Hat dieser Nurse einen verifizierten QualiPass?"
+       ↓ (Service-Token-Aufruf, gecacht für 24h in Redis)
+  GET /api/v1/mos/qualipass/status/:publicId   ← existiert bereits!
+       ↓
+  Wenn VERIFIED → isReleasedForMatching = true (kein doppelter Upload)
+```
+
+**Regel:** ShiftLinks eigene Verification bleibt als Fallback für Leute
+ohne MOS-Konto. Aber: wer QualiPass hat, muss nichts mehr hochladen.
+Das ist das eigentliche Produktversprechen („Einmal verifizieren, überall
+verwenden").
+
+## 5. Konkrete Umsetzungs-Reihenfolge
+
+| # | Was | Wo | Aufwand |
+|---|-----|-----|---------|
+| 1 | MOS: Route `/api/v1/auth/verify-credentials` (Service-Token-geschützt) | mos-core/app/api | ~1 h |
+| 2 | ShiftLink: Prisma-Feld `mosUserId` + Migration | shiftlink/prisma | ~30 min |
+| 3 | ShiftLink: UI „MOS verbinden" + API-Endpoint | shiftlink/web + src/routes | ~2 h |
+| 4 | ShiftLink: Beim Matching QualiPass-Status abfragen (mit Cache) | src/services/match.service.ts | ~1–2 h |
+| 5 | Tests + E2E (Verbinden → Status-Sync → Matching-Gate) | beide Repos | ~2 h |
+
+Gesamt: ca. 1 Arbeitstag. Danach funktioniert der Kern der Vision.
+
+Stufe 3 (echtes SSO) kommt erst, wenn beide Produkte öffentlich sind —
+vorher lohnt der Aufwand nicht.
+
+## 6. Sicherheits-Prinzipien (nicht verhandelbar)
+
+1. **Keine Passwörter über die Grenze**: Das verify-credentials-Endpoint
+   bekommt E-Mail+Passwort NUR über HTTPS im Request-Body, speichert sie
+   nirgendwo, loggt sie nie. ShiftLink merkt sich nur die `mosUserId`.
+2. **Service-Token bleibt Service-Token**: `MOS_SERVICE_TOKEN` ist ein
+   langes Zufalls-Token, liegt in `.env` beider Seiten, läuft nie durchs
+   Frontend.
+3. **Verifikationsstatus wird nicht vertraut, sondern geprüft**: Bei jedem
+   Match-Vorgang frisch abfragen (bzw. kurz cachen), nie dauerhaft
+   speichern — sonst riskieren wir, dass ein zwischenzeitlich entzogener
+   QualiPass weiter genutzt wird.
+4. **Audience-Claim ab Stufe 3**: Tokens gelten immer nur für bestimmte
+   Produkte, nie global.

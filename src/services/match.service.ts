@@ -7,6 +7,7 @@ import { createContractSnapshot, ensureContractSnapshotForOffer } from './contra
 import { generateContractPdfArtifact } from './contract-pdf.service';
 import { emitContractPdfGeneratedEvent, emitMatchOfferSignedEvent } from './contract-webhook.service';
 import { isPrismaUniqueConstraintError } from './prisma-error.service';
+import { getQualipassStatus } from './qualipass.service';
 
 const DEFAULT_OFFER_EXPIRY_HOURS = 24;
 
@@ -163,20 +164,31 @@ export async function listVisibleJobShiftsForNurse(actor: { userId: string; role
     throw createHttpError(403, 'Only nurses can browse visible job shifts');
   }
 
-  const nurseProfile = await prisma.nurseProfile.findUnique({
-    where: { userId: actor.userId },
-    include: {
-      specializations: true,
-      availabilityBlocks: true,
-      matchContracts: true,
-    },
-  });
+  const [nurseProfile, nurseUser] = await Promise.all([
+    prisma.nurseProfile.findUnique({
+      where: { userId: actor.userId },
+      include: {
+        specializations: true,
+        availabilityBlocks: true,
+        matchContracts: true,
+        verificationDocuments: true,
+      },
+    }),
+    prisma.user.findUnique({ where: { id: actor.userId }, select: { mosUserId: true } }),
+  ]);
 
   if (!nurseProfile) {
     throw createHttpError(404, 'Nurse profile not found');
   }
 
   if (!nurseProfile.isReleasedForMatching) {
+    return [];
+  }
+
+  // QualiPass-Bridge: verknüpfte MOS-Accounts mit VERIFIED-Status zählen
+  // als freigegeben, auch wenn ShiftLink-eigene Dokumente fehlen.
+  const qualipassStatus = await getQualipassStatus(nurseUser?.mosUserId ?? null);
+  if (!qualipassStatus && !nurseProfile.verificationDocuments.length) {
     return [];
   }
 
