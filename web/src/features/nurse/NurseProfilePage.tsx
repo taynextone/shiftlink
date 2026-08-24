@@ -63,6 +63,36 @@ export function NurseProfilePage() {
   const navigate = useNavigate();
   const { setAuthenticatedSession } = useAuth();
   const { data, loading, error, reload } = useAsyncData(() => api.getVerificationOverview(), []);
+  const [hrForm, setHrForm] = useState<Record<string, string>>({});
+  const [hrStatus, setHrStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
+  const [hrSaving, setHrSaving] = useState(false);
+
+  function updateHrField(key: string, value: string) {
+    setHrForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleSaveHrFields() {
+    setHrSaving(true);
+    setHrStatus(null);
+    try {
+      const payload: Record<string, string> = {};
+      for (const [key, value] of Object.entries(hrForm)) {
+        if (value.trim()) payload[key] = value.trim();
+      }
+      if (Object.keys(payload).length === 0) {
+        setHrStatus({ tone: 'error', message: 'Keine Änderungen zum Speichern.' });
+        return;
+      }
+      await api.updateOwnNurseProfileHrFields(payload);
+      setHrStatus({ tone: 'success', message: 'Angaben für die Personalabteilung gespeichert.' });
+      setHrForm({});
+      reload();
+    } catch (err) {
+      setHrStatus({ tone: 'error', message: err instanceof Error ? err.message : 'Speichern fehlgeschlagen' });
+    } finally {
+      setHrSaving(false);
+    }
+  }
   const verification = data?.verification ?? null;
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
@@ -197,6 +227,76 @@ export function NurseProfilePage() {
               ) : (
                 <p className="hint">Noch keine Verifikationsaktivität.</p>
               )}
+            </SectionCard>
+
+            <SectionCard
+              title="Angaben für die Personalabteilung"
+              description="Diese Angaben erscheinen automatisch in der Anlage deines Arbeitsvertrags. Alles optional — ausfüllen, was du bereitstellen willst."
+            >
+              {hrStatus ? <FeedbackMessage tone={hrStatus.tone} message={hrStatus.message} /> : null}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+                <Field label="Geburtsdatum">
+                  <input
+                    type="date"
+                    value={hrForm.dateOfBirth ?? verification.hrFields?.dateOfBirth ?? ''}
+                    onChange={(e) => updateHrField('dateOfBirth', e.target.value)}
+                  />
+                </Field>
+                <Field label="Geburtsort">
+                  <input
+                    type="text"
+                    placeholder="z. B. Zagreb"
+                    value={hrForm.birthPlace ?? verification.hrFields?.birthPlace ?? ''}
+                    onChange={(e) => updateHrField('birthPlace', e.target.value)}
+                  />
+                </Field>
+                <Field label="Anschrift" >
+                  <input
+                    type="text"
+                    placeholder="Straße, PLZ, Ort"
+                    value={hrForm.homeAddress ?? verification.hrFields?.homeAddress ?? ''}
+                    onChange={(e) => updateHrField('homeAddress', e.target.value)}
+                  />
+                </Field>
+                <Field label="Staatsangehörigkeit">
+                  <input
+                    type="text"
+                    placeholder="z. B. kroatisch"
+                    value={hrForm.nationality ?? verification.hrFields?.nationality ?? ''}
+                    onChange={(e) => updateHrField('nationality', e.target.value)}
+                  />
+                </Field>
+                <Field label="Sozialversicherungsnummer">
+                  <input
+                    type="text"
+                    value={hrForm.socialSecurityNumber ?? verification.hrFields?.socialSecurityNumber ?? ''}
+                    onChange={(e) => updateHrField('socialSecurityNumber', e.target.value)}
+                  />
+                </Field>
+                <Field label="Steuer-Identifikationsnummer">
+                  <input
+                    type="text"
+                    value={hrForm.taxId ?? verification.hrFields?.taxId ?? ''}
+                    onChange={(e) => updateHrField('taxId', e.target.value)}
+                  />
+                </Field>
+                <Field label="Krankenkasse">
+                  <input
+                    type="text"
+                    placeholder="z. B. TK, AOK"
+                    value={hrForm.healthInsuranceName ?? verification.hrFields?.healthInsuranceName ?? ''}
+                    onChange={(e) => updateHrField('healthInsuranceName', e.target.value)}
+                  />
+                </Field>
+              </div>
+              <div style={{ marginTop: '0.75rem' }}>
+                <button type="button" onClick={() => void handleSaveHrFields()} disabled={hrSaving}>
+                  {hrSaving ? 'Speichere…' : 'Angaben speichern'}
+                </button>
+              </div>
+              <p className="hint" style={{ marginTop: '0.5rem' }}>
+                Deine Bankverbindung gibst du nur dem Krankenhaus direkt — ShiftLink überträgt sie nie.
+              </p>
             </SectionCard>
 
             <SectionCard title="Datenschutz & Account" description="DSGVO-Rechte: Datenexport und Account-Löschung.">

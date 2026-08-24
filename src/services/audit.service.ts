@@ -20,7 +20,9 @@ export type AuditAction =
   | 'WEBHOOK_RETRY'
   | 'FAILURE_RESOLVE'
   | 'PROFILE_RELEASE'
-  | 'NURSE_DOCUMENT_UPLOAD';
+  | 'NURSE_DOCUMENT_UPLOAD'
+  | 'MOS_CONNECT'
+  | 'MOS_DISCONNECT';
 
 export async function recordAuditLog(data: {
   action: AuditAction;

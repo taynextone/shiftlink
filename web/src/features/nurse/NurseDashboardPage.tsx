@@ -87,6 +87,13 @@ export function NurseDashboardPage() {
             {/* KPI row */}
             <div className="stats-grid">
               <KpiCard
+                label="QualiPass (MOS)"
+                value={dashboard.nurseProfile.qualipassStatus === 'VERIFIED' ? '✔ Verifiziert' : dashboard.nurseProfile.qualipassStatus === 'PARTIALLY_VERIFIED' ? 'Teilweise' : dashboard.nurseProfile.qualipassStatus === 'UNVERIFIED' ? 'Nicht verifiziert' : '—'}
+                helper={dashboard.nurseProfile.qualipassStatus === 'VERIFIED'
+                  ? 'Du wirst bei Krankenhäusern priorisiert angezeigt.'
+                  : 'Verknüpfe MOS für Priorität im Matching — funktioniert automatisch, wenn du einen MOS-Account hast.'}
+              />
+              <KpiCard
                 label="Matching-Freigabe"
                 value={dashboard.nurseProfile.isReleasedForMatching ? 'Aktiv' : 'Ausstehend'}
                 helper={dashboard.nurseProfile.isReleasedForMatching

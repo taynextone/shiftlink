@@ -4,6 +4,7 @@ import { Router } from 'express';
 import { asyncHandler } from '../utils/async-handler';
 import { requireAuth } from '../middlewares/auth';
 import { prisma } from '../config/prisma';
+import { recordAuditLog } from '../services/audit.service';
 import createHttpError from 'http-errors';
 import crypto from 'node:crypto';
 
@@ -103,6 +104,15 @@ router.get('/auth/mos/sso/callback', requireAuth, asyncHandler(async (req, res) 
   }
 
   await prisma.user.update({ where: { id: userId }, data: { mosUserId: identity.userId } });
+
+  await recordAuditLog({
+    action: 'MOS_CONNECT',
+    actorUserId: userId,
+    actorRole: (req as unknown as { auth?: { role?: string } }).auth?.role ?? 'UNKNOWN',
+    targetEntityType: 'USER',
+    targetEntityId: userId,
+    metadata: { method: 'sso', mosUserId: identity.userId },
+  });
 
   // Zurück ins Nurse-Dashboard (UI zeigt dann den verbundenen Status)
   const proto = req.headers['x-forwarded-proto'] ?? req.protocol ?? 'http';

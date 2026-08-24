@@ -4,6 +4,7 @@ import { prisma } from '../config/prisma';
 import { env } from '../config/env';
 import { requireAuth } from '../middlewares/auth';
 import { getQualipassStatus, invalidateQualipassCache } from '../services/qualipass.service';
+import { recordAuditLog } from '../services/audit.service';
 
 /**
  * MOS-Account-Verknüpfung (Stufe 2, siehe docs/MOS-INTEGRATION.md).
@@ -84,6 +85,15 @@ router.post('/mos/connect', requireAuth, async (req, res) => {
 
     await invalidateQualipassCache(mosUser.userId);
 
+    await recordAuditLog({
+      action: 'MOS_CONNECT',
+      actorUserId: userId,
+      actorRole: (req as unknown as { auth?: { role?: string } }).auth?.role ?? 'UNKNOWN',
+      targetEntityType: 'USER',
+      targetEntityId: userId,
+      metadata: { method: 'manual', mosUserId: mosUser.userId },
+    });
+
     return res.json({
       connected: true,
       mosUserId: mosUser.userId,
@@ -109,6 +119,14 @@ router.post('/mos/disconnect', requireAuth, async (req, res) => {
   const prev = await prisma.user.findUnique({ where: { id: userId }, select: { mosUserId: true } });
   await prisma.user.update({ where: { id: userId }, data: { mosUserId: null } });
   if (prev?.mosUserId) await invalidateQualipassCache(prev.mosUserId);
+  await recordAuditLog({
+    action: 'MOS_DISCONNECT',
+    actorUserId: userId,
+    actorRole: (req as unknown as { auth?: { role?: string } }).auth?.role ?? 'UNKNOWN',
+    targetEntityType: 'USER',
+    targetEntityId: userId,
+    metadata: { method: 'manual', previousMosUserId: prev?.mosUserId ?? null },
+  });
   res.json({ connected: false });
 });
 

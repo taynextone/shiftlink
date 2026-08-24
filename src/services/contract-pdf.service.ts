@@ -136,7 +136,19 @@ export async function generateContractPdfArtifact(
   // Best-effort: schlägt das Nachladen fehl (z. B. im Unit-Test-Mock), fällt
   // der Service auf die Snapshot-Daten zurück — der Vertrag wird trotzdem erzeugt.
   let contractFull: {
-    nurseProfile: { iban: string | null; phoneNumber: string; user: { email: string }; verificationDocuments: { documentType: string; status: string }[] };
+    nurseProfile: {
+      iban: string | null;
+      phoneNumber: string;
+      dateOfBirth: Date | null;
+      birthPlace: string | null;
+      homeAddress: string | null;
+      nationality: string | null;
+      socialSecurityNumber: string | null;
+      taxId: string | null;
+      healthInsuranceName: string | null;
+      user: { email: string };
+      verificationDocuments: { documentType: string; status: string }[];
+    };
     jobShift: { hospitalProfile: { clinicName: string; billingAddress: string } };
     signedAt: Date | null;
   } | null = hydratedContract ?? null;
@@ -177,6 +189,15 @@ export async function generateContractPdfArtifact(
       ibanLast4: contractFull?.nurseProfile?.iban ? contractFull.nurseProfile.iban.slice(-4) : null,
       phoneNumber: contractFull?.nurseProfile?.phoneNumber ?? null,
       email: contractFull?.nurseProfile?.user?.email ?? null,
+      dateOfBirth: contractFull?.nurseProfile?.dateOfBirth
+        ? new Date(contractFull.nurseProfile.dateOfBirth).toLocaleDateString('de-DE')
+        : null,
+      birthPlace: contractFull?.nurseProfile?.birthPlace ?? null,
+      address: contractFull?.nurseProfile?.homeAddress ?? null,
+      nationality: contractFull?.nurseProfile?.nationality ?? null,
+      socialSecurityNumber: contractFull?.nurseProfile?.socialSecurityNumber ?? null,
+      taxId: contractFull?.nurseProfile?.taxId ?? null,
+      healthInsurance: contractFull?.nurseProfile?.healthInsuranceName ?? null,
       qualificationLabel: 'Pflegefachfrau/Pflegefachmann',
       hasProfessionalLicense:
         !!contractFull?.nurseProfile?.verificationDocuments?.some((d) => d.status === 'VERIFIED'),

@@ -123,6 +123,15 @@ export type VerificationOverview = {
   isReleasedForMatching: boolean;
   releasedAt?: string | null;
   documents: VerificationDocumentEntry[];
+  hrFields?: {
+    dateOfBirth?: string | null;
+    birthPlace?: string | null;
+    homeAddress?: string | null;
+    nationality?: string | null;
+    socialSecurityNumber?: string | null;
+    taxId?: string | null;
+    healthInsuranceName?: string | null;
+  };
 };
 
 export type NurseDashboardSummary = {
@@ -132,6 +141,7 @@ export type NurseDashboardSummary = {
     displayName: string;
     isReleasedForMatching: boolean;
     releasedAt?: string | null;
+    qualipassStatus?: 'VERIFIED' | 'PARTIALLY_VERIFIED' | 'UNVERIFIED' | null;
   };
   onboarding: {
     steps: Array<{ label: string; done: boolean }>;
@@ -573,6 +583,19 @@ export const api = {
   getVisibleJobShifts: () => request<{ jobShifts: VisibleJobShift[] }>('/matches/visible-job-shifts'),
   getOwnMatches: () => request<{ matchContracts: OwnMatchContract[] }>('/matches/me'),
   getVerificationOverview: () => request<{ verification: VerificationOverview }>('/nurse-profile/me/verification'),
+  updateOwnNurseProfileHrFields: (input: {
+    dateOfBirth?: string;
+    birthPlace?: string;
+    homeAddress?: string;
+    nationality?: string;
+    socialSecurityNumber?: string;
+    taxId?: string;
+    healthInsuranceName?: string;
+  }) =>
+    request<{ nurseProfile: Record<string, unknown> }>('/nurse-profiles/me', {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    }),
   getNurseDashboardSummary: () => request<{ dashboard: NurseDashboardSummary }>('/nurse-profile/me/dashboard'),
   getHospitalDashboardSummary: () => request<{ dashboard: HospitalDashboardSummary }>('/nurse-profile/me/hospital-dashboard'),
   getAdminVerificationOverview: (publicId: string) => request<{ verification: AdminVerificationOverview }>(`/nurse-profile/verification/admin/${encodeURIComponent(publicId)}`),

@@ -3,6 +3,7 @@ import { Prisma, UserRole, VerificationDocumentStatus, VerificationDocumentType 
 import { prisma } from '../config/prisma';
 import { ReviewVerificationDocumentInput, SetMatchingReleaseInput, UpdateNurseProfileInput, UploadDocumentInput } from '../schemas/nurse-profile.schema';
 import { recordAuditLog } from './audit.service';
+import { getQualipassStatus } from './qualipass.service';
 import { env } from '../config/env';
 import { createPresignedUploadUrl } from './storage.service';
 
@@ -92,6 +93,13 @@ export async function updateOwnNurseProfile(actor: { userId: string; role: UserR
     minAssignmentHours: input.minAssignmentHours,
     maxAssignmentHours: input.maxAssignmentHours,
     preferredRegionsNote: input.preferredRegionsNote,
+    dateOfBirth: input.dateOfBirth ? new Date(input.dateOfBirth) : undefined,
+    birthPlace: input.birthPlace,
+    homeAddress: input.homeAddress,
+    nationality: input.nationality,
+    socialSecurityNumber: input.socialSecurityNumber,
+    taxId: input.taxId,
+    healthInsuranceName: input.healthInsuranceName,
     isReleasedForMatching: shouldResetRelease ? false : undefined,
     releasedAt: shouldResetRelease ? null : undefined,
     specializations: input.specializationTags
@@ -212,6 +220,15 @@ export async function getOwnVerificationOverview(actor: { userId: string; role: 
     isReleasedForMatching: profile.isReleasedForMatching,
     releasedAt: profile.releasedAt,
     documents: profile.verificationDocuments,
+    hrFields: {
+      dateOfBirth: profile.dateOfBirth ? profile.dateOfBirth.toISOString().slice(0, 10) : null,
+      birthPlace: profile.birthPlace,
+      homeAddress: profile.homeAddress,
+      nationality: profile.nationality,
+      socialSecurityNumber: profile.socialSecurityNumber,
+      taxId: profile.taxId,
+      healthInsuranceName: profile.healthInsuranceName,
+    },
   };
 }
 
@@ -477,6 +494,7 @@ export async function getNurseDashboardSummary(actor: { userId: string; role: Us
     where: { userId: actor.userId },
     include: {
       verificationDocuments: { orderBy: { createdAt: 'desc' } },
+      user: { select: { mosUserId: true } },
       matchContracts: {
         orderBy: { createdAt: 'desc' },
         take: 5,
@@ -516,6 +534,8 @@ export async function getNurseDashboardSummary(actor: { userId: string; role: Us
 
   const completedSteps = onboardingSteps.filter((s) => s.done).length;
 
+  const qualipassStatus = await getQualipassStatus(profile.user.mosUserId ?? null);
+
   return {
     nurseProfile: {
       id: profile.id,
@@ -523,6 +543,7 @@ export async function getNurseDashboardSummary(actor: { userId: string; role: Us
       displayName: profile.displayName,
       isReleasedForMatching: profile.isReleasedForMatching,
       releasedAt: profile.releasedAt,
+      qualipassStatus,
     },
     onboarding: {
       steps: onboardingSteps,

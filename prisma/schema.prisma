@@ -116,6 +116,13 @@ model NurseProfile {
   minAssignmentHours      Int?
   maxAssignmentHours      Int?
   preferredRegionsNote    String?
+  dateOfBirth             DateTime?
+  birthPlace              String?
+  homeAddress             String?
+  nationality             String?
+  socialSecurityNumber    String?
+  taxId                   String?
+  healthInsuranceName     String?
   isReleasedForMatching   Boolean                  @default(false)
   releasedAt              DateTime?
   createdAt               DateTime                 @default(now())
