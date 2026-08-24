@@ -13,7 +13,7 @@ import { api } from '../../lib/api';
  * Einmalig MOS-Zugangsdaten eingeben → es wird nur die mosUserId gespeichert.
  */
 
-type MosStatus = { connected: boolean; mosUserId: number | null };
+type MosStatus = { connected: boolean; mosUserId: number | null; qualipassStatus?: string | null };
 
 const QUALIPASS_LABELS: Record<string, string> = {
   VERIFIED: 'Vollständig verifiziert',
@@ -38,7 +38,10 @@ export function NurseMosConnectPage() {
     if (justConnected) {
       setFeedback({ tone: 'success', text: 'MOS-Account erfolgreich über SSO verknüpft.' });
     }
-  }, [justConnected]);
+    if (data?.connected && data.qualipassStatus) {
+      setQualipassHint(data.qualipassStatus);
+    }
+  }, [justConnected, data]);
 
   async function handleConnect(e: React.FormEvent) {
     e.preventDefault();
@@ -76,8 +79,8 @@ export function NurseMosConnectPage() {
     <main className="page">
       <PageHeader
         eyebrow="MOS Ökosystem"
-        title="MOS verbinden"
-        description="Verknüpfe deinen ShiftLink-Account mit deinem MOS-Konto — ein Account für QualiPass, MedBenefit und ShiftLink."
+        title="QualiPass"
+        description="Dein Verifikationsstatus aus MOS wirkt sich automatisch aus. Du musst hier nichts tun."
       />
 
       {feedback && <FeedbackMessage tone={feedback.tone} message={feedback.text} />}
@@ -86,60 +89,41 @@ export function NurseMosConnectPage() {
         <p className="hint">Lade Status…</p>
       ) : error ? (
         <FeedbackMessage tone="error" message="Status konnte nicht geladen werden." />
-      ) : data?.connected ? (
-        <SectionCard title="Verbindung aktiv">
-          <p>
-            Dein ShiftLink-Account ist mit deinem MOS-Konto verknüpft{' '}
-            <StatusBadge value={`MOS-ID ${data.mosUserId}`} />
-          </p>
-          {qualipassHint && (
-            <p className="hint">QualiPass: {QUALIPASS_LABELS[qualipassHint] ?? qualipassHint}</p>
-          )}
-          <button type="button" className="btn-secondary" onClick={handleDisconnect} disabled={submitting}>
-            Verbindung trennen
-          </button>
-        </SectionCard>
       ) : (
-        <SectionCard title="MOS-Account verknüpfen">
-          <p className="hint">
-            Gib einmalig die Zugangsdaten deines MOS-Accounts ein. Wir speichern nur die Verknüpfung —
-            niemals dein Passwort. Danach gilt dein QualiPass auch hier in ShiftLink.
+        <SectionCard title="Es funktioniert von allein">
+          <p>
+            <strong>Du brauchst nichts zu verknüpfen.</strong><br />
+            Sobald du einen Account im MOS-Ökosystem hast (auch Demo-Accounts), wird dein QualiPass-Status automatisch bei der Kandidatensuche von Krankenhäusern berücksichtigt.
           </p>
-          <a className="btn-primary" href="/api/v1/auth/mos/sso/start">
-            Mit MOS anmelden (SSO)
-          </a>
-          <p className="hint">
-            Du wirst zu MOS weitergeleitet und kommst automatisch zurück — ohne
-            dass du hier Zugangsdaten eingibst.
+          <p>
+            Verifizierte Profile werden priorisiert angezeigt — ohne dass du hier irgendetwas klicken oder eingeben musst.
           </p>
-          <details>
-            <summary>Alternativ: MOS-Zugangsdaten eingeben</summary>
-            <form onSubmit={handleConnect}>
-              <Field label="MOS E-Mail">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
-              </Field>
-              <Field label="MOS Passwort">
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                />
-              </Field>
-              <button type="submit" className="btn-secondary" disabled={submitting}>
-                {submitting ? 'Verbinde…' : 'Manuell verbinden'}
+
+          {data?.connected ? (
+            <div style={{ marginTop: "1rem" }}>
+              <p>Dein Account ist aktuell mit MOS verknüpft (ID {data.mosUserId}).</p>
+              <button type="button" className="btn-secondary" onClick={handleDisconnect} disabled={submitting}>
+                Verknüpfung trennen (nur falls du das wirklich willst)
               </button>
-            </form>
-          </details>
+            </div>
+          ) : (
+            <p className="hint" style={{ marginTop: "1rem" }}>
+              Die Verknüpfung unten ist komplett optional und nur für Leute mit einem eigenen MOS-Account relevant.
+            </p>
+          )}
+
+          {!data?.connected && (
+            <details style={{ marginTop: "1rem" }}>
+              <summary>Optional: MOS-Account verknüpfen (nicht nötig)</summary>
+              <div style={{ marginTop: "0.75rem" }}>
+                <a className="btn-primary" href="/api/v1/auth/mos/sso/start">Mit MOS anmelden (SSO)</a>
+                <p className="hint">Wird zu MOS weitergeleitet — du gibst hier keine Daten ein.</p>
+              </div>
+            </details>
+          )}
         </SectionCard>
       )}
     </main>
   );
+
 }

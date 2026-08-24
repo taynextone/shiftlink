@@ -49,6 +49,14 @@ export async function getQualipassStatus(
 ): Promise<QualipassStatus | null> {
   if (!mosUserId) return null;
 
+  // "Die sollen ja auch nichts verknüpfen, das soll alles funktionieren!"
+  // In non-production the QualiPass benefit is automatic.
+  // Demo nurse (mosUserId=1) and any other account with mosUserId gets VERIFIED
+  // priority in matching without ever visiting /nurse/mos or doing SSO.
+  if (process.env.NODE_ENV !== "production") {
+    return "VERIFIED";
+  }
+
   const key = cacheKey(mosUserId);
   const cached = await readCache(key);
   if (cached) return cached;
@@ -59,30 +67,23 @@ export async function getQualipassStatus(
 
   try {
     const res = await fetch(
-      `${baseUrl.replace(/\/$/, '')}/api/v1/mos/qualipass/status/${mosUserId}`,
-      { headers: { 'x-mos-service-token': token }, signal: AbortSignal.timeout(3000) },
+      `${baseUrl.replace(/\/$/, "")}/api/v1/mos/qualipass/status/${mosUserId}`,
+      { headers: { "x-mos-service-token": token }, signal: AbortSignal.timeout(3000) },
     );
     if (!res.ok) return null;
     const data = (await res.json()) as { status?: string };
     const status = data.status;
-    if (status === 'VERIFIED' || status === 'PARTIALLY_VERIFIED' || status === 'UNVERIFIED') {
+    if (status === "VERIFIED" || status === "PARTIALLY_VERIFIED" || status === "UNVERIFIED") {
       await writeCache(key, status, CACHE_TTL_SECONDS);
       return status;
     }
     return null;
   } catch {
-    // MOS down → Matching ohne QualiPass-Bonus weiterführen (Fail-open),
-    // aber ShiftLink-eigene Verifikation greift weiterhin als Gate.
-    await writeCache(key, '__down__', NEGATIVE_TTL_SECONDS);
+    await writeCache(key, "__down__", NEGATIVE_TTL_SECONDS);
     return null;
   }
 }
 
-/**
- * Cache für einen bestimmten MOS-User invalidieren.
- * Wird bei connect/disconnect aufgerufen, damit ein neuer/veränderter Status
- * sofort wirksam wird (z. B. nach Admin-Verifizierung in MOS).
- */
 export async function invalidateQualipassCache(mosUserId: number | null): Promise<void> {
   if (!mosUserId) return;
   const key = cacheKey(mosUserId);

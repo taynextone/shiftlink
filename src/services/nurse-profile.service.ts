@@ -195,6 +195,7 @@ export async function getOwnVerificationOverview(actor: { userId: string; role: 
   const profile = await prisma.nurseProfile.findUnique({
     where: { userId: actor.userId },
     include: {
+      user: { select: { mosUserId: true } },
       verificationDocuments: {
         orderBy: {
           createdAt: 'desc',
@@ -285,9 +286,10 @@ export async function getSuperadminVerificationOverviewByPublicId(
   const profile = await prisma.nurseProfile.findUnique({
     where: { publicId },
     include: {
+      user: { select: { mosUserId: true } },
       verificationDocuments: {
         orderBy: {
-          createdAt: 'desc',
+          createdAt: "desc",
         },
       },
     },
@@ -304,6 +306,7 @@ export async function getSuperadminVerificationOverviewByPublicId(
       displayName: profile.displayName,
       isReleasedForMatching: profile.isReleasedForMatching,
       releasedAt: profile.releasedAt,
+      mosUserId: profile.user?.mosUserId ?? null,
     },
     documents: profile.verificationDocuments.map((document) => ({
       id: document.id,

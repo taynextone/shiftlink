@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../config/prisma';
 import { env } from '../config/env';
 import { requireAuth } from '../middlewares/auth';
-import { invalidateQualipassCache } from '../services/qualipass.service';
+import { getQualipassStatus, invalidateQualipassCache } from '../services/qualipass.service';
 
 /**
  * MOS-Account-Verknüpfung (Stufe 2, siehe docs/MOS-INTEGRATION.md).
@@ -49,7 +49,8 @@ router.get('/mos/status', requireAuth, async (req, res) => {
     where: { id: userId },
     select: { mosUserId: true },
   });
-  res.json({ connected: !!user?.mosUserId, mosUserId: user?.mosUserId ?? null });
+  const qp = user?.mosUserId ? await getQualipassStatus(user.mosUserId) : null;
+  res.json({ connected: !!user?.mosUserId, mosUserId: user?.mosUserId ?? null, qualipassStatus: qp });
 });
 
 /** MOS-Account verbinden. */

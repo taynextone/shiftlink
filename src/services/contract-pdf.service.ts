@@ -2,6 +2,7 @@ import createHttpError from 'http-errors';
 import { UserRole } from '@prisma/client';
 import { prisma } from '../config/prisma';
 import { createSignedDownloadUrl, uploadPrivateTextFile } from './storage.service';
+import { renderEmploymentContractPdf } from './employment-contract-pdf.service';
 
 type ContractSnapshotPayload = {
   matchContractId: string;
@@ -126,22 +127,71 @@ export async function generateContractPdfArtifact(matchContractId: string, provi
 
   const objectKey = `contracts/${matchContractId}/v${activeSnapshot.version}.pdf`;
   const artifactBody = renderContractArtifact(snapshot, signatureImages);
-  const upload = await uploadPrivateTextFile({
-    objectKey,
-    body: artifactBody,
-    contentType: 'application/pdf',
+
+  // Echter befüllter Arbeitsvertrag (PDF) aus Snapshot + Live-Daten
+  const contractFull = await prisma.matchContract.findUnique({
+    where: { id: matchContractId },
+    include: {
+      nurseProfile: true,
+      jobShift: { include: { hospitalProfile: true } },
+    },
   });
+
+  const grossWage = (
+    Number(snapshot.nurse.minHourlyRate) * Number(snapshot.jobShift.totalPlannedHours)
+  ).toFixed(2);
+
+  const pdfBuffer = await renderEmploymentContractPdf({
+    contractId: `${matchContractId} (v${activeSnapshot.version})`,
+    hospital: {
+      clinicName: contractFull?.jobShift.hospitalProfile.clinicName ?? snapshot.hospital.clinicName,
+      billingAddress: contractFull?.jobShift.hospitalProfile.billingAddress ?? snapshot.hospital.billingAddress,
+    },
+    nurse: {
+      displayName: snapshot.nurse.displayName,
+      firstName: snapshot.nurse.firstName ?? null,
+      lastName: snapshot.nurse.lastName ?? null,
+      hourlyRate: String(snapshot.nurse.minHourlyRate),
+      ibanLast4: contractFull?.nurseProfile.iban ? contractFull.nurseProfile.iban.slice(-4) : null,
+    },
+    jobShift: {
+      title: snapshot.jobShift.title,
+      department: snapshot.jobShift.department,
+      stationName: snapshot.jobShift.stationName,
+      locationCity: snapshot.jobShift.locationCity,
+      startTime: new Date(snapshot.jobShift.startTime),
+      endTime: new Date(snapshot.jobShift.endTime),
+      totalPlannedHours: String(snapshot.jobShift.totalPlannedHours),
+      grossWage,
+    },
+    signatures: {
+      hospitalSignedAt: contractFull?.signedAt ?? null,
+      nurseSignedAt: contractFull?.signedAt ?? null,
+    },
+  });
+
+  // PDF hochladen — eigener S3-Upload für binäre PDF-Payload
+  const { PutObjectCommand } = await import('@aws-sdk/client-s3');
+  const { s3 } = await import('../config/s3.js');
+  const { env } = await import('../config/env.js');
+
+  await s3.send(new PutObjectCommand({
+    Bucket: env.S3_BUCKET,
+    Key: objectKey,
+    Body: pdfBuffer,
+    ContentType: 'application/pdf',
+  }));
 
   await prisma.matchContract.update({
     where: { id: matchContractId },
     data: {
-      contractPdfUrl: upload.fileUrl,
+      contractPdfUrl: `s3://${env.S3_BUCKET}/${objectKey}`,
     },
   });
 
   return {
-    fileUrl: upload.fileUrl,
-    objectKey: upload.objectKey,
+    fileUrl: `s3://${env.S3_BUCKET}/${objectKey}`,
+    objectKey,
     version: activeSnapshot.version,
   };
 }
