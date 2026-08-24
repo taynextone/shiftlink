@@ -868,7 +868,7 @@ export async function signMatchContract(matchContractId: string, actor: { userId
   }
 
   const contractSnapshot = await createContractSnapshot(hydratedUpdatedContract.id);
-  await generateContractPdfArtifact(hydratedUpdatedContract.id, contractSnapshot);
+  await generateContractPdfArtifact(hydratedUpdatedContract.id, contractSnapshot, hydratedUpdatedContract);
   await emitMatchOfferSignedEvent(hydratedUpdatedContract.id);
   await emitContractPdfGeneratedEvent(hydratedUpdatedContract.id);
 

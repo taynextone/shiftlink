@@ -130,7 +130,7 @@ export async function signContractExecution(
   await emitContractExecutionSignedEvent(contract.id, actor);
 
   if (nextExecutionStatus === ContractExecutionStatus.FULLY_EXECUTED) {
-    await generateContractPdfArtifact(contract.id, activeSnapshot);
+    await generateContractPdfArtifact(contract.id, activeSnapshot, contract);
     await emitContractFullyExecutedEvent(contract.id);
     await emitContractPdfGeneratedEvent(contract.id);
   }

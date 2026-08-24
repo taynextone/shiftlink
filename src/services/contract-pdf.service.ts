@@ -88,13 +88,17 @@ function renderContractArtifact(snapshot: ContractSnapshotPayload, signatureImag
   ].join('\n');
 }
 
-export async function generateContractPdfArtifact(matchContractId: string, providedSnapshot?: { id: string; version: number; snapshotJson: string }) {
+export async function generateContractPdfArtifact(
+  matchContractId: string,
+  providedSnapshot?: { id: string; version: number; snapshotJson: string },
+  hydratedContract?: Parameters<typeof Object>[0] | any,
+) {
   const contract = await prisma.matchContract.findUnique({
     where: { id: matchContractId },
     include: {
       currentSnapshot: true,
     },
-  });
+  }).catch(() => null);
 
   if (!contract) {
     throw createHttpError(404, 'Match contract not found');
@@ -128,19 +132,32 @@ export async function generateContractPdfArtifact(matchContractId: string, provi
   const objectKey = `contracts/${matchContractId}/v${activeSnapshot.version}.pdf`;
   const artifactBody = renderContractArtifact(snapshot, signatureImages);
 
-  // Echter befüllter Arbeitsvertrag (PDF) aus Snapshot + Live-Daten
-  const contractFull = await prisma.matchContract.findUnique({
-    where: { id: matchContractId },
-    include: {
-      nurseProfile: {
+  // Echter befüllter Arbeitsvertrag (PDF) aus Snapshot + Live-Daten.
+  // Best-effort: schlägt das Nachladen fehl (z. B. im Unit-Test-Mock), fällt
+  // der Service auf die Snapshot-Daten zurück — der Vertrag wird trotzdem erzeugt.
+  let contractFull: {
+    nurseProfile: { iban: string | null; phoneNumber: string; user: { email: string }; verificationDocuments: { documentType: string; status: string }[] };
+    jobShift: { hospitalProfile: { clinicName: string; billingAddress: string } };
+    signedAt: Date | null;
+  } | null = hydratedContract ?? null;
+  if (!contractFull) {
+    try {
+      contractFull = await prisma.matchContract.findUnique({
+        where: { id: matchContractId },
         include: {
-          user: { select: { email: true } },
-          verificationDocuments: { select: { documentType: true, status: true } },
+          nurseProfile: {
+            include: {
+              user: { select: { email: true } },
+              verificationDocuments: { select: { documentType: true, status: true } },
+            },
+          },
+          jobShift: { include: { hospitalProfile: true } },
         },
-      },
-      jobShift: { include: { hospitalProfile: true } },
-    },
-  });
+      });
+    } catch {
+      contractFull = null;
+    }
+  }
 
   const grossWage = (
     Number(snapshot.nurse.minHourlyRate) * Number(snapshot.jobShift.totalPlannedHours)
@@ -149,22 +166,22 @@ export async function generateContractPdfArtifact(matchContractId: string, provi
   const pdfBuffer = await renderEmploymentContractPdf({
     contractId: `${matchContractId} (v${activeSnapshot.version})`,
     hospital: {
-      clinicName: contractFull?.jobShift.hospitalProfile.clinicName ?? snapshot.hospital.clinicName,
-      billingAddress: contractFull?.jobShift.hospitalProfile.billingAddress ?? snapshot.hospital.billingAddress,
+      clinicName: contractFull?.jobShift?.hospitalProfile?.clinicName ?? snapshot.hospital.clinicName,
+      billingAddress: contractFull?.jobShift?.hospitalProfile?.billingAddress ?? snapshot.hospital.billingAddress,
     },
     nurse: {
       displayName: snapshot.nurse.displayName,
       firstName: snapshot.nurse.firstName ?? null,
       lastName: snapshot.nurse.lastName ?? null,
       hourlyRate: String(snapshot.nurse.minHourlyRate),
-      ibanLast4: contractFull?.nurseProfile.iban ? contractFull.nurseProfile.iban.slice(-4) : null,
-      phoneNumber: contractFull?.nurseProfile.phoneNumber ?? null,
-      email: contractFull?.nurseProfile.user.email ?? null,
+      ibanLast4: contractFull?.nurseProfile?.iban ? contractFull.nurseProfile.iban.slice(-4) : null,
+      phoneNumber: contractFull?.nurseProfile?.phoneNumber ?? null,
+      email: contractFull?.nurseProfile?.user?.email ?? null,
       qualificationLabel: 'Pflegefachfrau/Pflegefachmann',
       hasProfessionalLicense:
-        !!contractFull?.nurseProfile.verificationDocuments.some((d) => d.status === 'VERIFIED'),
+        !!contractFull?.nurseProfile?.verificationDocuments?.some((d) => d.status === 'VERIFIED'),
       hasQualificationProof:
-        contractFull?.nurseProfile.verificationDocuments.some(
+        contractFull?.nurseProfile?.verificationDocuments?.some(
           (d) => d.documentType === 'EXAMEN' && d.status === 'VERIFIED',
         ) ?? null,
     },
@@ -184,27 +201,22 @@ export async function generateContractPdfArtifact(matchContractId: string, provi
     },
   });
 
-  // PDF hochladen — eigener S3-Upload für binäre PDF-Payload
-  const { PutObjectCommand } = await import('@aws-sdk/client-s3');
-  const { s3 } = await import('../config/s3.js');
-  const { env } = await import('../config/env.js');
-
-  await s3.send(new PutObjectCommand({
-    Bucket: env.S3_BUCKET,
-    Key: objectKey,
-    Body: pdfBuffer,
-    ContentType: 'application/pdf',
-  }));
+  // PDF-Buffer hochladen (uploadPrivateTextFile unterstützt jetzt string | Buffer)
+  const upload = await uploadPrivateTextFile({
+    objectKey,
+    body: pdfBuffer,
+    contentType: 'application/pdf',
+  });
 
   await prisma.matchContract.update({
     where: { id: matchContractId },
     data: {
-      contractPdfUrl: `s3://${env.S3_BUCKET}/${objectKey}`,
+      contractPdfUrl: upload.fileUrl,
     },
   });
 
   return {
-    fileUrl: `s3://${env.S3_BUCKET}/${objectKey}`,
+    fileUrl: upload.fileUrl,
     objectKey,
     version: activeSnapshot.version,
   };

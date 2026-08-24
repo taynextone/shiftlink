@@ -43,7 +43,7 @@ export async function createSignedDownloadUrl(fileUrl: string): Promise<{ url: s
 
 export async function uploadPrivateTextFile(input: {
   objectKey: string;
-  body: string;
+  body: string | Buffer;
   contentType: string;
 }): Promise<{ fileUrl: string; objectKey: string }> {
   await s3.send(
