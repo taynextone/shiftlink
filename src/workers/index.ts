@@ -1,6 +1,7 @@
 import { billingWorker } from './billing.worker';
 import { whatsappWorker } from './whatsapp.worker';
 import { webhookWorker } from './webhook.worker';
+import { mailWorker } from './mail.worker';
 import { recordAsyncProcessFailure } from '../services/async-process.service';
 import logger from '../config/logger';
 
@@ -36,6 +37,18 @@ export function startWorkers(): void {
       jobName: job?.name ?? 'unknown',
       jobId: job?.id?.toString(),
       relatedEntityId: job?.data?.webhookEventId ?? null,
+      attemptCount: job?.attemptsMade ?? null,
+      errorMessage: err.message,
+    });
+  });
+
+  mailWorker.on('failed', (job, err) => {
+    logger.error({ jobId: job?.id, jobName: job?.name, queue: 'mail', err }, 'Mail job failed');
+    void recordAsyncProcessFailure({
+      queueName: 'mail',
+      jobName: job?.name ?? 'unknown',
+      jobId: job?.id?.toString(),
+      relatedEntityId: job?.data?.matchContractId ?? null,
       attemptCount: job?.attemptsMade ?? null,
       errorMessage: err.message,
     });

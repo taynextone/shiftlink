@@ -5,6 +5,8 @@ import { createContractSnapshot } from './contract.service';
 import { generateContractPdfArtifact } from './contract-pdf.service';
 import { emitContractExecutionSignedEvent, emitContractFullyExecutedEvent, emitContractPdfGeneratedEvent } from './contract-webhook.service';
 import { isPrismaUniqueConstraintError } from './prisma-error.service';
+import { mailQueue } from '../config/queues';
+import logger from '../config/logger';
 
 function buildSignatureEvidence(actor: { userId: string; role: UserRole }) {
   return {
@@ -133,6 +135,25 @@ export async function signContractExecution(
     await generateContractPdfArtifact(contract.id, activeSnapshot, contract);
     await emitContractFullyExecutedEvent(contract.id);
     await emitContractPdfGeneratedEvent(contract.id);
+
+    // Vertrags-PDF per E-Mail zustellen (Dev-Fallback: Log).
+    // Fire-and-forget: Mail-Probleme dürfen die Signatur niemals blockieren.
+    try {
+      await mailQueue.add(
+        'contract-fully-executed-mail',
+        {
+          matchContractId: contract.id,
+          toEmail: contract.nurseProfile.user.email,
+          nurseName: [contract.nurseProfile.firstName, contract.nurseProfile.lastName].filter(Boolean).join(' ') || contract.nurseProfile.displayName,
+          clinicName: contract.jobShift.hospitalProfile.clinicName,
+          shiftTitle: contract.jobShift.title,
+          downloadPath: '/nurse/contracts',
+        },
+        { attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
+      );
+    } catch (mailErr) {
+      logger.error({ mailErr }, 'Failed to enqueue contract mail');
+    }
   }
 
   return {

@@ -12,3 +12,7 @@ export const whatsappQueue = new Queue('whatsapp', {
 export const webhookQueue = new Queue('webhook', {
   connection: redis,
 });
+
+export const mailQueue = new Queue('mail', {
+  connection: redis,
+});

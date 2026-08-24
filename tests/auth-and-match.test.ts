@@ -81,6 +81,7 @@ jest.mock('../src/config/queues', () => ({
   billingQueue: { add: jest.fn() },
   whatsappQueue: { add: jest.fn() },
   webhookQueue: { add: jest.fn() },
+  mailQueue: { add: jest.fn() },
 }));
 
 jest.mock('../src/services/contract.service', () => ({
