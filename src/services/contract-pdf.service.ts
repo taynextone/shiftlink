@@ -132,7 +132,12 @@ export async function generateContractPdfArtifact(matchContractId: string, provi
   const contractFull = await prisma.matchContract.findUnique({
     where: { id: matchContractId },
     include: {
-      nurseProfile: true,
+      nurseProfile: {
+        include: {
+          user: { select: { email: true } },
+          verificationDocuments: { select: { documentType: true, status: true } },
+        },
+      },
       jobShift: { include: { hospitalProfile: true } },
     },
   });
@@ -153,6 +158,15 @@ export async function generateContractPdfArtifact(matchContractId: string, provi
       lastName: snapshot.nurse.lastName ?? null,
       hourlyRate: String(snapshot.nurse.minHourlyRate),
       ibanLast4: contractFull?.nurseProfile.iban ? contractFull.nurseProfile.iban.slice(-4) : null,
+      phoneNumber: contractFull?.nurseProfile.phoneNumber ?? null,
+      email: contractFull?.nurseProfile.user.email ?? null,
+      qualificationLabel: 'Pflegefachfrau/Pflegefachmann',
+      hasProfessionalLicense:
+        !!contractFull?.nurseProfile.verificationDocuments.some((d) => d.status === 'VERIFIED'),
+      hasQualificationProof:
+        contractFull?.nurseProfile.verificationDocuments.some(
+          (d) => d.documentType === 'EXAMEN' && d.status === 'VERIFIED',
+        ) ?? null,
     },
     jobShift: {
       title: snapshot.jobShift.title,
