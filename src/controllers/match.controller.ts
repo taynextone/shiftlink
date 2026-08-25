@@ -174,7 +174,8 @@ export async function getContractPdfController(req: Request, res: Response): Pro
     throw createHttpError(400, 'Invalid match contract id');
   }
 
-  const contractPdf = await getContractPdfDownload(matchContractId, req.auth);
+  const inline = req.query.inline === '1' || req.query.inline === 'true';
+  const contractPdf = await getContractPdfDownload(matchContractId, req.auth, { inline });
 
   res.status(200).json({
     contractPdf,

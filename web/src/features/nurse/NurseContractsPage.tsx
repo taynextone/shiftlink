@@ -37,8 +37,8 @@ export function NurseContractsPage() {
     });
   }
 
-  function handleDownloadPdf(contractId: string) {
-    api.getContractPdf(contractId).then((result) => {
+  function handleDownloadPdf(contractId: string, inline = false) {
+    api.getContractPdf(contractId, inline).then((result) => {
       if (result.contractPdf?.fileUrl) window.open(result.contractPdf.fileUrl, '_blank');
     }).catch(() => {
       setStatus({ tone: 'error', message: 'PDF-Download fehlgeschlagen' });
@@ -109,6 +109,13 @@ export function NurseContractsPage() {
                   onClick={() => handleSignNurse(activeContract.id)}
                 >
                   Unterschreiben
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => handleDownloadPdf(activeContract.id, true)}
+                >
+                  PDF ansehen
                 </button>
                 <button
                   type="button"

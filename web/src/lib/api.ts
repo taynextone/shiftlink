@@ -718,7 +718,8 @@ export const api = {
     }),
   getContractLifecycle: (contractId: string) => request<{ lifecycle: ContractLifecycle }>(`/matches/contract/${contractId}/lifecycle`),
   getContractSnapshot: (contractId: string) => request<{ contractSnapshot: ContractSnapshotResponse }>(`/matches/contract/${contractId}/snapshot`),
-  getContractPdf: (contractId: string) => request<{ contractPdf: ContractPdfResponse }>(`/matches/contract/${contractId}/pdf`),
+  getContractPdf: (contractId: string, inline?: boolean) =>
+    request<{ contractPdf: ContractPdfResponse }>(`/matches/contract/${contractId}/pdf${inline ? '?inline=1' : ''}`),
   getContractExecutionOverview: (contractId: string) => request<{ execution: ContractExecutionOverview }>(`/matches/contract/${contractId}/execution`),
   getContractVoidOverview: (contractId: string) => request<{ voiding: ContractVoidOverview }>(`/matches/contract/${contractId}/void`),
   completeOnboarding: (input: { displayName: string; phoneNumber: string; whatsappOptIn: boolean; minHourlyRate?: number; specializations?: string[]; clinicName?: string; billingAddress?: string }) =>

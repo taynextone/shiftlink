@@ -22,12 +22,19 @@ function buildS3Url(objectKey: string): string {
   return `s3://${env.S3_BUCKET}/${objectKey}`;
 }
 
-export async function createSignedDownloadUrl(fileUrl: string): Promise<{ url: string; expiresIn: number; objectKey: string }> {
+export async function createSignedDownloadUrl(
+  fileUrl: string,
+  options?: { inline?: boolean },
+): Promise<{ url: string; expiresIn: number; objectKey: string }> {
   const objectKey = normalizeObjectKey(fileUrl);
 
   const command = new GetObjectCommand({
     Bucket: env.S3_BUCKET,
     Key: objectKey,
+    // Inline-Auslieferung: Browser zeigt PDF direkt an statt es herunterzuladen
+    ...(options?.inline
+      ? { ResponseContentType: 'application/pdf', ResponseContentDisposition: 'inline' }
+      : {}),
   });
 
   const url = await getSignedUrl(s3, command, {

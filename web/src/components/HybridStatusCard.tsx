@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ActionBar } from './ActionBar';
 import { api, type HybridSignatureStatus as HybridSigStatus } from '../lib/api';
 import { FeedbackMessage } from './FeedbackMessage';
@@ -15,10 +15,17 @@ export function HybridStatusCard({ contractId, onUpdatePaperStatus }: HybridStat
   const [pending, setPending] = useState(false);
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
 
-  useEffect(() => {
+  const reload = useCallback(() => {
     if (!contractId) return;
     api.getHybridSignatureStatus(contractId).then(setStatus).catch(() => {});
   }, [contractId]);
+
+  useEffect(() => {
+    reload();
+    // Sanftes Polling (15 s), damit digitale Signaturen der Gegenseite sichtbar werden
+    const timer = setInterval(reload, 15000);
+    return () => clearInterval(timer);
+  }, [reload]);
 
   if (!status) return <SectionCard title="Vertrags-Status" description="Lade Signatur-Status…"><p className="hint">Lade…</p></SectionCard>;
 
@@ -28,6 +35,7 @@ export function HybridStatusCard({ contractId, onUpdatePaperStatus }: HybridStat
     try {
       await onUpdatePaperStatus(newStatus);
       setFeedback({ tone: 'success', message: `Papiervertrag-Status aktualisiert: ${formatStatusLabel(newStatus)}` });
+      reload();
     } catch (err) {
       setFeedback({ tone: 'error', message: err instanceof Error ? err.message : 'Aktualisierung fehlgeschlagen' });
     } finally {
@@ -82,13 +90,26 @@ export function HybridStatusCard({ contractId, onUpdatePaperStatus }: HybridStat
       {feedback ? <FeedbackMessage tone={feedback.tone} message={feedback.message} /> : null}
 
       <ActionBar>
-        <button type="button" disabled={pending} onClick={() => handlePaperAction('PENDING')}>
+        <button
+          type="button"
+          disabled={pending || status.paper.status === 'PENDING'}
+          onClick={() => handlePaperAction('PENDING')}
+        >
           Papier ausstehend
         </button>
-        <button type="button" disabled={pending} onClick={() => handlePaperAction('SIGNED')}>
+        <button
+          type="button"
+          disabled={pending || status.paper.signed}
+          onClick={() => handlePaperAction('SIGNED')}
+        >
           Papier signiert
         </button>
-        <button type="button" className="secondary" disabled={pending} onClick={() => handlePaperAction('WAIVED')}>
+        <button
+          type="button"
+          className="secondary"
+          disabled={pending || status.paper.waived}
+          onClick={() => handlePaperAction('WAIVED')}
+        >
           Verzichten
         </button>
       </ActionBar>

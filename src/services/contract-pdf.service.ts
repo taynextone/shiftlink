@@ -243,7 +243,11 @@ export async function generateContractPdfArtifact(
   };
 }
 
-export async function getContractPdfDownload(matchContractId: string, actor: { userId: string; role: UserRole }) {
+export async function getContractPdfDownload(
+  matchContractId: string,
+  actor: { userId: string; role: UserRole },
+  options?: { inline?: boolean },
+) {
   const contract = await prisma.matchContract.findUnique({
     where: { id: matchContractId },
     include: {
@@ -272,5 +276,5 @@ export async function getContractPdfDownload(matchContractId: string, actor: { u
     throw createHttpError(404, 'No contract PDF available yet');
   }
 
-  return createSignedDownloadUrl(contract.contractPdfUrl);
+  return createSignedDownloadUrl(contract.contractPdfUrl, options);
 }
