@@ -16,6 +16,7 @@ import userRoutes from './routes/user.routes';
 import { mosSignalRoutes } from './routes/mos-signal.routes';
 import mosAccountRoutes from './routes/mos-account.routes';
 import mosSsoRoutes from './routes/mos-sso.routes';
+import medbenefitRoutes from './routes/medbenefit.routes';
 import { mosConnectRateLimit } from './middlewares/auth-rate-limit';
 import path from 'path';
 import { notFoundMiddleware } from './middlewares/not-found';
@@ -98,6 +99,7 @@ export function createApp() {
   app.use('/api/v1', mosConnectRateLimit);
   app.use('/api/v1', mosAccountRoutes);
   app.use('/api/v1', mosSsoRoutes);
+  app.use('/api/v1/medbenefit', medbenefitRoutes);
   app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1/matches', matchRoutes);
   app.use('/api/v1/documents', documentRoutes);

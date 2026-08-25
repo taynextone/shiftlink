@@ -720,6 +720,19 @@ export const api = {
   getContractSnapshot: (contractId: string) => request<{ contractSnapshot: ContractSnapshotResponse }>(`/matches/contract/${contractId}/snapshot`),
   getContractPdf: (contractId: string, inline?: boolean) =>
     request<{ contractPdf: ContractPdfResponse }>(`/matches/contract/${contractId}/pdf${inline ? '?inline=1' : ''}`),
+  getMedBenefitDeals: () =>
+    request<{
+      deals: Array<{
+        id: number;
+        title: string;
+        partner: string;
+        description: string;
+        category: string;
+        discountText: string;
+        redemptionInfo: string | null;
+      }>;
+      available: boolean;
+    }>('/medbenefit/deals'),
   getContractExecutionOverview: (contractId: string) => request<{ execution: ContractExecutionOverview }>(`/matches/contract/${contractId}/execution`),
   getContractVoidOverview: (contractId: string) => request<{ voiding: ContractVoidOverview }>(`/matches/contract/${contractId}/void`),
   completeOnboarding: (input: { displayName: string; phoneNumber: string; whatsappOptIn: boolean; minHourlyRate?: number; specializations?: string[]; clinicName?: string; billingAddress?: string }) =>

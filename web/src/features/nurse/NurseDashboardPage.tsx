@@ -12,6 +12,8 @@ import { api } from '../../lib/api';
 export function NurseDashboardPage() {
   const { data, loading, error } = useAsyncData(() => api.getNurseDashboardSummary(), []);
   const dashboard = data?.dashboard;
+  const { data: dealsData } = useAsyncData(() => api.getMedBenefitDeals(), []);
+  const deals = dealsData?.deals ?? [];
 
   const pendingDocuments = useMemo(
     () => dashboard?.documents.filter((d) => d.status === 'PENDING').length ?? 0,
@@ -174,6 +176,31 @@ export function NurseDashboardPage() {
                 </div>
                 <div style={{ marginTop: '0.75rem' }}>
                   <Link to="/nurse/profile">→ Dokumente verwalten</Link>
+                </div>
+              </SectionCard>
+            )}
+
+            {/* MedBenefit deals */}
+            {deals.length > 0 && (
+              <SectionCard
+                title="MedBenefit Vorteile"
+                description="Exklusive Rabatte für verifizierte Pflegekräfte — powered by MOS."
+              >
+                <div style={{ display: 'grid', gap: '0.75rem', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
+                  {deals.map((deal) => (
+                    <div key={deal.id} style={{ border: '1px solid var(--line)', borderRadius: '8px', padding: '0.9rem', background: 'var(--card, #fff)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                        <StatusBadge value={formatStatusLabel(deal.category)} />
+                        <strong style={{ color: '#6157FF' }}>{deal.discountText}</strong>
+                      </div>
+                      <strong>{deal.title}</strong>
+                      <p className="hint" style={{ margin: '0.3rem 0 0' }}>{deal.partner}</p>
+                      <p style={{ fontSize: '0.85rem', marginTop: '0.4rem' }}>{deal.description}</p>
+                      {deal.redemptionInfo ? (
+                        <p className="hint" style={{ marginTop: '0.35rem' }}>💡 {deal.redemptionInfo}</p>
+                      ) : null}
+                    </div>
+                  ))}
                 </div>
               </SectionCard>
             )}
