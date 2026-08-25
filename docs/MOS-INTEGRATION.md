@@ -25,6 +25,11 @@ den Verifikationsstatus aus MOS.
 
 ## 2. Ist-Zustand (ehrlich)
 
+> **Update 25.08.2026:** Stufe 1 ✅, Stufe 2 ✅, Stufe 3 ✅ (SSO live seit 23.08.).
+> Zusätzlich live: **MedBenefit Stufe A** (Deal-Vitrine im Nurse-Dashboard, siehe
+> docs/MEDBENEFIT-INTEGRATION.md) und **MOS-Audit-Events**
+> (MOS_CONNECT/MOS_DISCONNECT in ShiftLink `/admin/audit-logs`).
+
 | Aspekt | MOS Core | ShiftLink |
 |---|---|---|
 | Auth | E-Mail/Passwort (bcrypt), Session-Cookie `kimi_sid` mit JWT `{userId}` | E-Mail/Passwort (bcrypt), eigener JWT (`Authorization: Bearer`) |

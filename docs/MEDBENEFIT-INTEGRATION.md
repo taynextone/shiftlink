@@ -1,8 +1,37 @@
 # MedBenefit × ShiftLink — Integrationskonzept
 
-**Stand:** 25.08.2026 · Status: Konzept (nicht implementiert)
+**Stand:** 25.08.2026 · **Stufe A: LIVE** (implementiert & deployed) · Stufen B/C: Konzept
 
-## Was MedBenefit bereits ist (in MOS-Core, live)
+## ✅ Was live ist (Stufe A, seit 25.08.2026)
+
+### MOS-Core Seite
+
+- **`GET /api/v1/mos/deals/active`** (app/api/deals-active.ts) — Service-to-Service
+  Endpoint mit `x-mos-service-token`-Auth (gleiche Mechanik wie QualiPass-Status).
+  Liefert alle aktiven, nicht abgelaufenen Deals:
+  `{ deals: [{ id, title, partner, category, discountText, description, redemptionInfo?, validUntil? }] }`
+- Commit `4290585` (lokal; kein Remote konfiguriert).
+
+### ShiftLink Seite
+
+- **`src/services/medbenefit.service.ts`** — holt die Deals und cached sie in Redis
+  (10 min TTL; bei MOS-Ausfall 60 s Negativ-Cache, damit das Dashboard nicht blockiert).
+- **`GET /api/v1/medbenefit/deals`** — authentifiziert, antwortet mit
+  `{ deals: [...], available: boolean }`. `available=false` = MOS down/leer.
+- **Nurse-Dashboard**: Abschnitt „MedBenefit Vorteile" unterhalb der Dokumenten-Karte —
+  Deal-Karten mit Kategorie-Badge, Rabatt (Indigo #6157FF), Partner und
+  Einlöse-Hinweis. Verschwindet automatisch, wenn keine Deals da sind.
+- Commit `2b152cd`, deployed & E2E-verifiziert (3 Demo-Deals live).
+
+### Einlösen funktioniert weiterhin in MOS
+
+Die Vitrine zeigt nur an. Das eigentliche `deals.redeem` (mit QualiPass-Prüfung
+und persönlichem Code) läuft wie bisher über MOS selbst — der Nutzer klickt sich
+bei Bedarf dorthin durch (SSO existiert ja).
+
+---
+
+## Was MedBenefit bereits ist (in MOS-Core)
 
 MOS-Core hat MedBenefit als **Deals-Modul** vollständig gebaut:
 
@@ -24,29 +53,16 @@ ShiftLink ist die **Arbeits-Ebene** (Matching + Verträge). MedBenefit ist die *
 MedBenefit verstärkt damit genau den Anreiz, über ShiftLink zu arbeiten — ohne dass
 ShiftLink selbst Geldflüsse berührt (Geschäftsmodell: reine Direktvermittlung).
 
-## Integrationsstufen
+## Weitere Integrationsstufen
 
-### Stufe A — Deal-Vitrine im Nurse-Dashboard (empfohlener Start)
-
-- Neuer Abschnitt „MedBenefit Vorteile" auf dem Pflegekraft-Dashboard.
-- Datenquelle: MOS-Core. Da tRPC (kein REST), zwei Wege:
-  - **a1) Service-Token-Endpoint in MOS** (wie QualiPass-Status): `GET /api/v1/mos/deals/active`
-    mit `x-mos-service-token` → ShiftLink cached die Liste (gleiche Cache-Mechanik wie
-    `getQualipassStatus`). Empfohlen: sauber, kein Nutzer-Login nötig.
-  - a2) SSO-Bridge: Nutzer klickt „Bei MOS ansehen" → bestehender SSO-Flow (Stufe 3)
-    loggt ihn in MOS ein, Deals werden dort angezeigt. Kein neuer Endpoint nötig,
-    aber keine Inline-Anzeige in ShiftLink.
-- Anzeige: Karten mit Titel, Partner, Rabatt-Text, Kategorie-Badge (MOS-Designsystem).
-- Klick → „Einlösen in MOS" (leitet in MOS, SSO) ODER direkt redeem via Service-API.
-
-### Stufe B — Einlösen direkt aus ShiftLink
+### Stufe B — Einlösen direkt aus ShiftLink (Konzept)
 
 - `POST /api/v1/mos/deals/redeem` (service-token, mosUserId + dealId) in MOS ergänzen;
   MOS prüft QualiPass intern und erzeugt den Code.
 - ShiftLink zeigt den Code direkt in der App („Dein Code: ABC123").
 - Voraussetzung: ShiftLink kennt `mosUserId` — vorhanden sobald MOS-Konto verbunden.
 
-### Stufe C — Kontextuelle Deals (später)
+### Stufe C — Kontextuelle Deals (später, Konzept)
 
 - Nach Vertragsabschluss: gezielte Vorschläge (z. B. EQUIPMENT-Deals vor dem ersten Einsatz).
 - Nach X absolvierten Schichten: FORTBILDUNG-Rabatt als Belohnung.
@@ -58,18 +74,3 @@ ShiftLink selbst Geldflüsse berührt (Geschäftsmodell: reine Direktvermittlung
 - KEINE Provisionsflüsse über ShiftLink. Deal-Partnern vertraglich in MOS regeln.
 - `requiresVerifiedProfile=true` macht den QualiPass zum Werterzeuger — stärkt das
   ganze Ökosystem (mehr Verifizierung = mehr Vertrauen im Matching).
-
-## Aufwandsschätzung
-
-| Stufe | Umfang | Aufwand |
-|---|---|---|
-| A (a1) | MOS-Endpoint + ShiftLink-Service/Cache + Dashboard-Abschnitt | ~0,5–1 Tag |
-| B | Redeem-Endpoint + Code-Anzeige | ~0,5 Tag |
-| C | Kontextlogik + Notifications | offen |
-
-## Nächster konkreter Schritt
-
-1. In MOS-Core: `GET /api/v1/mos/deals/active` (service-token) — analog zum bestehenden
-   QualiPass-Status-Endpoint, ~20 Zeilen.
-2. In ShiftLink: `medbenefit.service.ts` (Cache nach qualipass.service-Vorbild),
-   Dashboard-Abschnitt „MedBenefit" unterhalb der Onboarding-Karte.
