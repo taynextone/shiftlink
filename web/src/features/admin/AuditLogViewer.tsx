@@ -18,6 +18,10 @@ const auditActionLabels: Record<string, string> = {
   WEBHOOK_RETRY: 'Webhook erneut versucht',
   FAILURE_RESOLVE: 'Fehler als behandelt markiert',
   PROFILE_RELEASE: 'Profil freigegeben',
+  NURSE_DOCUMENT_UPLOAD: 'Dokument hochgeladen',
+  EXECUTION_SIGN: 'Vertrag elektronisch signiert',
+  MOS_CONNECT: 'MOS-Konto verbunden',
+  MOS_DISCONNECT: 'MOS-Konto getrennt',
 };
 
 export function AuditLogViewer() {
@@ -80,6 +84,10 @@ export function AuditLogViewer() {
             <option value="WEBHOOK_RETRY">Webhook erneut versucht</option>
             <option value="FAILURE_RESOLVE">Fehler behandelt</option>
             <option value="PROFILE_RELEASE">Profil freigegeben</option>
+            <option value="NURSE_DOCUMENT_UPLOAD">Dokument hochgeladen</option>
+            <option value="EXECUTION_SIGN">Vertrag signiert</option>
+            <option value="MOS_CONNECT">MOS verbunden</option>
+            <option value="MOS_DISCONNECT">MOS getrennt</option>
           </select>
         </label>
         <div className="actions" style={{ alignSelf: 'end' }}>
