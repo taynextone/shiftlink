@@ -12,6 +12,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mocks.navigate,
+  useSearchParams: () => [{
+    get: (key: string) => null,
+    entries: () => [],
+  }],
 }));
 
 vi.mock('../../../lib/api', () => ({
@@ -37,7 +41,7 @@ describe('RegisterPage', () => {
     mocks.setAuthenticatedSession.mockReset();
   });
 
-  it('submits a hospital registration and redirects to the hospital workspace', async () => {
+  it('submits a hospital registration and redirects to the onboarding page after new accounts', async () => {
     const auth = {
       cookieName: 'shiftlink.sid',
       user: {
@@ -70,7 +74,7 @@ describe('RegisterPage', () => {
       },
     });
     expect(mocks.setAuthenticatedSession).toHaveBeenCalledWith(auth);
-    expect(mocks.navigate).toHaveBeenCalledWith('/hospital');
+    expect(mocks.navigate).toHaveBeenCalledWith('/onboarding');
   });
 
   it('keeps nurse registration as the default role', () => {

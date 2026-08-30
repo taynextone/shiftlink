@@ -84,7 +84,6 @@ export async function updateOwnNurseProfile(actor: { userId: string; role: UserR
     displayName: input.displayName,
     firstName: input.firstName,
     lastName: input.lastName,
-    iban: input.iban,
     minHourlyRate: input.minHourlyRate !== undefined ? new Prisma.Decimal(input.minHourlyRate) : undefined,
     phoneNumber: input.phoneNumber,
     whatsappOptIn: input.whatsappOptIn,

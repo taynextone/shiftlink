@@ -20,9 +20,12 @@ function cacheKey(mosUserId: number) {
   return `qualipass:${h}`;
 }
 
-async function readCache(key: string): Promise<QualipassStatus | null> {
+type CachedQualipassStatus = QualipassStatus | '__down__';
+
+async function readCache(key: string): Promise<CachedQualipassStatus | null> {
   try {
     const v = await redis.get(key);
+    if (v === '__down__') return v;
     if (v && ['VERIFIED', 'PARTIALLY_VERIFIED', 'UNVERIFIED'].includes(v)) {
       return v as QualipassStatus;
     }
@@ -59,6 +62,7 @@ export async function getQualipassStatus(
 
   const key = cacheKey(mosUserId);
   const cached = await readCache(key);
+  if (cached === '__down__') return null;
   if (cached) return cached;
 
   const token = process.env.MOS_SERVICE_TOKEN;

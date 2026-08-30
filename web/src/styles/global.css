@@ -309,9 +309,7 @@ label span { font-size: 0.92rem; }
   .sidebar-open .workspace-card {
     grid-column: 1 / -1;
   }
-  .sidebar-open .nav-groups {
-    margin-top: 0.25rem;
-  }
+  .sidebar-open .nav-groups { margin-top: 0.25rem; }
   .mobile-nav-toggle {
     display: inline-flex;
     width: 44px;
@@ -342,9 +340,11 @@ label span { font-size: 0.92rem; }
 }
 @media (max-width: 720px) {
   .content { padding: 1rem; }
-  .panel-hero,
-  .record-card { flex-direction: column; align-items: flex-start; }
+  .panel-hero, .record-card { flex-direction: column; align-items: flex-start; }
   .record-card-meta.align-right { align-items: flex-start; text-align: left; }
+  .app-shell { padding-top: 0; }
+  .sidebar { padding: 0.6rem 0.75rem; }
+  .brand-card { padding: 0.5rem; }
 }
 
 .action-bar {

@@ -30,7 +30,7 @@ export async function registerUser(input: RegisterInput) {
               displayName: input.nurseProfile.displayName ?? 'Pflegekraft',
               firstName: input.nurseProfile.firstName,
               lastName: input.nurseProfile.lastName,
-              iban: '',
+              iban: null,
               minHourlyRate: new Prisma.Decimal(input.nurseProfile.minHourlyRate ?? 42),
               phoneNumber: input.nurseProfile.phoneNumber ?? '',
               whatsappOptIn: input.nurseProfile.whatsappOptIn,

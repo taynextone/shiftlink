@@ -40,7 +40,8 @@ export const updateNurseProfileSchema = z
     displayName: z.string().trim().min(2).max(80).optional(),
     firstName: z.string().trim().min(1).max(100).optional(),
     lastName: z.string().trim().min(1).max(100).optional(),
-    iban: z.string().trim().min(15).max(34).optional(),
+    // Bank details never belong to the Shiftlink platform profile. Hospitals
+    // collect payment data directly in their own contract/HR flow.
     minHourlyRate: z.number().positive().min(1).optional(),
     phoneNumber: z.string().trim().regex(/^\+[1-9]\d{7,14}$/, 'phoneNumber must be in E.164 format').optional(),
     whatsappOptIn: z.boolean().optional(),

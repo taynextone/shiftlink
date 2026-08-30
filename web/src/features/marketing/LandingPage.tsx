@@ -57,6 +57,7 @@ const CSS = `
 .ld .section-head h2{font-size:clamp(36px,4vw,56px);font-weight:800;margin:20px 0 18px}
 .ld .section-head p{color:var(--slate);font-size:18px;margin:0}
 .ld .benefit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.ld .benefit-grid .benefit-card { min-height: auto; }
 .ld .benefit-card{background:#fff;border:1px solid var(--border);border-radius:24px;overflow:hidden;transition:transform .4s cubic-bezier(.22,1,.36,1),box-shadow .4s}
 .ld .benefit-card:hover{transform:translateY(-8px);box-shadow:0 30px 56px -24px rgba(12,18,32,.2)}
 .ld .benefit-card img{width:100%;aspect-ratio:16/10;object-fit:cover}
@@ -98,8 +99,25 @@ const CSS = `
 .ld .cookie-btns .btn{min-height:42px;padding:10px 16px;font-size:13.5px;flex:1}
 .ld .cookie .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,.25);color:var(--ivory)}
 .ld .cookie .btn-light{background:var(--ivory);color:var(--graphite)}
-@media(max-width:1023px){.ld .hero{padding:150px 0 100px}.ld .hero-grid{grid-template-columns:1fr;gap:56px}.ld .mhub-grid{grid-template-columns:1fr}.ld .footer-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:767px){.ld .nav-links,.ld .nav-cta .login-link,.ld .nav-cta .btn{display:none}.ld .burger{display:block}.ld .hero{padding:128px 0 84px}}
+@media(max-width:1023px){
+  .ld .hero{padding:150px 0 100px}
+  .ld .hero-grid{grid-template-columns:1fr;gap:56px}
+  .ld .mhub-grid{grid-template-columns:1fr}
+  .ld .footer-grid{grid-template-columns:1fr 1fr}
+  .ld .benefit-grid,.ld .steps-grid{grid-template-columns:repeat(2,1fr);gap:20px}
+}
+@media(max-width:767px){
+  .ld .nav-links,.ld .nav-cta .login-link,.ld .nav-cta .btn{display:none}
+  .ld .burger{display:block}
+  .ld .hero{padding:110px 0 70px}
+  .ld .hero h1{font-size:clamp(36px,9vw,52px)}
+  .ld .hero .sub{font-size:15.5px}
+  .ld .benefit-grid,.ld .steps-grid{grid-template-columns:1fr;gap:16px}
+  .ld .step,.ld .benefit-card{padding:24px 20px}
+  .ld .section{padding:clamp(60px,10vw,90px) 0}
+  .ld .section-head h2{font-size:clamp(28px,7vw,40px)}
+  .ld .footer-grid{grid-template-columns:1fr;gap:32px}
+}
 `;
 
 export function LandingPage() {
